@@ -2,7 +2,7 @@
 url = https://gitlab.gnome.org/GNOME/gtk.git
 # Native GTK. This is the default target (packages/gtk/targets name "gnome").
 # Upstream GNOME is built as-is. Android fixes are not patched onto this tree.
-# --gtk ime selects Knowles/gtk branch android-ime, which carries those fixes.
+# --gtk Knowles.android-ime selects that owner.branch, which carries those fixes.
 revision = ae709f962a51f9108a1e6381bcfbd05bbaecc840
 depth = 1
 

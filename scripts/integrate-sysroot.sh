@@ -10,7 +10,7 @@ source "$ROOT/scripts/sysroot-common.sh"
 source "$ROOT/scripts/upstream-index.sh"
 
 usage() {
-  echo "Usage: $0 latest --dest DIR [--gtk ime|gnome] [--abi ABI] [--arch aarch64|x86_64] [--repo OWNER/NAME] [--index-url URL]" >&2
+  echo "Usage: $0 latest --dest DIR [--gtk TARGET] [--abi ABI] [--arch aarch64|x86_64] [--repo OWNER/NAME] [--index-url URL]" >&2
   echo "       $0 pin INDEX --dest DIR [--exclude PACKAGE ...]" >&2
   exit 2
 }

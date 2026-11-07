@@ -13,7 +13,7 @@ tarball_dir=""
 dry=0
 
 usage() {
-  echo "Usage: $0 --plan FILE [--arch aarch64|x86_64] [--gtk ime|gnome] --tarball-dir DIR [--dry-run]" >&2
+  echo "Usage: $0 --plan FILE [--arch aarch64|x86_64] [--gtk TARGET] --tarball-dir DIR [--dry-run]" >&2
   exit 2
 }
 

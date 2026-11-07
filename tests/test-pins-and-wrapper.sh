@@ -35,7 +35,7 @@ fi
 # shellcheck source=../scripts/gtk-target.sh
 source "$ROOT/scripts/gtk-target.sh"
 read -r gnome_url gnome_rev gnome_patch < <(gtk_target_read "$ROOT/packages/gtk/targets" gnome)
-read -r ime_url ime_rev ime_patch < <(gtk_target_read "$ROOT/packages/gtk/targets" ime)
+read -r ime_url ime_rev ime_patch < <(gtk_target_read "$ROOT/packages/gtk/targets" Knowles.android-ime)
 [ "$gnome_url" = "https://gitlab.gnome.org/GNOME/gtk.git" ]
 [ "$gnome_rev" = "$(revision_of "$ROOT/packages/gtk/gtk.wrap")" ]
 [ "$gnome_patch" = "-" ]
@@ -48,6 +48,25 @@ gtk_target_apply_wrap "$wrap_copy" "$ime_url" "$ime_rev"
 grep -q "^url = $ime_url$" "$wrap_copy"
 grep -q "^revision = $ime_rev$" "$wrap_copy"
 rm -f "$wrap_copy"
+
+# A branch target is owner.branch. A nickname is rejected. Another fork is another line.
+bad_targets="$(mktemp)"
+printf '%s\n' 'ime https://gitlab.gnome.org/Knowles/gtk.git android-ime -' > "$bad_targets"
+if gtk_target_read "$bad_targets" ime >/dev/null 2>"$bad_targets.err"; then
+  echo "nickname ime was accepted" >&2
+  exit 1
+fi
+grep -q 'Knowles.android-ime' "$bad_targets.err"
+cat > "$bad_targets" << 'EOF'
+gnome https://gitlab.gnome.org/GNOME/gtk.git ae709f962a51f9108a1e6381bcfbd05bbaecc840 -
+Knowles.android-ime https://gitlab.gnome.org/Knowles/gtk.git android-ime -
+Other.feature https://gitlab.gnome.org/Other/gtk.git feature -
+EOF
+read -r other_url other_rev other_patch < <(gtk_target_read "$bad_targets" Other.feature)
+[ "$other_url" = "https://gitlab.gnome.org/Other/gtk.git" ]
+[ "$other_rev" = feature ]
+[ "$other_patch" = "-" ]
+rm -f "$bad_targets" "$bad_targets.err"
 
 # pango pin must not be named *.wrap or install would publish a second provider.
 if compgen -G "$ROOT/packages/gtk/*.wrap" | grep -q 'pango\|harfbuzz'; then

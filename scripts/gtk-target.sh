@@ -1,9 +1,60 @@
 # GTK source targets. Source this file; do not execute it.
+# A branch target is named <repo-owner>.<branch>. A pinned commit may use a short name.
+
+gtk_target_owner() {
+  local url=$1 owner
+  owner="$(printf '%s\n' "$url" | sed -n 's#^.*/\([^/][^/]*\)/[^/][^/]*$#\1#p')"
+  if [ -z "$owner" ]; then
+    echo "Cannot read repo owner from $url" >&2
+    return 1
+  fi
+  printf '%s\n' "$owner"
+}
+
+gtk_target_check() {
+  local file=$1 line name url rev patch extra owner expect found=0
+  if [ ! -f "$file" ]; then
+    echo "GTK target list missing: $file" >&2
+    return 1
+  fi
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      ''|\#*) continue ;;
+    esac
+    extra=""
+    read -r name url rev patch extra <<< "$line"
+    if [ -n "$extra" ] || [ -z "$name" ] || [ -z "$url" ] || [ -z "$rev" ] || [ -z "$patch" ]; then
+      echo "GTK target line needs name url revision patch: $line" >&2
+      return 1
+    fi
+    found=1
+    if [[ "$rev" =~ ^[0-9a-f]{40}$ ]]; then
+      continue
+    fi
+    owner="$(gtk_target_owner "$url")" || return 1
+    expect="${owner}.${rev}"
+    if [ "$name" != "$expect" ]; then
+      echo "GTK branch target must be named ${expect} (repo owner.branch), not ${name}" >&2
+      return 1
+    fi
+  done < "$file"
+  if [ "$found" -eq 0 ]; then
+    echo "GTK target list is empty: $file" >&2
+    return 1
+  fi
+}
+
+gtk_target_names() {
+  awk 'NF && $1 !~ /^#/ { print $1 }' "$1"
+}
 
 gtk_target_read() {
   local file=$1 name=$2 line
   if [ ! -f "$file" ]; then
     echo "GTK target list missing: $file" >&2
+    return 1
+  fi
+  if ! gtk_target_check "$file"; then
     return 1
   fi
   if ! line="$(awk -v name="$name" '

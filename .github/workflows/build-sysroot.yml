@@ -11,11 +11,8 @@ on:
           - x86_64
         default: aarch64
       gtk:
-        description: GTK target. gnome is native GTK with no Android patch. ime is Knowles/gtk android-ime.
-        type: choice
-        options:
-          - gnome
-          - ime
+        description: GTK target from packages/gtk/targets. Default gnome. A branch target is owner.branch, for example Knowles.android-ime.
+        type: string
         default: gnome
 
 jobs:

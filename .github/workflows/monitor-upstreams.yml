@@ -13,12 +13,8 @@ on:
           - x86_64
         default: aarch64
       gtk:
-        description: GTK target. gnome is native GTK with no Android patch. ime is Knowles/gtk android-ime. both checks each.
-        type: choice
-        options:
-          - both
-          - gnome
-          - ime
+        description: GTK target from packages/gtk/targets, or both. A branch target is owner.branch, for example Knowles.android-ime.
+        type: string
         default: both
       force:
         description: Rebuild these packages even when unchanged (all, or comma-separated names).
@@ -29,14 +25,49 @@ permissions:
   contents: read
 
 jobs:
+  targets:
+    runs-on: ubuntu-24.04
+    outputs:
+      names: ${{ steps.list.outputs.names }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - id: list
+        env:
+          WANT: ${{ github.event.inputs.gtk || 'both' }}
+        run: |
+          set -euo pipefail
+          mapfile -t all < <(awk 'NF && $1 !~ /^#/ { print $1 }' packages/gtk/targets)
+          if [ "${#all[@]}" -eq 0 ]; then
+            echo "packages/gtk/targets has no GTK targets" >&2
+            exit 1
+          fi
+          if [ "$WANT" = both ]; then
+            selected=("${all[@]}")
+          else
+            selected=()
+            for name in "${all[@]}"; do
+              if [ "$name" = "$WANT" ]; then
+                selected+=("$name")
+              fi
+            done
+            if [ "${#selected[@]}" -ne 1 ]; then
+              echo "Unknown GTK target: $WANT" >&2
+              printf 'Known targets:\n' >&2
+              printf '  %s\n' "${all[@]}" >&2
+              exit 1
+            fi
+          fi
+          json="$(printf '%s\n' "${selected[@]}" | jq -R . | jq -sc .)"
+          echo "names=$json" >> "$GITHUB_OUTPUT"
+
   plan:
+    needs: targets
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        gtk:
-          - gnome
-          - ime
+        gtk: ${{ fromJson(needs.targets.outputs.names) }}
     steps:
       - uses: actions/checkout@v6
 
@@ -45,16 +76,10 @@ jobs:
         env:
           ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
           FORCE: ${{ github.event.inputs.force || '' }}
-          WANT: ${{ github.event.inputs.gtk || 'both' }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           gtk="${{ matrix.gtk }}"
-          if [ "$WANT" != both ] && [ "$WANT" != "$gtk" ]; then
-            echo "publish=0" >> "$GITHUB_OUTPUT"
-            echo "Skipping $gtk"
-            exit 0
-          fi
           case "$ARCH" in
             aarch64) abi=arm64-v8a ;;
             x86_64) abi=x86_64 ;;
@@ -83,7 +108,7 @@ jobs:
             resolved.tsv
 
   publish:
-    needs: plan
+    needs: [targets, plan]
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     permissions:
@@ -91,9 +116,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gtk:
-          - gnome
-          - ime
+        gtk: ${{ fromJson(needs.targets.outputs.names) }}
     steps:
       - uses: actions/checkout@v6
 

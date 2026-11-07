@@ -37,7 +37,7 @@ printf 'glib\ngtk\nopenssl\n' > "$tmp/provided.txt"
   --api 31 \
   --ndk 28.2.13676358 \
   --pixiewood-revision abc \
-  --gtk-target ime \
+  --gtk-target Knowles.android-ime \
   --gtk-url https://gitlab.gnome.org/Knowles/gtk.git \
   --gtk-revision android-ime \
   --provided "$tmp/provided.txt" \
@@ -53,7 +53,7 @@ gio="$(cat "$destdir/lib/$abi/pkgconfig/gioopenssl.pc")"
 printf '%s\n' "$gio" | grep -q '^prefix=@PIXIEWOOD_SYSROOT@$'
 printf '%s\n' "$gio" | grep -q 'libgioopenssl.a'
 manifest="$destdir/share/pixiewood/MANIFEST.json"
-grep -q '"gtk_target": "ime"' "$manifest"
+grep -q '"gtk_target": "Knowles.android-ime"' "$manifest"
 grep -q 'Knowles/gtk' "$manifest"
 grep -q '"format": 1' "$manifest"
 grep -q '"provided_dependencies": \["glib", "gtk", "openssl"\]' "$manifest"
