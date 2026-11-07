@@ -3,10 +3,14 @@ name: Prove package
 on:
   workflow_dispatch:
     inputs:
-      packages:
-        description: Packages in build order. The default builds gdk, then gtk on that GDK. sqlite3 is the smaller toolchain check.
+      through:
+        description: Last package to prove, from the start of build-order.txt. Cached packages whose inputs have not changed are reused.
         type: string
-        default: gdk,gtk
+        default: gtk
+      packages:
+        description: Explicit package list instead of through. Leave empty to use through.
+        type: string
+        default: ""
       arch:
         description: Android arch
         type: choice
@@ -22,9 +26,18 @@ on:
 jobs:
   prove:
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v6
+
+      - name: Restore proved packages
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/prove
+          key: prove-${{ inputs.arch || 'aarch64' }}-${{ github.run_id }}
+          restore-keys: |
+            prove-${{ inputs.arch || 'aarch64' }}-
 
       - name: Install host packages
         run: scripts/ci-host-setup.sh
@@ -33,14 +46,30 @@ jobs:
         env:
           ARCH: ${{ inputs.arch || 'aarch64' }}
           GTK_TARGET: ${{ inputs.gtk || 'gnome' }}
-          PACKAGES: ${{ inputs.packages || 'gdk,gtk' }}
+          THROUGH: ${{ inputs.through || 'gtk' }}
+          PACKAGES: ${{ inputs.packages || '' }}
         run: |
           set -euo pipefail
           hash -r
           meson --version
-          scripts/prove-package.sh --arch "$ARCH" --gtk "$GTK_TARGET" --packages "$PACKAGES"
+          args=(--arch "$ARCH" --gtk "$GTK_TARGET" --cache "$PWD/.cache/prove")
+          if [ -n "$PACKAGES" ]; then
+            args+=(--packages "$PACKAGES")
+          else
+            args+=(--through "$THROUGH")
+          fi
+          scripts/prove-package.sh "${args[@]}"
+
+      - name: Save proved packages
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/prove
+          key: prove-${{ inputs.arch || 'aarch64' }}-${{ github.run_id }}
 
       - name: Upload proved tarballs
+        if: success()
         uses: actions/upload-artifact@v7
         with:
           name: prove-${{ inputs.arch || 'aarch64' }}

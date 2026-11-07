@@ -9,16 +9,29 @@ trap 'rm -rf "$tmp"' EXIT
 bash -n "$ROOT/scripts/prove-package.sh"
 
 "$ROOT/scripts/prove-package.sh" --dry-run > "$tmp/default.out"
-grep -qx 'prove gdk alone' "$tmp/default.out"
-grep -qx 'prove gtk on gdk' "$tmp/default.out"
+grep -qx 'build openssl alone' "$tmp/default.out"
+grep -q '^build glib on ' "$tmp/default.out"
+grep -q '^build gdk on ' "$tmp/default.out"
+grep -q '^build gtk on ' "$tmp/default.out"
+if grep -q webkitgtk-android "$tmp/default.out"; then
+  echo "default proof continued past gtk" >&2
+  exit 1
+fi
 
 "$ROOT/scripts/prove-package.sh" --dry-run --packages sqlite3 > "$tmp/one.out"
-grep -qx 'prove sqlite3 alone' "$tmp/one.out"
+grep -qx 'build sqlite3 alone' "$tmp/one.out"
 
 "$ROOT/scripts/prove-package.sh" --dry-run --packages 'sqlite3, nghttp2,libpsl' > "$tmp/stack.out"
-grep -qx 'prove sqlite3 alone' "$tmp/stack.out"
-grep -qx 'prove nghttp2 on sqlite3' "$tmp/stack.out"
-grep -qx 'prove libpsl on sqlite3 nghttp2' "$tmp/stack.out"
+grep -qx 'build sqlite3 alone' "$tmp/stack.out"
+grep -qx 'build nghttp2 on sqlite3' "$tmp/stack.out"
+grep -qx 'build libpsl on sqlite3 nghttp2' "$tmp/stack.out"
+
+mkdir -p "$tmp/cache/arm64-v8a"
+touch "$tmp/cache/arm64-v8a/openssl.tar.xz" "$tmp/cache/arm64-v8a/libxml2.tar.xz"
+"$ROOT/scripts/prove-package.sh" --dry-run --through gtk --cache "$tmp/cache" > "$tmp/cache.out"
+grep -qx 'cached openssl alone' "$tmp/cache.out"
+grep -qx 'cached libxml2 on openssl' "$tmp/cache.out"
+grep -qx 'build sqlite3 on openssl libxml2' "$tmp/cache.out"
 
 if "$ROOT/scripts/prove-package.sh" --dry-run --packages 'nghttp2,sqlite3' > "$tmp/order.out" 2> "$tmp/order.err"; then
   echo "out-of-order packages were accepted" >&2
@@ -38,15 +51,27 @@ mkdir -p "$pkg/lib/$abi/pkgconfig" "$pkg/lib/$abi"
 printf '%s\n' 'prefix=/' 'Name: sqlite3' 'Version: 3.53.2' > "$pkg/lib/$abi/pkgconfig/sqlite3.pc"
 printf 'sqlite\n' > "$pkg/lib/$abi/libsqlite3.so"
 tar -C "$pkg" -cJf "$tmp/sqlite3-${abi}.tar.xz" .
-"$ROOT/scripts/prove-package.sh" --check "$tmp/sqlite3-${abi}.tar.xz" --arch aarch64 > "$tmp/check.out"
-grep -q 'proved sqlite3-arm64-v8a: sqlite3 3.53.2 (lib/arm64-v8a/libsqlite3.so)' "$tmp/check.out"
+"$ROOT/scripts/prove-package.sh" --check "$tmp/sqlite3-${abi}.tar.xz" --package sqlite3 --arch aarch64 > "$tmp/check.out"
+grep -q 'proved sqlite3: sqlite3 3.53.2 (lib/arm64-v8a/libsqlite3.so)' "$tmp/check.out"
 
 rm -f "$pkg/lib/$abi/pkgconfig/sqlite3.pc"
 tar -C "$pkg" -cJf "$tmp/bare.tar.xz" .
-if "$ROOT/scripts/prove-package.sh" --check "$tmp/bare.tar.xz" --arch aarch64 > "$tmp/bare.out" 2> "$tmp/bare.err"; then
+if "$ROOT/scripts/prove-package.sh" --check "$tmp/bare.tar.xz" --package sqlite3 --arch aarch64 > "$tmp/bare.out" 2> "$tmp/bare.err"; then
   echo "tarball without pkg-config was accepted" >&2
   exit 1
 fi
-grep -q 'No pkg-config file' "$tmp/bare.err"
+grep -q 'missing lib/arm64-v8a/pkgconfig/sqlite3.pc' "$tmp/bare.err"
+
+printf '%s\n' 'prefix=/' 'Name: pixiewood-gdk' 'Version: 4' > "$pkg/lib/$abi/pkgconfig/pixiewood-gdk.pc"
+printf '%s\n' 'prefix=/' 'Name: glib' 'Version: 2.80.0' > "$pkg/lib/$abi/pkgconfig/glib-2.0.pc"
+printf 'gdk\n' > "$pkg/lib/$abi/libgdk.a"
+mkdir -p "$pkg/bin/$abi"
+printf '#!/bin/sh\n' > "$pkg/bin/$abi/gdbus-codegen"
+tar -C "$pkg" -cJf "$tmp/polluted-gdk.tar.xz" .
+if "$ROOT/scripts/prove-package.sh" --check "$tmp/polluted-gdk.tar.xz" --package gdk --arch aarch64 > "$tmp/polluted.out" 2> "$tmp/polluted.err"; then
+  echo "gdk tarball containing glib was accepted" >&2
+  exit 1
+fi
+grep -q 'contains glib-2.0.pc from glib' "$tmp/polluted.err"
 
 echo "prove package: ok"

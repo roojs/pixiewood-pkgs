@@ -43,7 +43,7 @@ scripts/build-sysroot.sh --gtk Knowles.android-ime --arch aarch64
 
 A push does not publish packages. Once a day, **Monitor upstreams** resolves every package for each name in `packages/gtk/targets`. It uploads tarballs only for packages whose upstream revision or local inputs changed, writes an index that reuses the previous URL for the rest, and skips the release entirely when nothing changed. **Build Android sysroot** can still be started by hand for one combined tree.
 
-**Prove package** does not publish. `sqlite3` checks the toolchain. The default run builds `gdk`, then `gtk` on that GDK, which is the split the full publish configures. Pass `sqlite3` to repeat only the toolchain check. Each name is built against only the packages listed before it, in `build-order.txt` order.
+**Prove package** does not publish. It builds from the start of `build-order.txt` through `gtk`, and keeps each proved tarball in the workflow cache. The next run reuses a package whose inputs have not changed, so a GTK-only fix does not rebuild GLib. Pass `packages=sqlite3` to prove that package alone.
 
 ## Use the sysroot from Pixiewood
 
