@@ -55,7 +55,7 @@ OLLMchat's Android wraps (GLib 2.90.0, Pango 1.58.2, the `android-bugs` patch).
 `00b1862b6434a8778557dc3d3074f43f5fdead1b`. Fontconfig still tracks that
 checkout's `main` wrap; the tarball is the artifact that freezes the result.
 
-GitHub Actions workflow **Build Android sysroot** runs the same script.
+A push to `main` runs **Build Android sysroot** for aarch64 and attaches the tarball to the `v<version>` GitHub Release. **Build Android sysroot** can also be started by hand for `aarch64` or `x86_64`.
 
 ## Use a tarball
 
