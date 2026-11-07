@@ -1,4 +1,3 @@
-# Exclude documentation, tests, and CI configs from source archives
-/docs export-ignore
-/tests export-ignore
-/.github export-ignore
+# Source archives contain the release date file and nothing else.
+* export-ignore
+/1.*.tgz !export-ignore
