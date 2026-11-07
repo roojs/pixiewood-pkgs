@@ -43,7 +43,7 @@ mode=${1:-}
 shift || usage
 
 dest=""
-gtk="${GTK_TARGET:-ime}"
+gtk="${GTK_TARGET:-gnome}"
 abi=""
 arch=""
 repo="${GITHUB_REPOSITORY:-roojs/pixiewood-pkgs}"

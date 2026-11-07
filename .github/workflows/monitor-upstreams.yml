@@ -17,8 +17,8 @@ on:
         type: choice
         options:
           - both
-          - ime
           - gnome
+          - ime
         default: both
       force:
         description: Rebuild these packages even when unchanged (all, or comma-separated names).
@@ -35,8 +35,8 @@ jobs:
       fail-fast: false
       matrix:
         gtk:
-          - ime
           - gnome
+          - ime
     steps:
       - uses: actions/checkout@v6
 
@@ -92,8 +92,8 @@ jobs:
       fail-fast: false
       matrix:
         gtk:
-          - ime
           - gnome
+          - ime
     steps:
       - uses: actions/checkout@v6
 

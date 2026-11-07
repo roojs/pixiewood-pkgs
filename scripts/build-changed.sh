@@ -8,7 +8,7 @@ source "$ROOT/scripts/upstream-index.sh"
 
 plan=""
 arch="${ARCH:-aarch64}"
-gtk="${GTK_TARGET:-ime}"
+gtk="${GTK_TARGET:-gnome}"
 tarball_dir=""
 dry=0
 

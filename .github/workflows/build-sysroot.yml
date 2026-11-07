@@ -14,9 +14,9 @@ on:
         description: GTK target. ime is Knowles/gtk android-ime. gnome is standard GTK.
         type: choice
         options:
-          - ime
           - gnome
-        default: ime
+          - ime
+        default: gnome
 
 jobs:
   sysroot:
@@ -31,12 +31,12 @@ jobs:
       - name: Build sysroot tarball
         env:
           ARCH: ${{ inputs.arch || 'aarch64' }}
-          GTK_TARGET: ${{ inputs.gtk || 'ime' }}
+          GTK_TARGET: ${{ inputs.gtk || 'gnome' }}
         run: scripts/build-sysroot.sh --arch "$ARCH" --gtk "$GTK_TARGET"
 
       - name: Upload tarball
         uses: actions/upload-artifact@v7
         with:
-          name: pixiewood-android-${{ inputs.gtk || 'ime' }}-${{ inputs.arch || 'aarch64' }}
+          name: pixiewood-android-${{ inputs.gtk || 'gnome' }}-${{ inputs.arch || 'aarch64' }}
           path: out/*.tar.xz
           if-no-files-found: error

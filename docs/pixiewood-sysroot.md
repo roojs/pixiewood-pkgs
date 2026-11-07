@@ -17,11 +17,11 @@ the glue is not inside a wrap anymore:
 3. `java-sources` must point at `share/pixiewood/gtk-android-java` in the
    extracted tree (that directory contains `org/gtk/android`).
 
-Fetch a set first. `latest` follows one GTK target (`ime` is Knowles/gtk
-branch `android-ime`; `gnome` is standard GTK). `pin` keeps a single index
-file:
+Fetch a set first. `latest` follows standard GTK unless `--gtk ime` selects
+Knowles/gtk branch `android-ime`. `pin` keeps a single index file:
 
 ```bash
+scripts/integrate-sysroot.sh latest --dest "$HOME/pixiewood-sysroot"
 scripts/integrate-sysroot.sh latest --gtk ime --dest "$HOME/pixiewood-sysroot"
 scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysroot"
 ```
@@ -127,8 +127,8 @@ does not delete extra files already in the destdir.
 Dependencies listed in `MANIFEST.json` no longer need source wraps. The
 application meson targets stay as they are: `dependency('gtk4')`,
 `dependency('gioopenssl')`, `dependency('webkitgtk-android-1')`, and the
-others resolve through pkg-config. The manifest's `gtk_target` is `ime` for
-Knowles/gtk branch `android-ime`, or `gnome` for standard GTK.
+others resolve through pkg-config. The manifest's `gtk_target` is `gnome`
+for standard GTK, or `ime` for Knowles/gtk branch `android-ime`.
 
 Stop pointing `glib-mkenums` at `subprojects/glib` once GLib is not a
 subproject. The activated cross file uses the script from the sysroot when

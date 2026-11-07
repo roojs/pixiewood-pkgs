@@ -135,7 +135,7 @@ index_write() {
 }
 
 cmd_resolve() {
-  local packages="$ROOT/packages" gtk="${GTK_TARGET:-ime}" out=""
+  local packages="$ROOT/packages" gtk="${GTK_TARGET:-gnome}" out=""
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --packages) packages=$2; shift 2 ;;
@@ -212,7 +212,7 @@ cmd_resolve() {
 }
 
 cmd_plan() {
-  local resolved="" previous="" out="" force="" gtk="${GTK_TARGET:-ime}" order="$ROOT/build-order.txt"
+  local resolved="" previous="" out="" force="" gtk="${GTK_TARGET:-gnome}" order="$ROOT/build-order.txt"
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --resolved) resolved=$2; shift 2 ;;

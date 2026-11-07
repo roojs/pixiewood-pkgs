@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cross-compile Android GTK packages.
-# Default GTK is Knowles/gtk branch android-ime. --gtk gnome builds upstream GTK.
+# Default GTK is upstream GNOME. --gtk ime builds Knowles/gtk branch android-ime.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -9,7 +9,7 @@ source "$ROOT/scripts/gtk-target.sh"
 
 ARCH="${ARCH:-aarch64}"
 JOBS="${JOBS:-$(nproc)}"
-GTK_TARGET="${GTK_TARGET:-ime}"
+GTK_TARGET="${GTK_TARGET:-gnome}"
 ONLY=""
 DEPS_SYSROOT=""
 RESOLVED=""
