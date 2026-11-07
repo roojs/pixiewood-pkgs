@@ -114,8 +114,9 @@ fi
 
 WORK="${PIXIEWOOD_SYSROOT_WORK:-$ROOT/out/work-$GTK_TARGET-$ARCH${ONLY:+-$ONLY}}"
 rm -rf "$WORK"
-mkdir -p "$WORK/subprojects/packagefiles"
-cp "$ROOT/meson.build" "$ROOT/probe.c" "$WORK/"
+mkdir -p "$WORK/subprojects/packagefiles" "$WORK/sysroot"
+cp "$ROOT/meson.build" "$WORK/"
+cp "$ROOT/sysroot/probe.c" "$WORK/sysroot/"
 
 shopt -s nullglob
 if [ -n "$ONLY" ]; then

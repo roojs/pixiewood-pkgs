@@ -44,7 +44,7 @@ deps += dependency('gioopenssl')
 
 executable(
   'pixiewood-sysroot-probe',
-  'probe.c',
+  'sysroot/probe.c',
   dependencies: deps,
   install: false,
 )
