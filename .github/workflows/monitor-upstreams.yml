@@ -190,6 +190,8 @@ jobs:
           done
           if [ "$need_host" -eq 1 ]; then
             scripts/ci-host-setup.sh
+            hash -r
+            meson --version
           fi
           while IFS= read -r gtk; do
             plan="plans/upstream-plan-${gtk}/plan.tsv"

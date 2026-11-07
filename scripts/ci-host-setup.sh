@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Host packages for a sysroot build. Meson itself is upgraded when the distro copy is older than 1.8.
+# Host packages for a sysroot build.
+# Fontconfig's main branch requires Meson >= 1.11, and GTK requires >= 1.8.
+# Ubuntu's package is older, so a newer Meson is installed onto PATH for this step.
 set -euo pipefail
 
 if [ "$(id -u)" -eq 0 ]; then
@@ -34,7 +36,7 @@ version_ge() {
   [ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | tail -n1)" = "$1" ]
 }
 
-if command -v meson >/dev/null 2>&1 && version_ge "$(meson --version)" 1.8.0; then
+if command -v meson >/dev/null 2>&1 && version_ge "$(meson --version)" 1.11.0; then
   echo "Using $(command -v meson) $(meson --version)"
   exit 0
 fi
@@ -63,8 +65,15 @@ printf '%s\n' \
   > "$real"
 chmod +x "$real" "$real.real"
 ln -sf "$real" "$tools/bin/meson"
+# /usr/local/bin is already on PATH. GITHUB_PATH only affects later steps,
+# and this script runs in the same step as the build.
+if [ "$(id -u)" -eq 0 ]; then
+  ln -sfn "$real" /usr/local/bin/meson
+else
+  sudo ln -sfn "$real" /usr/local/bin/meson
+fi
 if [ -n "${GITHUB_PATH:-}" ]; then
   echo "$tools/bin" >> "$GITHUB_PATH"
 fi
-export PATH="$tools/bin:$PATH"
-"$tools/bin/meson" --version
+hash -r
+echo "Using $(command -v meson) $(meson --version)"
