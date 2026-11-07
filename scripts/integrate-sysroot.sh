@@ -77,7 +77,7 @@ case "$mode" in
     fi
     abi="${abi:-arm64-v8a}"
     if [ -z "$index_url" ]; then
-      index_url="$("$ROOT/scripts/current-pins.sh" url --abi "$abi" --gtk "$gtk")"
+      index_url="https://github.com/${repo}/releases/download/latest/index-${abi}-${gtk}.json"
     fi
     index_file="$(mktemp)"
     fetch_url "$index_url" "$index_file"

@@ -281,37 +281,21 @@ grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-
 grep -q '"version": "1.261107"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
-# current.pins is the download list, and the source archive contains only that file.
-gnome_url="$("$ROOT/scripts/current-pins.sh" url --abi arm64-v8a --gtk gnome)"
-ime_url="$("$ROOT/scripts/current-pins.sh" url --abi arm64-v8a --gtk Knowles.android-ime)"
-grep -qx "arm64-v8a gnome 1.261107 $gnome_url" "$ROOT/current.pins"
-grep -qx "arm64-v8a Knowles.android-ime 1.261107 $ime_url" "$ROOT/current.pins"
+# The pointer file is not the package list, so it is not in the tree.
+if [ -e "$ROOT/current.pins" ]; then
+  echo "current.pins is still in the tree" >&2
+  exit 1
+fi
 if grep -q 'tgz' "$ROOT/.gitattributes"; then
   echo "gitattributes names a generated release archive" >&2
   exit 1
 fi
 grep -qx '/current.pins !export-ignore' "$ROOT/.gitattributes"
-"$ROOT/scripts/current-pins.sh" write \
-  --file "$tmp/pins" \
-  --arch aarch64 \
-  --created 2026-11-08T00:00:00Z \
-  --repo roojs/pixiewood-pkgs \
-  --gtk gnome
-printf '%s\n' 'x86_64 x86_64 1.261107 https://example.invalid/x86_64.json' >> "$tmp/pins"
-"$ROOT/scripts/current-pins.sh" write \
-  --file "$tmp/pins" \
-  --arch aarch64 \
-  --created 2026-11-08T00:00:00Z \
-  --repo roojs/pixiewood-pkgs \
-  --gtk gnome
-grep -qx 'arm64-v8a gnome 1.261108 https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/index-arm64-v8a-gnome.json' "$tmp/pins"
-grep -qx 'x86_64 x86_64 1.261107 https://example.invalid/x86_64.json' "$tmp/pins"
-[ "$("$ROOT/scripts/current-pins.sh" url --file "$tmp/pins" --abi x86_64 --gtk x86_64)" = "https://example.invalid/x86_64.json" ]
 
 attr_work="$(mktemp -d)"
 attr_index="$(mktemp)"
 cp "$ROOT/.gitattributes" "$attr_work/.gitattributes"
-cp "$ROOT/current.pins" "$attr_work/current.pins"
+printf 'list\n' > "$attr_work/current.pins"
 printf 'no\n' > "$attr_work/README.md"
 GIT_INDEX_FILE="$attr_index" git -C "$ROOT" read-tree --empty
 GIT_INDEX_FILE="$attr_index" git -C "$ROOT" --work-tree="$attr_work" add -- .gitattributes current.pins README.md
