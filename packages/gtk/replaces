@@ -1,0 +1,4 @@
+# Packages a branch target builds. GDK ships inside the gtk package.
+# Every other library stays on the first target in packages/gtk/targets.
+gtk
+gdk

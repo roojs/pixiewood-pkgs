@@ -285,16 +285,20 @@ grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 grep -q $'arm64-v8a\tgnome\t1.261107\topenssl\t' "$ROOT/current.pins"
 grep -q $'\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/openssl-arm64-v8a-gnome.tar.xz$' "$ROOT/current.pins"
 grep -q $'arm64-v8a\tKnowles.android-ime\t1.261107\tgtk\tandroid-ime\t' "$ROOT/current.pins"
-grep -q $'\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/openssl-arm64-v8a-gnome.tar.xz$' "$ROOT/current.pins"
-if grep -q $'Knowles.android-ime\t1.261107\topenssl\t' "$ROOT/current.pins" \
-  && ! grep $'Knowles.android-ime\t1.261107\topenssl\t' "$ROOT/current.pins" \
-    | grep -q 'openssl-arm64-v8a-gnome.tar.xz'; then
-  echo "IME openssl was not reused from gnome" >&2
+if grep $'Knowles.android-ime\t' "$ROOT/current.pins" | awk -F '\t' '$4 != "gtk" && $4 != "gdk" { found = 1 } END { exit !found }'; then
+  echo "Knowles.android-ime is pinned for a library other than gtk or gdk" >&2
   exit 1
 fi
 if ! grep $'Knowles.android-ime\t1.261107\tgtk\t' "$ROOT/current.pins" \
   | grep -q 'gtk-arm64-v8a-Knowles.android-ime.tar.xz'; then
   echo "IME gtk does not point at its own tarball" >&2
+  exit 1
+fi
+"$ROOT/scripts/current-pins.sh" index --abi arm64-v8a --gtk Knowles.android-ime --out "$tmp/ime-index.json"
+grep -q 'openssl-arm64-v8a-gnome.tar.xz' "$tmp/ime-index.json"
+grep -q 'gtk-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/ime-index.json"
+if grep -q 'libadwaita-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/ime-index.json"; then
+  echo "IME index rebuilt a library other than gtk" >&2
   exit 1
 fi
 if grep -q 'index-.*\.json' "$ROOT/current.pins"; then
