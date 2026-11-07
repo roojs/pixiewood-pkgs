@@ -135,6 +135,10 @@ for dep_dir in "${package_dirs[@]}"; do
 done
 shopt -u nullglob
 rm -f "$WORK/subprojects/gdk.wrap"
+# GDK is built from the GTK checkout. A one-package gdk build still needs gtk.wrap.
+if [ "$ONLY" = gdk ]; then
+  cp -a "$ROOT/packages/gtk/gtk.wrap" "$WORK/subprojects/gtk.wrap"
+fi
 
 build_gtk=0
 if [ -z "$ONLY" ] || [ "$ONLY" = gtk ] || [ "$ONLY" = gdk ]; then

@@ -120,6 +120,10 @@ package_pin_label() {
 
 gtk_target_apply_wrap() {
   local wrap=$1 url=$2 rev=$3 tmp
+  if [ ! -f "$wrap" ]; then
+    echo "gtk wrap missing: $wrap" >&2
+    return 1
+  fi
   tmp="$(mktemp)"
   awk -v url="$url" -v rev="$rev" '
     /^url[[:space:]]*=/ { print "url = " url; next }
