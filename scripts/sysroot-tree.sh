@@ -262,11 +262,33 @@ meson_quote() {
   printf "'%s'" "$s"
 }
 
+# gdbus-codegen is installed in bin/$abi. Its own lookup only treats a
+# directory named bin as the prefix, then falls back to the baked datadir
+# /share. The modules are in share/glib-2.0/codegen. A shell wrapper puts
+# that directory on PYTHONPATH; the script's failed lookup does not remove it.
+write_gdbus_codegen_launch() {
+  local sysroot=$1 abi=$2
+  local script="$sysroot/bin/$abi/gdbus-codegen"
+  local codegen="$sysroot/share/glib-2.0"
+  local launch="$sysroot/share/pixiewood/gdbus-codegen"
+  if [ ! -f "$script" ] || [ "$(head -c 2 "$script")" != '#!' ]; then
+    return 1
+  fi
+  mkdir -p "$(dirname "$launch")"
+  cat > "$launch" << EOF
+#!/bin/sh
+export PYTHONPATH=$(sh_single_quote "$codegen")\${PYTHONPATH:+:\$PYTHONPATH}
+exec $(sh_single_quote "$script") "\$@"
+EOF
+  chmod a+x "$launch"
+  printf '%s\n' "$launch"
+}
+
 write_cross() {
   local sysroot=$1 abi=$2 wrapper=$3
   local pkgconfig="$sysroot/lib/$abi/pkgconfig"
   local dest="$sysroot/share/pixiewood/sysroot.cross"
-  local tool script quoted_wrapper
+  local tool script launch quoted_wrapper
   quoted_wrapper="$(meson_quote "$wrapper")"
   {
     printf '[binaries]\n'
@@ -274,7 +296,9 @@ write_cross() {
     for tool in glib-mkenums glib-genmarshal gdbus-codegen; do
       script="$sysroot/bin/$abi/$tool"
       # Installed GLib tools are scripts. Run them through their shebang.
-      if [ -f "$script" ] && [ "$(head -c 2 "$script")" = '#!' ]; then
+      if [ "$tool" = gdbus-codegen ] && launch="$(write_gdbus_codegen_launch "$sysroot" "$abi")"; then
+        printf '%s = [%s]\n' "$tool" "$(meson_quote "$launch")"
+      elif [ -f "$script" ] && [ "$(head -c 2 "$script")" = '#!' ]; then
         printf '%s = [%s]\n' "$tool" "$(meson_quote "$script")"
       fi
     done

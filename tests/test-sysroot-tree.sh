@@ -28,6 +28,28 @@ printf '<schema/>\n' > "$destdir/share/glib-2.0/schemas/org.gtk.Settings.gschema
 mkdir -p "$tmp/java/org/gtk/android"
 printf 'class ToplevelActivity {}\n' > "$tmp/java/org/gtk/android/ToplevelActivity.java"
 printf 'glib\ngtk\nopenssl\n' > "$tmp/provided.txt"
+mkdir -p "$destdir/bin/$abi" "$destdir/share/glib-2.0/codegen"
+# Same lookup as GLib's gdbus-codegen: bin/$abi is not named bin, and the
+# baked datadir is /share, so the import only works via PYTHONPATH.
+cat > "$destdir/bin/$abi/gdbus-codegen" << 'EOF'
+#!/usr/bin/env python3
+import os
+import sys
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if not os.path.isfile(os.path.join(path, 'codegen', 'codegen_main.py')):
+    path = os.path.join('/share', 'glib-2.0')
+sys.path.insert(0, path)
+from codegen import codegen_main
+raise SystemExit(codegen_main.codegen_main())
+EOF
+chmod a+x "$destdir/bin/$abi/gdbus-codegen"
+cat > "$destdir/share/glib-2.0/codegen/__init__.py" << 'EOF'
+EOF
+cat > "$destdir/share/glib-2.0/codegen/codegen_main.py" << 'EOF'
+def codegen_main():
+    print('codegen-ok')
+    return 0
+EOF
 
 "$ROOT/scripts/sysroot-tree.sh" finalize \
   --destdir "$destdir" \
@@ -63,6 +85,11 @@ test -f "$destdir/share/pixiewood/gtk-android-java/org/gtk/android/ToplevelActiv
 
 "$ROOT/scripts/sysroot-tree.sh" activate "$destdir"
 grep -q "^prefix=$destdir$" "$destdir/lib/$abi/pkgconfig/gtk4.pc"
+cross_tool="$(sed -n "s/^gdbus-codegen = \['\(.*\)'\]/\\1/p" "$destdir/share/pixiewood/sysroot.cross")"
+test -n "$cross_tool"
+test -x "$cross_tool"
+test "$cross_tool" != "$destdir/bin/$abi/gdbus-codegen"
+[ "$("$cross_tool")" = codegen-ok ]
 cross="$(cat "$destdir/share/pixiewood/sysroot.cross")"
 printf '%s\n' "$cross" | grep -q 'pkg-config'
 if printf '%s\n' "$cross" | grep -q 'sys_root'; then
@@ -80,6 +107,8 @@ moved="$tmp/moved"
 mv "$destdir" "$moved"
 "$ROOT/scripts/sysroot-tree.sh" activate "$moved"
 grep -q "^prefix=$moved$" "$moved/lib/$abi/pkgconfig/gtk4.pc"
+cross_tool="$(sed -n "s/^gdbus-codegen = \['\(.*\)'\]/\\1/p" "$moved/share/pixiewood/sysroot.cross")"
+[ "$("$cross_tool")" = codegen-ok ]
 if grep -q "^prefix=$destdir$" "$moved/lib/$abi/pkgconfig/gtk4.pc"; then
   echo "activate left the old prefix in gtk4.pc" >&2
   exit 1
