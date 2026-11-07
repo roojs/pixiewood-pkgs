@@ -21,3 +21,6 @@ jobs:
 
       - name: Check the package index and GTK targets
         run: bash tests/test-index.sh
+
+      - name: Check the one-package proof plan
+        run: bash tests/test-prove-package.sh

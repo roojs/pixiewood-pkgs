@@ -1,0 +1,48 @@
+name: Prove package
+
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: Packages in build order. sqlite3 proves the toolchain alone. Add the next name to build it on that sysroot, for example sqlite3,nghttp2.
+        type: string
+        default: sqlite3
+      arch:
+        description: Android arch
+        type: choice
+        options:
+          - aarch64
+          - x86_64
+        default: aarch64
+      gtk:
+        description: GTK target from packages/gtk/targets. Leaf packages do not use it. gdk and gtk do.
+        type: string
+        default: gnome
+
+jobs:
+  prove:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install host packages
+        run: scripts/ci-host-setup.sh
+
+      - name: Prove the named packages
+        env:
+          ARCH: ${{ inputs.arch || 'aarch64' }}
+          GTK_TARGET: ${{ inputs.gtk || 'gnome' }}
+          PACKAGES: ${{ inputs.packages || 'sqlite3' }}
+        run: |
+          set -euo pipefail
+          hash -r
+          meson --version
+          scripts/prove-package.sh --arch "$ARCH" --gtk "$GTK_TARGET" --packages "$PACKAGES"
+
+      - name: Upload proved tarballs
+        uses: actions/upload-artifact@v7
+        with:
+          name: prove-${{ inputs.arch || 'aarch64' }}
+          path: out/prove/*.tar.xz
+          if-no-files-found: error
