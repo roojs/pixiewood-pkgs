@@ -88,6 +88,36 @@ gtk_target_read() {
   printf '%s\n' "$line"
 }
 
+distro_owner() {
+  local repo=${1:-${GITHUB_REPOSITORY:-roojs/pixiewood-pkgs}}
+  printf '%s\n' "${repo%%/*}"
+}
+
+package_wrap_owner() {
+  local name=$1 wrap url
+  wrap="$ROOT/packages/$name/$name.wrap"
+  [ -f "$wrap" ] || return 1
+  url="$(sed -n 's/^url[[:space:]]*=[[:space:]]*//p' "$wrap" | head -n1 | tr -d '[:space:]')"
+  [ -n "$url" ] || return 1
+  gtk_target_owner "$url"
+}
+
+# Column in current.pins. gtk and gdk follow the GTK target. A package whose
+# git owner is this distribution (roojs/webkitgtk-android) is pinned as that
+# owner. Everything else stays on the first GTK target.
+package_pin_label() {
+  local name=$1 gtk_variant=$2 repo=${3:-${GITHUB_REPOSITORY:-roojs/pixiewood-pkgs}} owner
+  if [ "$name" = gtk ] || [ "$name" = gdk ]; then
+    printf '%s\n' "$gtk_variant"
+    return 0
+  fi
+  if owner="$(package_wrap_owner "$name")" && [ "$owner" = "$(distro_owner "$repo")" ]; then
+    printf '%s\n' "$owner"
+    return 0
+  fi
+  gtk_target_base "$ROOT/packages/gtk/targets"
+}
+
 gtk_target_apply_wrap() {
   local wrap=$1 url=$2 rev=$3 tmp
   tmp="$(mktemp)"

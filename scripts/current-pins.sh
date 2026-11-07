@@ -83,13 +83,22 @@ cmd_write() {
   declare -A replaced=()
   pins_mark_replaced replaced || return 1
   declare -A groups=()
-  local got_abi got_gtk release name track resolved inputs url key
+  declare -A base_inputs=()
+  local got_abi got_gtk release name track resolved inputs url key label owner
+  owner="$(distro_owner "$repo")"
   if [ -f "$file" ]; then
     while IFS=$'\t' read -r got_abi got_gtk release name track resolved inputs url _; do
       if [ -z "${got_abi:-}" ] || [ "${got_abi#\#}" != "$got_abi" ]; then
         continue
       fi
       [ -n "$url" ] || continue
+      if [ "$got_gtk" = "$base" ]; then
+        label="$(package_pin_label "$name" "$base" "$repo")"
+        if [ "$label" != "$base" ]; then
+          got_gtk="$label"
+        fi
+        base_inputs[$name]=$inputs
+      fi
       key="${got_abi} ${got_gtk}"
       groups[$key]+="${got_abi}"$'\t'"${got_gtk}"$'\t'"${release}"$'\t'"${name}"$'\t'"${track}"$'\t'"${resolved}"$'\t'"${inputs}"$'\t'"${url}"$'\n'
     done < "$file"
@@ -114,23 +123,34 @@ cmd_write() {
       echo "plan is missing gtk_target: $plan" >&2
       return 1
     fi
-    key="${abi} ${gtk}"
-    groups[$key]=""
+    groups["${abi} ${gtk}"]=""
+    if [ "$gtk" = "$base" ] && [ "$owner" != "$base" ]; then
+      groups["${abi} ${owner}"]=""
+    fi
     while IFS=$'\t' read -r status name kind track resolved inputs url _; do
       [ -n "${status:-}" ] || continue
       case "$status" in \#*) continue ;; esac
-      if [ "$gtk" != "$base" ] && [ -z "${replaced[$name]:-}" ]; then
-        continue
+      if [ "$gtk" != "$base" ]; then
+        if [ "$name" = gdk ] && [ -n "${base_inputs[gdk]:-}" ] && [ "$inputs" = "${base_inputs[gdk]}" ]; then
+          continue
+        fi
+        if [ -z "${replaced[$name]:-}" ]; then
+          continue
+        fi
       fi
+      label="$(package_pin_label "$name" "$gtk" "$repo")"
       if [ "$status" = build ] || [ -z "$url" ] || [ "$url" = "-" ]; then
-        url="https://github.com/${repo}/releases/download/${version}/${name}-${abi}-${gtk}.tar.xz"
+        url="https://github.com/${repo}/releases/download/${version}/${name}-${abi}-${label}.tar.xz"
       elif [ "$status" != keep ]; then
         echo "Bad plan status: $status" >&2
         return 1
       fi
-      groups[$key]+="${abi}"$'\t'"${gtk}"$'\t'"${version}"$'\t'"${name}"$'\t'"${track}"$'\t'"${resolved}"$'\t'"${inputs}"$'\t'"${url}"$'\n'
+      if [ "$gtk" = "$base" ]; then
+        base_inputs[$name]=$inputs
+      fi
+      groups["${abi} ${label}"]+="${abi}"$'\t'"${label}"$'\t'"${version}"$'\t'"${name}"$'\t'"${track}"$'\t'"${resolved}"$'\t'"${inputs}"$'\t'"${url}"$'\n'
     done < "$plan"
-    if [ -z "${groups[$key]}" ]; then
+    if [ -z "${groups[${abi} ${gtk}]}" ]; then
       echo "plan has no packages: $plan" >&2
       return 1
     fi
@@ -175,16 +195,18 @@ cmd_apply() {
     return 0
   fi
   declare -A replaced=()
-  declare -A reuse=()
-  local got_abi got_gtk release name track resolved inputs url
+  declare -A reuse_url=()
+  declare -A reuse_inputs=()
+  local got_abi got_gtk release name track resolved inputs url label
   pins_mark_replaced replaced || return 1
   if [ -f "$file" ]; then
     while IFS=$'\t' read -r got_abi got_gtk release name track resolved inputs url _; do
       if [ -z "${got_abi:-}" ] || [ "${got_abi#\#}" != "$got_abi" ]; then
         continue
       fi
-      if [ "$got_abi" = "$abi" ] && [ "$got_gtk" = "$base" ] && [ -n "$url" ]; then
-        reuse[$name]=$url
+      if [ "$got_abi" = "$abi" ] && [ -n "$url" ]; then
+        reuse_url["${got_gtk} ${name}"]=$url
+        reuse_inputs["${got_gtk} ${name}"]=$inputs
       fi
     done < "$file"
   fi
@@ -200,13 +222,24 @@ cmd_apply() {
         continue
         ;;
     esac
-    if [ -z "${replaced[$name]:-}" ]; then
-      if [ -z "${reuse[$name]:-}" ]; then
-        echo "No $base tarball for $name. $gtk replaces only the packages in packages/gtk/replaces." >&2
+    if [ "$name" = gdk ]; then
+      if [ -n "${reuse_url["$base gdk"]:-}" ] && [ "$inputs" = "${reuse_inputs["$base gdk"]:-}" ]; then
+        echo "gdk matches $base; reusing that build" >&2
+        printf 'keep\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+          "$name" "$kind" "$track" "$resolved" "$inputs" "${reuse_url["$base gdk"]}"
+      else
+        echo "gdk differs from $base; building it for $gtk" >&2
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+          "$status" "$name" "$kind" "$track" "$resolved" "$inputs" "$url"
+      fi
+    elif [ -z "${replaced[$name]:-}" ]; then
+      label="$(package_pin_label "$name" "$base")"
+      if [ -z "${reuse_url["$label $name"]:-}" ]; then
+        echo "No $label tarball for $name. $gtk replaces only the packages in packages/gtk/replaces." >&2
         return 1
       fi
       printf 'keep\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "$name" "$kind" "$track" "$resolved" "$inputs" "${reuse[$name]}"
+        "$name" "$kind" "$track" "$resolved" "$inputs" "${reuse_url["$label $name"]}"
     else
       printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$status" "$name" "$kind" "$track" "$resolved" "$inputs" "$url"
@@ -235,54 +268,60 @@ cmd_index() {
     echo "Missing package list: $file" >&2
     return 1
   fi
-  local list got_abi got_gtk release name track resolved inputs url arch created set_release base
+  local list got_abi got_gtk release name track resolved inputs url arch created set_release base owner order_name picked
   list="$(mktemp)"
   : > "$list"
   set_release=""
   base="$(gtk_target_base "$ROOT/packages/gtk/targets")" || return 1
+  owner="$(distro_owner)"
   declare -A replaced=()
-  declare -A over_track=() over_resolved=() over_inputs=() over_url=()
+  declare -A row_track=() row_resolved=() row_inputs=() row_url=() row_release=()
   pins_mark_replaced replaced || return 1
-  if [ "$gtk" != "$base" ]; then
-    while IFS=$'\t' read -r got_abi got_gtk release name track resolved inputs url _; do
-      if [ -z "${got_abi:-}" ] || [ "${got_abi#\#}" != "$got_abi" ]; then
-        continue
-      fi
-      if [ "$got_abi" = "$abi" ] && [ "$got_gtk" = "$gtk" ] && [ -n "${replaced[$name]:-}" ]; then
-        over_track[$name]=$track
-        over_resolved[$name]=$resolved
-        over_inputs[$name]=$inputs
-        over_url[$name]=$url
-        set_release="$release"
-      fi
-    done < "$file"
-    if [ -z "${over_url[gtk]:-}" ]; then
-      echo "current.pins has no gtk package for $abi $gtk" >&2
-      return 1
-    fi
-  fi
   while IFS=$'\t' read -r got_abi got_gtk release name track resolved inputs url _; do
     if [ -z "${got_abi:-}" ] || [ "${got_abi#\#}" != "$got_abi" ]; then
       continue
     fi
-    if [ "$gtk" = "$base" ]; then
-      [ "$got_abi" = "$abi" ] && [ "$got_gtk" = "$gtk" ] || continue
-      if [ -n "$set_release" ] && [ "$set_release" != "$release" ]; then
-        echo "current.pins has mixed releases for $abi $gtk" >&2
-        return 1
-      fi
-      set_release="$release"
-    else
-      [ "$got_abi" = "$abi" ] && [ "$got_gtk" = "$base" ] || continue
-      if [ -n "${replaced[$name]:-}" ] && [ -n "${over_url[$name]:-}" ]; then
-        track="${over_track[$name]}"
-        resolved="${over_resolved[$name]}"
-        inputs="${over_inputs[$name]}"
-        url="${over_url[$name]}"
-      fi
-    fi
-    printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$track" "$resolved" "$inputs" "$url" >> "$list"
+    [ "$got_abi" = "$abi" ] || continue
+    row_track["${got_gtk} ${name}"]=$track
+    row_resolved["${got_gtk} ${name}"]=$resolved
+    row_inputs["${got_gtk} ${name}"]=$inputs
+    row_url["${got_gtk} ${name}"]=$url
+    row_release["${got_gtk} ${name}"]=$release
   done < "$file"
+  if [ "$gtk" != "$base" ] && [ -z "${row_url["$gtk gtk"]:-}" ]; then
+    echo "current.pins has no gtk package for $abi $gtk" >&2
+    return 1
+  fi
+  while IFS= read -r order_name || [ -n "$order_name" ]; do
+    order_name=${order_name%%#*}
+    order_name=${order_name#"${order_name%%[![:space:]]*}"}
+    order_name=${order_name%"${order_name##*[![:space:]]}"}
+    [ -n "$order_name" ] || continue
+    picked=""
+    if [ "$gtk" != "$base" ] && [ -n "${row_url["$gtk $order_name"]:-}" ]; then
+      picked="$gtk"
+    elif [ -n "${row_url["$owner $order_name"]:-}" ] && [ "$owner" != "$base" ]; then
+      picked="$owner"
+    elif [ -n "${row_url["$base $order_name"]:-}" ]; then
+      picked="$base"
+    elif [ "$gtk" = "$base" ] && [ -n "${row_url["$gtk $order_name"]:-}" ]; then
+      picked="$gtk"
+    else
+      continue
+    fi
+    if [ "$order_name" = gtk ]; then
+      set_release="${row_release["$picked gtk"]}"
+    fi
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+      "$order_name" \
+      "${row_track["$picked $order_name"]}" \
+      "${row_resolved["$picked $order_name"]}" \
+      "${row_inputs["$picked $order_name"]}" \
+      "${row_url["$picked $order_name"]}" >> "$list"
+  done < "$ROOT/build-order.txt"
+  if [ -z "$set_release" ]; then
+    set_release="${row_release["$base openssl"]:-${row_release["$gtk gtk"]:-}}"
+  fi
   if [ ! -s "$list" ]; then
     echo "current.pins has no packages for $abi $gtk" >&2
     return 1

@@ -1,0 +1,11 @@
+[wrap-git]
+directory = gtk
+url = https://gitlab.gnome.org/GNOME/gtk.git
+revision = ae709f962a51f9108a1e6381bcfbd05bbaecc840
+depth = 1
+
+[provide]
+dependency_names = pixiewood-gdk
+# Built from the selected GTK target. The gdk/ tree hash decides whether a
+# later target can reuse the first target's GDK.
+pixiewood_from = gtk

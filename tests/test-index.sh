@@ -308,6 +308,105 @@ fi
 "$ROOT/scripts/current-pins.sh" index --abi arm64-v8a --gtk gnome --out "$tmp/pins-index.json"
 grep -q '"version": "1.261107"' "$tmp/pins-index.json"
 grep -q 'openssl-arm64-v8a-gnome.tar.xz' "$tmp/pins-index.json"
+grep -q 'webkitgtk-android-arm64-v8a-roojs.tar.xz' "$tmp/pins-index.json"
+grep -q 'webkitgtk-android-arm64-v8a-roojs.tar.xz' "$tmp/ime-index.json"
+if awk -F '\t' '$2 == "gnome" && $4 == "webkitgtk-android" { found = 1 } END { exit !found }' "$ROOT/current.pins"; then
+  echo "webkitgtk-android is pinned as gnome" >&2
+  exit 1
+fi
+grep -q $'arm64-v8a\troojs\t1.261107\twebkitgtk-android\t' "$ROOT/current.pins"
+
+{
+  printf '%s\n' '# abi gtk release name track resolved inputs url'
+  printf '%s\n' $'arm64-v8a\tgnome\t1.261107\tgdk\tgnome-rev\tgdkr\tsame-gdk\thttps://example.invalid/gdk-gnome.tar.xz'
+  printf '%s\n' $'arm64-v8a\tgnome\t1.261107\tgtk\tgnome-rev\tgtkr\tgtk-in\thttps://example.invalid/gtk-gnome.tar.xz'
+  printf '%s\n' $'arm64-v8a\troojs\t1.261107\twebkitgtk-android\tv0.1.5\twr\twi\thttps://example.invalid/webkit-roojs.tar.xz'
+} > "$tmp/gdk-pins"
+{
+  printf '%s\n' '# publish=1' '# gtk_target=Knowles.android-ime'
+  printf '%s\n' $'build\tgdk\tgit\tandroid-ime\time-gdk\tsame-gdk\t-'
+  printf '%s\n' $'build\tgtk\tgit\tandroid-ime\time-gtk\tgtk-in\t-'
+  printf '%s\n' $'keep\twebkitgtk-android\tgit\tv0.1.5\twr\twi\t-'
+} > "$tmp/gdk-same.tsv"
+"$ROOT/scripts/current-pins.sh" apply --plan "$tmp/gdk-same.tsv" --out "$tmp/gdk-same-built.tsv" --arch aarch64 --file "$tmp/gdk-pins" 2> "$tmp/gdk-same.out"
+grep -q 'gdk matches gnome' "$tmp/gdk-same.out"
+grep -q $'keep\tgdk\tgit\tandroid-ime\time-gdk\tsame-gdk\thttps://example.invalid/gdk-gnome.tar.xz' "$tmp/gdk-same-built.tsv"
+{
+  printf '%s\n' '# publish=1' '# gtk_target=Knowles.android-ime'
+  printf '%s\n' $'build\tgdk\tgit\tandroid-ime\time-gdk\tdifferent-gdk\t-'
+  printf '%s\n' $'build\tgtk\tgit\tandroid-ime\time-gtk\tgtk-in\t-'
+} > "$tmp/gdk-diff.tsv"
+"$ROOT/scripts/current-pins.sh" apply --plan "$tmp/gdk-diff.tsv" --out "$tmp/gdk-diff-built.tsv" --arch aarch64 --file "$tmp/gdk-pins" 2> "$tmp/gdk-diff.out"
+grep -q 'gdk differs from gnome' "$tmp/gdk-diff.out"
+grep -q $'^build\tgdk\t' "$tmp/gdk-diff-built.tsv"
+{
+  printf '%s\n' '# publish=1' '# gtk_target=gnome'
+  printf '%s\n' $'build\tgdk\tgit\tgnome-rev\tgdkr\tsame-gdk\t-'
+  printf '%s\n' $'build\tgtk\tgit\tgnome-rev\tgtkr\tgtk-in\t-'
+  printf '%s\n' $'build\twebkitgtk-android\tgit\tv0.1.5\twr\twi\t-'
+} > "$tmp/gnome-webkit.tsv"
+"$ROOT/scripts/current-pins.sh" write \
+  --file "$tmp/owner-pins" \
+  --arch aarch64 \
+  --created 2026-11-08T00:00:00Z \
+  --repo roojs/pixiewood-pkgs \
+  --plan "$tmp/gnome-webkit.tsv" \
+  --plan "$tmp/gdk-diff.tsv"
+grep -q $'arm64-v8a\troojs\t1.261108\twebkitgtk-android\t' "$tmp/owner-pins"
+grep -q 'webkitgtk-android-arm64-v8a-roojs.tar.xz' "$tmp/owner-pins"
+grep -q $'arm64-v8a\tKnowles.android-ime\t1.261108\tgdk\t' "$tmp/owner-pins"
+grep -q 'gdk-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/owner-pins"
+if awk -F '\t' '$2 == "gnome" && $4 == "webkitgtk-android" { found = 1 } END { exit !found }' "$tmp/owner-pins"; then
+  echo "written pins still label webkit as gnome" >&2
+  exit 1
+fi
+
+part="$tmp/gtk-src"
+mkdir -p "$part/gtk" "$part/gsk" "$part/gdk"
+cat > "$part/meson.options" << 'EOF'
+option('docs', type: 'boolean', value: false)
+EOF
+cat > "$part/meson.build" << 'EOF'
+subdir('gdk/version')
+subdir('gtk/css')
+subdir('gdk')
+subdir('gsk')
+subdir('gtk')
+
+subdir('tools')
+pkg_config.generate(libgtk,
+)
+EOF
+printf '%s\n' 'link_with: [libgtk_css, libgtk_svg, libgdk, libgsk ],' > "$part/gtk/meson.build"
+printf '%s\n' 'link_with: [ libgdk, libgsk_f16c],' > "$part/gsk/meson.build"
+"$ROOT/scripts/gtk-part.sh" patch "$part"
+grep -q "pixiewood-part" "$part/meson.options"
+grep -q "pixiewood_part == 'gtk'" "$part/meson.build"
+grep -q 'gdk_link' "$part/gtk/meson.build"
+grep -q 'gdk_link' "$part/gsk/meson.build"
+grep -q "endif" "$part/meson.build"
+
+src="$(mktemp -d)"
+git -C "$src" init -q -b main
+git -C "$src" config user.email test@example.com
+git -C "$src" config user.name test
+git -C "$src" config uploadpack.allowReachableSHA1InWant true
+mkdir -p "$src/gdk"
+printf 'int a;\n' > "$src/gdk/a.c"
+git -C "$src" add gdk/a.c
+git -C "$src" commit -q -m one
+one="$(git -C "$src" rev-parse HEAD)"
+printf 'int b;\n' > "$src/gdk/a.c"
+git -C "$src" add gdk/a.c
+git -C "$src" commit -q -m two
+two="$(git -C "$src" rev-parse HEAD)"
+# shellcheck source=../scripts/upstream-index.sh
+source "$ROOT/scripts/upstream-index.sh"
+hash_one="$(gdk_tree_hash "$src" "$one")"
+hash_two="$(gdk_tree_hash "$src" "$two")"
+[ "$hash_one" != "$hash_two" ]
+hash_one_again="$(gdk_tree_hash "$src" "$one")"
+[ "$hash_one" = "$hash_one_again" ]
 
 {
   printf '%s\n' '# publish=1' '# gtk_target=gnome'

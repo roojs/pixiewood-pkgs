@@ -52,6 +52,27 @@ index_hash_paths() {
   done
 }
 
+gdk_tree_hash() {
+  local url=$1 rev=$2 cache dir hash
+  cache="${PIXIEWOOD_GDK_CACHE:-${TMPDIR:-/tmp}/pixiewood-gdk-tree}"
+  dir="$cache/$rev"
+  if [ ! -s "$dir/.gdk-hash" ]; then
+    rm -rf "$dir"
+    mkdir -p "$dir"
+    git -C "$dir" init -q
+    git -C "$dir" remote add origin "$url"
+    git -C "$dir" fetch --depth 1 origin "$rev"
+    git -C "$dir" checkout -q --detach FETCH_HEAD
+    if [ ! -d "$dir/gdk" ]; then
+      echo "GTK checkout has no gdk directory: $rev" >&2
+      return 1
+    fi
+    hash="$(index_hash_paths "" "$dir/gdk" | sha256sum | awk '{print $1}')"
+    printf '%s\n' "$hash" > "$dir/.gdk-hash"
+  fi
+  cat "$dir/.gdk-hash"
+}
+
 index_shared_hash() {
   local api ndk
   api="$(distro_get api)"
@@ -184,22 +205,30 @@ cmd_resolve() {
       name="$(basename "$dir")"
       wrap="$dir/$name.wrap"
       [ -f "$wrap" ] || continue
-      if [ "$name" = gtk ]; then
+      if [ "$name" = gtk ] || [ "$(wrap_field "$wrap" pixiewood_from)" = gtk ]; then
         track="$rev"
         kind=git
         resolved="$(index_resolve_git "$url" "$track")"
-        if [ "$patch" = "-" ]; then
+        if [ "$name" != gtk ]; then
           inputs="$(
             {
               printf 'shared %s\n' "$shared"
-              index_hash_paths "__no_such_patch__" "$dir"
+              printf 'gdk %s\n' "$(gdk_tree_hash "$url" "$resolved")"
+              index_hash_paths "" "$dir" "$ROOT/scripts/gtk-part.sh"
+            } | sha256sum | awk '{print $1}'
+          )"
+        elif [ "$patch" = "-" ]; then
+          inputs="$(
+            {
+              printf 'shared %s\n' "$shared"
+              index_hash_paths "__no_such_patch__" "$dir" "$ROOT/scripts/gtk-part.sh"
             } | sha256sum | awk '{print $1}'
           )"
         else
           inputs="$(
             {
               printf 'shared %s\n' "$shared"
-              index_hash_paths "$patch" "$dir"
+              index_hash_paths "$patch" "$dir" "$ROOT/scripts/gtk-part.sh"
             } | sha256sum | awk '{print $1}'
           )"
         fi

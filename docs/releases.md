@@ -29,7 +29,7 @@ On a day when something upstream changed, **Monitor upstreams** does this in ord
 1. Resolve every package for each name in `packages/gtk/targets`.
 2. Write `current.pins` for the packages that will be published and commit it.
 3. Build the first GTK target in `packages/gtk/targets`. That is `gnome`, and it builds the shared libraries.
-4. Build each later target. `packages/gtk/replaces` names what that target builds: `gtk` and `gdk`. Every other library stays on the first target, so `Knowles.android-ime` is not a pin for OpenSSL, GLib, libadwaita, or the rest. The IME build compiles GTK, which includes GDK, against those GNOME tarballs.
+4. Build each later target. `packages/gtk/replaces` names what that target may build. `gtk` is always its own build. `gdk` is built for that target only when the `gdk/` tree differs from the first target; otherwise the later target links the first target's GDK. Every other library stays on the first target. `webkitgtk-android` is the roojs project, so its pin is `roojs` rather than `gnome`.
 5. Upload the release. The release tag points at the pins commit, so the source archive of the tag is that list.
 
 A hand-started **Build Android sysroot** run does not publish and does not rewrite `current.pins`.

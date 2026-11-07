@@ -63,13 +63,14 @@ while IFS=$'\t' read -r status name _kind _track _resolved _inputs _url; do
   [ -n "${status:-}" ] || continue
   case "$status" in \#*) continue ;; esac
   [ "$status" = build ] || continue
+  label="$(package_pin_label "$name" "$gtk" "$repo")"
   tarball="$tarball_dir/${name}-${abi}.tar.xz"
   if [ ! -f "$tarball" ]; then
     echo "Missing tarball: $tarball" >&2
     exit 1
   fi
   printf '%s\thttps://github.com/%s/releases/download/%s/%s-%s-%s.tar.xz\n' \
-    "$name" "$repo" "$tag" "$name" "$abi" "$gtk" >> "$built"
+    "$name" "$repo" "$tag" "$name" "$abi" "$label" >> "$built"
   changed="${changed} ${name}"
 done < "$plan"
 if [ -n "$changed" ]; then
@@ -90,9 +91,10 @@ fi
 list="$(mktemp -d)"
 cp "$out" "$list/$asset"
 pkgs="$(mktemp -d)"
-while IFS=$'\t' read -r name _url; do
+while IFS=$'\t' read -r name built_url; do
   [ -n "$name" ] || continue
-  cp "$tarball_dir/${name}-${abi}.tar.xz" "$pkgs/${name}-${abi}-${gtk}.tar.xz"
+  asset_name="$(basename "$built_url")"
+  cp "$tarball_dir/${name}-${abi}.tar.xz" "$pkgs/$asset_name"
 done < "$built"
 
 # A later target on the same day adds its list. The archive stays a list.
@@ -119,9 +121,9 @@ archive="$(dirname "$out")/${tag}.tgz"
   tar -czf "$archive" -- *
 )
 args=("$archive" "$list/$asset")
-while IFS=$'\t' read -r name _url; do
+while IFS=$'\t' read -r name built_url; do
   [ -n "$name" ] || continue
-  args+=("$pkgs/${name}-${abi}-${gtk}.tar.xz")
+  args+=("$pkgs/$(basename "$built_url")")
 done < "$built"
 if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
   gh release upload "$tag" "${args[@]}" --repo "$repo" --clobber
