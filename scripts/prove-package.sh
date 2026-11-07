@@ -9,7 +9,7 @@ source "$ROOT/scripts/sysroot-common.sh"
 
 arch="${ARCH:-aarch64}"
 gtk="${GTK_TARGET:-gnome}"
-packages="sqlite3"
+packages="gdk,gtk"
 out=""
 dry=0
 check=""
@@ -17,7 +17,7 @@ check=""
 usage() {
   echo "Usage: $0 [--arch aarch64|x86_64] [--gtk TARGET] [--packages NAMES] [--out DIR] [--dry-run]" >&2
   echo "       $0 --check TARBALL [--arch aarch64|x86_64]" >&2
-  echo "NAMES is a build-order list. The default is sqlite3 alone." >&2
+  echo "NAMES is a build-order list. The default is gdk, then gtk on that GDK." >&2
   echo "A later name is built against only the packages listed before it." >&2
   exit 2
 }

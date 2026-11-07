@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       packages:
-        description: Packages in build order. sqlite3 proves the toolchain alone. Add the next name to build it on that sysroot, for example sqlite3,nghttp2.
+        description: Packages in build order. The default builds gdk, then gtk on that GDK. sqlite3 is the smaller toolchain check.
         type: string
-        default: sqlite3
+        default: gdk,gtk
       arch:
         description: Android arch
         type: choice
@@ -22,7 +22,7 @@ on:
 jobs:
   prove:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v6
 
@@ -33,7 +33,7 @@ jobs:
         env:
           ARCH: ${{ inputs.arch || 'aarch64' }}
           GTK_TARGET: ${{ inputs.gtk || 'gnome' }}
-          PACKAGES: ${{ inputs.packages || 'sqlite3' }}
+          PACKAGES: ${{ inputs.packages || 'gdk,gtk' }}
         run: |
           set -euo pipefail
           hash -r

@@ -363,6 +363,16 @@ fi
 
 part="$tmp/gtk-src"
 mkdir -p "$part/gtk" "$part/gsk" "$part/gdk"
+cat > "$part/gdk/meson.build" << 'EOF'
+gdk_backends = []
+gdk_backends_gen_headers = []
+libgdk = static_library('gdk',
+  link_whole: gdk_backends,
+)
+libgdk_dep = declare_dependency(
+  dependencies: gdk_deps + [libgtk_css_dep],
+)
+EOF
 cat > "$part/meson.options" << 'EOF'
 option('docs', type: 'boolean', value: false)
 EOF
@@ -386,7 +396,14 @@ printf '%s\n' 'link_with: [libgtk_static, libgtk_css, libgdk, libgsk ],' >> "$pa
 printf '%s\n' 'link_with: [ libgdk, libgsk_f16c],' > "$part/gsk/meson.build"
 "$ROOT/scripts/gtk-part.sh" patch "$part"
 grep -q "pixiewood-part" "$part/meson.options"
+grep -q "subdir('gdk')" "$part/meson.build"
 grep -q "pixiewood_part == 'gtk'" "$part/meson.build"
+grep -q "pixiewood_part != 'gtk'" "$part/gdk/meson.build"
+grep -q "dependency('pixiewood-gdk')" "$part/gdk/meson.build"
+if grep -q "libgdk_dep = dependency('pixiewood-gdk')" "$part/meson.build"; then
+  echo "top-level meson still replaces subdir gdk" >&2
+  exit 1
+fi
 grep -q 'gdk_link' "$part/gtk/meson.build"
 grep -q 'gdk_link' "$part/gsk/meson.build"
 if grep -Eq 'link_(with|whole):[^#]*\blibgdk\b' "$part/gtk/meson.build" "$part/gsk/meson.build"; then

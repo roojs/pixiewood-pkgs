@@ -47,11 +47,10 @@ EOF
         next
       }
       state == 1 && $0 == "subdir('\''gdk'\'')" {
+        print "subdir('\''gdk'\'')"
         print "if pixiewood_part == '\''gtk'\''"
-        print "  libgdk_dep = dependency('\''pixiewood-gdk'\'')"
         print "  gdk_link = []"
         print "else"
-        print "  subdir('\''gdk'\'')"
         print "  gdk_link = [libgdk]"
         print "endif"
         print "if pixiewood_part != '\''gdk'\''"
@@ -104,6 +103,62 @@ EOF
       return 1
     fi
   done
+  # GTK's typefuncs target needs gdkenum_h and gdkinc from this file.
+  # A GTK build that reuses a GDK package still configures those headers,
+  # and links the package instead of compiling libgdk again.
+  if [ -f "$src/gdk/meson.build" ]; then
+    patch_gdk_library "$src/gdk/meson.build"
+  fi
+}
+
+patch_gdk_library() {
+  local meson=$1 tmp
+  if grep -q "pixiewood_part != 'gtk'" "$meson"; then
+    return 0
+  fi
+  if ! grep -qx 'gdk_backends = \[\]' "$meson"; then
+    echo "GDK meson.build has no backend list to split: $meson" >&2
+    return 1
+  fi
+  tmp="$(mktemp)"
+  awk '
+    BEGIN { state = 0 }
+    state == 0 && $0 == "gdk_backends = []" {
+      print "if pixiewood_part != '\''gtk'\''"
+      print
+      state = 1
+      next
+    }
+    state == 1 && $0 == "libgdk_dep = declare_dependency(" {
+      print
+      state = 2
+      next
+    }
+    state == 2 && $0 == ")" {
+      print
+      print "else"
+      print "  libgdk_dep = declare_dependency("
+      print "    sources: ['\''gdk.h'\'', gdk_gen_headers],"
+      print "    include_directories: [confinc, gdkx11_inc, wlinc],"
+      print "    dependencies: gdk_deps + [libgtk_css_dep, dependency('\''pixiewood-gdk'\'')],"
+      print "  )"
+      print "endif"
+      state = 3
+      next
+    }
+    { print }
+    END {
+      if (state != 3) {
+        print "gdk library split stopped in state " state > "/dev/stderr"
+        exit 2
+      }
+    }
+  ' "$meson" > "$tmp" || {
+    echo "Could not split the GDK library out of $meson" >&2
+    rm -f "$tmp"
+    return 1
+  }
+  mv "$tmp" "$meson"
 }
 
 archive_members() {

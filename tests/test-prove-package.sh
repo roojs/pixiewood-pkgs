@@ -8,6 +8,10 @@ trap 'rm -rf "$tmp"' EXIT
 
 bash -n "$ROOT/scripts/prove-package.sh"
 
+"$ROOT/scripts/prove-package.sh" --dry-run > "$tmp/default.out"
+grep -qx 'prove gdk alone' "$tmp/default.out"
+grep -qx 'prove gtk on gdk' "$tmp/default.out"
+
 "$ROOT/scripts/prove-package.sh" --dry-run --packages sqlite3 > "$tmp/one.out"
 grep -qx 'prove sqlite3 alone' "$tmp/one.out"
 
