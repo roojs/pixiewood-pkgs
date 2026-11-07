@@ -174,6 +174,27 @@ archive_members() {
   return 1
 }
 
+# Meson writes static libraries as thin archives. Their members are paths
+# back into the build tree, so a copied archive cannot be linked later.
+# GNU ar MRI addlib stores the object bytes in a normal archive.
+copy_archive() {
+  local src=$1 dest=$2 magic staging
+  magic="$(head -c 8 "$src" || true)"
+  if [ "$magic" != '!<thin>' ]; then
+    cp -a "$src" "$dest"
+    return 0
+  fi
+  staging="$(mktemp -d)"
+  ar -M << EOF
+create $staging/lib.a
+addlib $src
+save
+end
+EOF
+  mv "$staging/lib.a" "$dest"
+  rmdir "$staging"
+}
+
 pack_archives() {
   local builddir=$1 destdir=$2 abi=$3
   local libdir="$destdir/lib/$abi" gdk_build libgdk archive base name flags header rel listed
@@ -192,7 +213,7 @@ pack_archives() {
     return 1
   fi
   mkdir -p "$libdir/pkgconfig" "$destdir/include/gtk-4.0/gdk"
-  cp -a "$libgdk" "$libdir/libgdk.a"
+  copy_archive "$libgdk" "$libdir/libgdk.a"
   flags=" -lgdk"
   if listed="$(archive_members "$libgdk")"; then
     while IFS= read -r archive; do
@@ -212,7 +233,7 @@ pack_archives() {
       fi
       if [ "$missing" -eq 1 ]; then
         base="$(basename "$archive")"
-        cp -a "$archive" "$libdir/$base"
+        copy_archive "$archive" "$libdir/$base"
         name="${base#lib}"
         name="${name%.a}"
         flags="$flags -l$name"
@@ -235,7 +256,7 @@ includedir=\${prefix}/include
 Name: pixiewood-gdk
 Description: GDK from the GTK build
 Version: 4
-Libs: -L\${libdir} -Wl,--start-group -Wl,--whole-archive${flags} -Wl,--no-whole-archive -Wl,--end-group
+Libs: -L\${libdir} -Wl,--whole-archive${flags} -Wl,--no-whole-archive
 Cflags: -I\${includedir}/gtk-4.0
 EOF
 }

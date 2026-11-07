@@ -436,6 +436,25 @@ printf 'config\n' > "$pack_build/subprojects/gtk/gdk/gdkconfig.h"
 [ -f "$pack_dest/include/gtk-4.0/gdk/gdkconfig.h" ]
 grep -q ' -lgdk -lgdk-android ' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
 grep -q -- '-I${includedir}/gtk-4.0' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
+if grep -q -- '--start-group' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"; then
+  echo "pixiewood-gdk.pc nests --start-group" >&2
+  exit 1
+fi
+thin_build="$tmp/thin-build"
+thin_dest="$tmp/thin-dest"
+mkdir -p "$thin_build/subprojects/gtk/gdk/libgdk.a.p" "$thin_dest"
+printf 'enum-bytes\n' > "$thin_build/subprojects/gtk/gdk/libgdk.a.p/gdkenumtypes.c.o"
+( cd "$thin_build/subprojects/gtk/gdk" && ar rcT libgdk.a libgdk.a.p/gdkenumtypes.c.o )
+"$ROOT/scripts/gtk-part.sh" pack "$thin_build" "$thin_dest" arm64-v8a
+installed="$thin_dest/lib/arm64-v8a/libgdk.a"
+if [ "$(head -c 8 "$installed")" = '!<thin>' ]; then
+  echo "packed libgdk.a is still a thin archive" >&2
+  exit 1
+fi
+extract="$tmp/thin-extract"
+mkdir "$extract"
+( cd "$extract" && ar x "$installed" )
+grep -q 'enum-bytes' "$extract/gdkenumtypes.c.o"
 
 src="$(mktemp -d)"
 git -C "$src" init -q -b main
