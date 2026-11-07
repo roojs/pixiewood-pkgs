@@ -256,7 +256,7 @@ includedir=\${prefix}/include
 Name: pixiewood-gdk
 Description: GDK from the GTK build
 Version: 4
-Libs: -L\${libdir} -Wl,--whole-archive${flags} -Wl,--no-whole-archive
+Libs: -L\${libdir} -Wl,--whole-archive${flags} -Wl,--no-whole-archive -landroid -ljnigraphics -lnativewindow -llog
 Cflags: -I\${includedir}/gtk-4.0
 EOF
 }

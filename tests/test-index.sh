@@ -435,6 +435,7 @@ printf 'config\n' > "$pack_build/subprojects/gtk/gdk/gdkconfig.h"
 [ ! -e "$pack_dest/lib/arm64-v8a/libgtk_css.a" ]
 [ -f "$pack_dest/include/gtk-4.0/gdk/gdkconfig.h" ]
 grep -q ' -lgdk -lgdk-android ' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
+grep -q -- '-landroid -ljnigraphics -lnativewindow -llog' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
 grep -q -- '-I${includedir}/gtk-4.0' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
 if grep -q -- '--start-group' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"; then
   echo "pixiewood-gdk.pc nests --start-group" >&2
