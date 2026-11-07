@@ -38,7 +38,7 @@ read -r gnome_url gnome_rev gnome_patch < <(gtk_target_read "$ROOT/packages/gtk/
 read -r ime_url ime_rev ime_patch < <(gtk_target_read "$ROOT/packages/gtk/targets" ime)
 [ "$gnome_url" = "https://gitlab.gnome.org/GNOME/gtk.git" ]
 [ "$gnome_rev" = "$(revision_of "$ROOT/packages/gtk/gtk.wrap")" ]
-[ "$gnome_patch" = android-bugs.patch ]
+[ "$gnome_patch" = "-" ]
 [ "$ime_url" = "https://gitlab.gnome.org/Knowles/gtk.git" ]
 [ "$ime_rev" = android-ime ]
 [ "$ime_patch" = "-" ]

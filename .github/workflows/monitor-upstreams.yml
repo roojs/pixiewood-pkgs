@@ -13,7 +13,7 @@ on:
           - x86_64
         default: aarch64
       gtk:
-        description: GTK target. ime is Knowles/gtk branch android-ime. gnome is standard GTK. both checks each.
+        description: GTK target. gnome is native GTK with no Android patch. ime is Knowles/gtk android-ime. both checks each.
         type: choice
         options:
           - both

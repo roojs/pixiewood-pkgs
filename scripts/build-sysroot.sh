@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Cross-compile Android GTK packages.
-# Default GTK is upstream GNOME. --gtk ime builds Knowles/gtk branch android-ime.
+# Default GTK is native upstream GNOME, with no Android patch.
+# --gtk ime builds Knowles/gtk branch android-ime, which has those fixes.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -181,13 +182,7 @@ if [ "$build_gtk" -eq 1 ]; then
     patch -p1 -d "$WORK/subprojects/gtk" --forward --batch < "$ROOT/packages/gtk/$GTK_TARGET_PATCH"
     patch_status=$?
     set -e
-    if [ "$GTK_TARGET_PATCH" = android-bugs.patch ]; then
-      # The patch identifies itself with this string.
-      if ! grep -q 'ollmchat-android-bugs-v16' "$WORK/subprojects/gtk/gdk/android/gdkandroidollmchatpatch.c"; then
-        echo "android-bugs.patch did not apply (patch exit $patch_status)." >&2
-        exit 1
-      fi
-    elif [ "$patch_status" -ne 0 ]; then
+    if [ "$patch_status" -ne 0 ]; then
       echo "$GTK_TARGET_PATCH did not apply (patch exit $patch_status)." >&2
       exit 1
     fi

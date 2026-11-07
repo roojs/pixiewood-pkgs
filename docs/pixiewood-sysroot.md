@@ -17,8 +17,9 @@ the glue is not inside a wrap anymore:
 3. `java-sources` must point at `share/pixiewood/gtk-android-java` in the
    extracted tree (that directory contains `org/gtk/android`).
 
-Fetch a set first. `latest` follows standard GTK unless `--gtk ime` selects
-Knowles/gtk branch `android-ime`. `pin` keeps a single index file:
+Fetch a set first. `latest` follows native GTK (`gnome`), which is upstream
+GNOME with no Android patch. `--gtk ime` selects Knowles/gtk branch
+`android-ime`, where those fixes live. `pin` keeps a single index file:
 
 ```bash
 scripts/integrate-sysroot.sh latest --dest "$HOME/pixiewood-sysroot"
@@ -128,7 +129,7 @@ Dependencies listed in `MANIFEST.json` no longer need source wraps. The
 application meson targets stay as they are: `dependency('gtk4')`,
 `dependency('gioopenssl')`, `dependency('webkitgtk-android-1')`, and the
 others resolve through pkg-config. The manifest's `gtk_target` is `gnome`
-for standard GTK, or `ime` for Knowles/gtk branch `android-ime`.
+for native GTK, or `ime` for Knowles/gtk branch `android-ime`.
 
 Stop pointing `glib-mkenums` at `subprojects/glib` once GLib is not a
 subproject. The activated cross file uses the script from the sysroot when
@@ -138,9 +139,9 @@ that file is a host script. Drop the app's `android/pixiewood-extra.cross`
 Keep the pieces this distro does not build: icon themes, shared-mime-info,
 CA certificates, and the application's own Java classes.
 
-`g_set_user_dirs` is already compiled into the GLib package. The `gnome`
-target also includes `packages/gtk/android-bugs.patch`. The `ime` target is
-the Knowles `android-ime` branch and does not apply that patch.
+`g_set_user_dirs` is already compiled into the GLib package. Native GTK
+(`gnome`) is upstream GNOME and does not get an Android patch. Those fixes
+are the `ime` target: Knowles/gtk branch `android-ime`.
 
 ## Why the pkg-config wrapper exists
 

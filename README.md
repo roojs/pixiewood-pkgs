@@ -6,10 +6,10 @@ Prebuilt Android packages for the GTK stack [Pixiewood](https://github.com/sp1ri
 
 | Target | Source | What it tracks |
 | --- | --- | --- |
-| `gnome` (default) | https://gitlab.gnome.org/GNOME/gtk.git | pinned upstream commit, plus `packages/gtk/android-bugs.patch` |
+| `gnome` (default) | https://gitlab.gnome.org/GNOME/gtk.git | pinned upstream commit, no Android patch |
 | `ime` | https://gitlab.gnome.org/Knowles/gtk.git | branch `android-ime` |
 
-`packages/gtk/targets` is the list. The IME branch is the Android input-method tree. Standard GTK stays available as `gnome`.
+`packages/gtk/targets` is the list. Native GTK stays the default and is built as upstream publishes it. Android fixes come from the Knowles `android-ime` branch.
 
 ## Fetch a sysroot
 
@@ -21,7 +21,7 @@ scripts/integrate-sysroot.sh latest --gtk ime --dest "$HOME/pixiewood-sysroot"
 scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysroot"
 ```
 
-The default target is standard GTK (`gnome`). `--gtk ime` fetches the Knowles `android-ime` branch. Copy `share/pixiewood/INDEX.json` out of an assembled tree and pass it to `pin` to stay on that set.
+The default target is native GTK (`gnome`), with no Android patch. `--gtk ime` fetches the Knowles `android-ime` branch, which is where the Android fixes live. Copy `share/pixiewood/INDEX.json` out of an assembled tree and pass it to `pin` to stay on that set.
 
 The index URL for the moving release is:
 
@@ -43,7 +43,7 @@ scripts/build-sysroot.sh --arch aarch64
 scripts/build-sysroot.sh --gtk ime --arch aarch64
 ```
 
-`scripts/build-sysroot.sh --only gtk` builds one package of the default GTK. `--gtk ime` selects the Knowles branch. Pins and Android patches live in `packages/`. Cross files live in `cross/`. NDK and API levels are in `distro.conf`.
+`scripts/build-sysroot.sh --only gtk` builds one package of native GTK. `--gtk ime` selects the Knowles branch. Pins live in `packages/`. Cross files live in `cross/`. NDK and API levels are in `distro.conf`.
 
 A push does not publish packages. Once a day, **Monitor upstreams** resolves every package for `ime` and for `gnome`. It uploads tarballs only for packages whose upstream revision or local inputs changed, writes an index that reuses the previous URL for the rest, and skips the release entirely when nothing changed. **Build Android sysroot** can still be started by hand for one combined tree.
 
