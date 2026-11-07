@@ -112,4 +112,19 @@ forward="$(
 -C
 builddir" ]
 
+# build-sysroot checks the wrap out before Meson, then applies diff_files.
+# The patch has to match the private declaration it exports.
+glib_tree="$tmp/glib-tree"
+mkdir -p "$glib_tree/glib"
+cat > "$glib_tree/glib/gutilsprivate.h" << 'EOF'
+
+G_BEGIN_DECLS
+
+void g_set_user_dirs (const gchar *first_dir_type,
+                      ...) G_GNUC_NULL_TERMINATED;
+
+EOF
+patch -p1 -d "$glib_tree" --forward --batch < "$ROOT/packages/glib/packagefiles/glib/hack.patch" >/dev/null
+grep -q '^GLIB_AVAILABLE_IN_ALL$' "$glib_tree/glib/gutilsprivate.h"
+
 echo "pins and meson wrapper: ok"

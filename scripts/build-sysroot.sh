@@ -220,6 +220,27 @@ checkout_wrap() {
       ;;
   esac
   ensure_git_checkout "$WORK/subprojects/$dir" "$url" "$rev"
+  # Meson applies diff_files only when it clones the wrap. This checkout
+  # already exists, so the patches have to be applied here.
+  apply_wrap_diff "$wrap" "$WORK/subprojects/$dir"
+}
+
+apply_wrap_diff() {
+  local wrap=$1 dest=$2 files file patchfile
+  files="$(field "$wrap" diff_files)"
+  [ -n "$files" ] || return 0
+  [ -d "$dest" ] || return 0
+  IFS=',' read -ra parts <<< "$files"
+  for file in "${parts[@]}"; do
+    [ -n "$file" ] || continue
+    patchfile="$WORK/subprojects/packagefiles/$file"
+    if [ ! -f "$patchfile" ]; then
+      echo "Wrap patch missing: $patchfile" >&2
+      return 1
+    fi
+    echo "Applying $file"
+    patch -p1 -d "$dest" --forward --batch < "$patchfile"
+  done
 }
 
 checkout_wrap "$WORK/subprojects/glib.wrap"
