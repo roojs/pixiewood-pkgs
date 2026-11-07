@@ -74,7 +74,7 @@ in [docs/pixiewood-sysroot.md](docs/pixiewood-sysroot.md).
 ## Tests
 
 ```bash
-python3 tests/test_sysroot_tree.py
+bash tests/test-sysroot-tree.sh
 bash tests/test-pins-and-wrapper.sh
 bash tests/test-pixiewood-patch.sh
 ```

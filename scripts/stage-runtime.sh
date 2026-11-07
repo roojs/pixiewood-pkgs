@@ -11,6 +11,10 @@ if [ "$#" -ne 2 ]; then
   exit 2
 fi
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=sysroot-common.sh
+source "$ROOT/sysroot-common.sh"
+
 sysroot="$(cd "$1" && pwd)"
 mkdir -p "$2"
 root="$(cd "$2" && pwd)"
@@ -22,7 +26,7 @@ if [ ! -f "$manifest" ]; then
   exit 1
 fi
 
-abi="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["abi"])' "$manifest")"
+abi="$(sysroot_json_get abi "$manifest")"
 src_lib="$sysroot/lib/$abi"
 if [ ! -d "$src_lib" ]; then
   echo "Sysroot library directory missing: $src_lib" >&2

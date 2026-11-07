@@ -7,39 +7,52 @@ if [ "$#" -ne 1 ]; then
   exit 2
 fi
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=sysroot-common.sh
+source "$ROOT/sysroot-common.sh"
+
 sysroot="$(cd "$1" && pwd)"
 manifest="$sysroot/share/pixiewood/MANIFEST.json"
-python3 - "$sysroot" "$manifest" << 'PY'
-import json
-import sys
-from pathlib import Path
+if [ ! -f "$manifest" ]; then
+  echo "missing $manifest" >&2
+  exit 1
+fi
 
-sysroot = Path(sys.argv[1])
-manifest_path = Path(sys.argv[2])
-if not manifest_path.is_file():
-    sys.exit(f"missing {manifest_path}")
-meta = json.loads(manifest_path.read_text(encoding="utf-8"))
-abi = meta["abi"]
-pkgconfig = sysroot / meta["pkgconfig_dir"]
-required = [
-    "gtk4.pc",
-    "glib-2.0.pc",
-    "libadwaita-1.pc",
-    "libsoup-3.0.pc",
-    "gioopenssl.pc",
-    "gee-0.8.pc",
-    "gtksourceview-5.pc",
-    "webkitgtk-android-1.pc",
-]
-missing = [name for name in required if not (pkgconfig / name).is_file()]
-if missing:
-    sys.exit("missing pkg-config files: " + ", ".join(missing))
-glue = sysroot / meta["java_glue"] / "org" / "gtk" / "android"
-if not glue.is_dir() or not any(glue.rglob("*.java")):
-    sys.exit(f"GTK Android Java glue missing under {glue}")
-for pc in pkgconfig.glob("*.pc"):
-    for line in pc.read_text(encoding="utf-8", errors="replace").splitlines():
-        if line == "prefix=/":
-            sys.exit(f"{pc} still has prefix=/ (finalize did not rewrite it)")
-print(f"sysroot ok: profile={meta['profile']} version={meta['version']} abi={abi} pcs={len(list(pkgconfig.glob('*.pc')))}")
-PY
+abi="$(sysroot_json_get abi "$manifest")"
+profile="$(sysroot_json_get profile "$manifest")"
+version="$(sysroot_json_get version "$manifest")"
+pkgconfig="$sysroot/$(sysroot_json_get pkgconfig_dir "$manifest")"
+java_glue="$sysroot/$(sysroot_json_get java_glue "$manifest")/org/gtk/android"
+
+required=(
+  gtk4.pc
+  glib-2.0.pc
+  libadwaita-1.pc
+  libsoup-3.0.pc
+  gioopenssl.pc
+  gee-0.8.pc
+  gtksourceview-5.pc
+  webkitgtk-android-1.pc
+)
+missing=()
+for name in "${required[@]}"; do
+  if [ ! -f "$pkgconfig/$name" ]; then
+    missing+=("$name")
+  fi
+done
+if [ "${#missing[@]}" -gt 0 ]; then
+  echo "missing pkg-config files: ${missing[*]}" >&2
+  exit 1
+fi
+if [ ! -d "$java_glue" ] || ! find "$java_glue" -name '*.java' -type f -print -quit | grep -q .; then
+  echo "GTK Android Java glue missing under $java_glue" >&2
+  exit 1
+fi
+while IFS= read -r -d '' pc; do
+  if grep -q '^prefix=/$' "$pc"; then
+    echo "$pc still has prefix=/ (finalize did not rewrite it)" >&2
+    exit 1
+  fi
+done < <(find "$pkgconfig" -name '*.pc' -type f -print0)
+count="$(find "$pkgconfig" -name '*.pc' -type f | wc -l)"
+echo "sysroot ok: profile=$profile version=$version abi=$abi pcs=$count"

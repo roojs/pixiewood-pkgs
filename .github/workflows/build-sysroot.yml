@@ -18,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # python3 runs GLib's glib-mkenums and the OpenSSL wrap generator.
       - name: Install host packages
         run: |
           sudo apt-get update

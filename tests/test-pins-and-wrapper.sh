@@ -45,7 +45,7 @@ cat > "$tmp/sysroot/share/pixiewood/MANIFEST.json" << EOF
 {"format": 1, "abi": "arm64-v8a", "prefix_token": "@PIXIEWOOD_SYSROOT@", "activated_prefix": null}
 EOF
 # activate writes the cross file the wrapper requires
-python3 "$ROOT/scripts/sysroot_tree.py" activate "$tmp/sysroot"
+"$ROOT/scripts/sysroot-tree.sh" activate "$tmp/sysroot"
 
 cat > "$tmp/bin/fake-meson" << 'EOF'
 #!/bin/bash

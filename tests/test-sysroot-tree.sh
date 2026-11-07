@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# Pack, activate, and stage a fake sysroot without the Android NDK.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+destdir="$tmp/destdir"
+abi=arm64-v8a
+pkg="$destdir/lib/$abi/pkgconfig"
+mkdir -p "$pkg" "$destdir/lib/$abi/gio/modules" "$destdir/share/glib-2.0/schemas"
+cat > "$pkg/gtk4.pc" << 'EOF'
+prefix=/
+libdir=${prefix}/lib/arm64-v8a
+includedir=${prefix}/include
+Name: gtk4
+Description: GTK
+Version: 4.18.0
+Libs: -L${libdir} -lgtk-4
+Cflags: -I${includedir}/gtk-4.0
+EOF
+printf '%s\n' 'prefix=/' 'Name: glib' 'Version: 2.90.0' 'Libs: -L${prefix}/lib/arm64-v8a -lglib-2.0' \
+  > "$pkg/glib-2.0.pc"
+printf 'not-a-real-elf\n' > "$destdir/lib/$abi/libgtk-4.so"
+printf 'archive\n' > "$destdir/lib/$abi/gio/modules/libgioopenssl.a"
+printf '<schema/>\n' > "$destdir/share/glib-2.0/schemas/org.gtk.Settings.gschema.xml"
+mkdir -p "$tmp/java/org/gtk/android"
+printf 'class ToplevelActivity {}\n' > "$tmp/java/org/gtk/android/ToplevelActivity.java"
+printf 'glib\ngtk\nopenssl\n' > "$tmp/provided.txt"
+
+"$ROOT/scripts/sysroot-tree.sh" finalize \
+  --destdir "$destdir" \
+  --profile ollmchat \
+  --version 0.1.0 \
+  --abi "$abi" \
+  --arch aarch64 \
+  --api 31 \
+  --ndk 28.2.13676358 \
+  --pixiewood-revision abc \
+  --ollmchat-wraps-revision def \
+  --provided "$tmp/provided.txt" \
+  --java-glue "$tmp/java"
+
+gtk="$(cat "$destdir/lib/$abi/pkgconfig/gtk4.pc")"
+printf '%s\n' "$gtk" | grep -q '^prefix=@PIXIEWOOD_SYSROOT@$'
+if printf '%s\n' "$gtk" | grep -q '^prefix=/$'; then
+  echo "gtk4.pc still has prefix=/" >&2
+  exit 1
+fi
+gio="$(cat "$destdir/lib/$abi/pkgconfig/gioopenssl.pc")"
+printf '%s\n' "$gio" | grep -q '^prefix=@PIXIEWOOD_SYSROOT@$'
+printf '%s\n' "$gio" | grep -q 'libgioopenssl.a'
+manifest="$destdir/share/pixiewood/MANIFEST.json"
+grep -q '"format": 1' "$manifest"
+grep -q '"provided_dependencies": \["glib", "gtk", "openssl"\]' "$manifest"
+grep -q '"pc": "gtk4"' "$manifest"
+grep -q '"pc": "gioopenssl"' "$manifest"
+test -f "$destdir/share/pixiewood/gtk-android-java/org/gtk/android/ToplevelActivity.java"
+
+"$ROOT/scripts/sysroot-tree.sh" activate "$destdir"
+grep -q "^prefix=$destdir$" "$destdir/lib/$abi/pkgconfig/gtk4.pc"
+cross="$(cat "$destdir/share/pixiewood/sysroot.cross")"
+printf '%s\n' "$cross" | grep -q 'pkg-config'
+if printf '%s\n' "$cross" | grep -q 'sys_root'; then
+  echo "sysroot.cross must not set sys_root" >&2
+  exit 1
+fi
+test -x "$destdir/share/pixiewood/pkg-config-wrapper"
+
+root="$tmp/pixiewood-root"
+"$ROOT/scripts/stage-runtime.sh" "$destdir" "$root"
+test -f "$root/lib/$abi/libgtk-4.so"
+test -f "$root/share/glib-2.0/schemas/org.gtk.Settings.gschema.xml"
+
+moved="$tmp/moved"
+mv "$destdir" "$moved"
+"$ROOT/scripts/sysroot-tree.sh" activate "$moved"
+grep -q "^prefix=$moved$" "$moved/lib/$abi/pkgconfig/gtk4.pc"
+if grep -q "^prefix=$destdir$" "$moved/lib/$abi/pkgconfig/gtk4.pc"; then
+  echo "activate left the old prefix in gtk4.pc" >&2
+  exit 1
+fi
+
+echo "sysroot tree: ok"

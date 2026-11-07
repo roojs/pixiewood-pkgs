@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Pack, activate, and stage a fake sysroot
-        run: python3 tests/test_sysroot_tree.py
+        run: bash tests/test-sysroot-tree.sh
 
       - name: Check wrap pins and the Meson wrapper
         run: bash tests/test-pins-and-wrapper.sh

@@ -56,9 +56,12 @@ need_tool() {
   fi
 }
 
-for tool in git python3 meson ninja pkg-config patch curl cmake valac sassc nasm glslc gperf; do
+for tool in git meson ninja pkg-config patch curl cmake valac sassc nasm glslc gperf; do
   need_tool "$tool"
 done
+# Not used by these scripts. GLib's glib-mkenums and the OpenSSL wrap
+# generator are Python programs shipped by those projects.
+need_tool python3
 if ! perl -MText::Template -e 1 >/dev/null 2>&1; then
   echo "Missing Perl module Text::Template (package libtext-template-perl)." >&2
   echo "The OpenSSL wrap runs generator.sh on the host during configure." >&2
@@ -132,22 +135,21 @@ if [ -f "$PROFILE_DIR/wraps/gtk/android-bugs.patch" ]; then
   cp -a "$PROFILE_DIR/wraps/gtk/android-bugs.patch" "$WORK/subprojects/packagefiles/gtk/"
   # diff_files belongs in the wrap-git section. Appending it after [provide]
   # is ignored by Meson.
-  python3 - "$WORK/subprojects/gtk.wrap" << 'PY'
-import sys
-from pathlib import Path
-path = Path(sys.argv[1])
-text = path.read_text(encoding="utf-8")
-if "diff_files" not in text:
-    needle = "[provide]"
-    if needle not in text:
-        raise SystemExit(f"{path} has no [provide] section")
-    text = text.replace(
-        needle,
-        "diff_files = gtk/android-bugs.patch\n\n" + needle,
-        1,
-    )
-    path.write_text(text, encoding="utf-8")
-PY
+  if ! grep -q '^diff_files[[:space:]]*=' "$WORK/subprojects/gtk.wrap"; then
+    awk '
+      /^\[provide\]/ && !inserted {
+        print "diff_files = gtk/android-bugs.patch"
+        print ""
+        inserted = 1
+      }
+      { print }
+    ' "$WORK/subprojects/gtk.wrap" > "$WORK/subprojects/gtk.wrap.tmp"
+    if ! grep -q '^diff_files[[:space:]]*=' "$WORK/subprojects/gtk.wrap.tmp"; then
+      echo "gtk.wrap has no [provide] section: $WORK/subprojects/gtk.wrap" >&2
+      exit 1
+    fi
+    mv "$WORK/subprojects/gtk.wrap.tmp" "$WORK/subprojects/gtk.wrap"
+  fi
 fi
 
 gtk_url="$(field "$WORK/subprojects/gtk.wrap" url)"
@@ -241,7 +243,7 @@ rm -rf "$destdir"
 mkdir -p "$destdir"
 meson install -C "$builddir" --destdir "$destdir" --no-rebuild
 
-python3 "$ROOT/scripts/sysroot_tree.py" finalize \
+"$ROOT/scripts/sysroot-tree.sh" finalize \
   --destdir "$destdir" \
   --profile "$PROFILE" \
   --version "$version" \
