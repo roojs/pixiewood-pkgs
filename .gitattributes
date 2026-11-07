@@ -1,3 +1,0 @@
-# Source archives contain the release file 1.yymmdd.tgz and nothing else.
-* export-ignore
-/1.[0-9][0-9][0-9][0-9][0-9][0-9].tgz !export-ignore

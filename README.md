@@ -27,7 +27,7 @@ The index URL for the moving release is:
 
 `https://github.com/roojs/pixiewood-pkgs/releases/download/latest/index-<abi>-<gtk>.json`
 
-A day that publishes packages is release `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. The release file `1.yymmdd.tgz` holds the package list, not the packages. Each entry in that list is a URL for one package tarball. `.gitattributes` marks every other path `export-ignore`, so the tag's source archive is that release file and nothing else. Unchanged package entries still point at the tarball from the release that built them.
+A day that publishes packages is release `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. The release file `1.yymmdd.tgz` is generated at publish time and holds the package list, not the packages. Each entry in that list is a URL for one package tarball. Unchanged package entries still point at the tarball from the release that built them.
 
 ## What a package contains
 

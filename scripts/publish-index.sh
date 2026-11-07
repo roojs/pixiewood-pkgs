@@ -57,7 +57,7 @@ out="${out:-$tarball_dir/$asset}"
 
 built="$(mktemp)"
 : > "$built"
-notes="Release file ${tag}.tgz is the package list for ${gtk}. Package tarballs are separate assets named in that list. The tag source archive is that file alone."
+notes="Release file ${tag}.tgz is the package list for ${gtk}. Package tarballs are separate assets named in that list."
 changed=""
 while IFS=$'\t' read -r status name _kind _track _resolved _inputs _url; do
   [ -n "${status:-}" ] || continue
@@ -118,24 +118,6 @@ archive="$(dirname "$out")/${tag}.tgz"
   cd "$list"
   tar -czf "$archive" -- *
 )
-# The tag tree is the release file plus the export-ignore rules, so GitHub's
-# source archive of the tag is 1.yymmdd.tgz and not this repository.
-if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  release_index="$(mktemp)"
-  release_work="$(mktemp -d)"
-  cp "$ROOT/.gitattributes" "$release_work/.gitattributes"
-  cp "$archive" "$release_work/${tag}.tgz"
-  GIT_INDEX_FILE="$release_index" git -C "$ROOT" read-tree --empty
-  GIT_INDEX_FILE="$release_index" git -C "$ROOT" --work-tree="$release_work" add -- .gitattributes "${tag}.tgz"
-  release_tree="$(GIT_INDEX_FILE="$release_index" git -C "$ROOT" write-tree)"
-  rm -f "$release_index"
-  rm -rf "$release_work"
-  release_commit="$(git -C "$ROOT" commit-tree "$release_tree" -m "Release ${tag}")"
-  git -C "$ROOT" tag -f "$tag" "$release_commit"
-  if ! git -C "$ROOT" push origin "refs/tags/${tag}"; then
-    git -C "$ROOT" push origin "+refs/tags/${tag}"
-  fi
-fi
 args=("$archive" "$list/$asset")
 while IFS=$'\t' read -r name _url; do
   [ -n "$name" ] || continue
@@ -144,7 +126,11 @@ done < "$built"
 if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
   gh release upload "$tag" "${args[@]}" --repo "$repo" --clobber
 else
-  gh release create "$tag" "${args[@]}" --repo "$repo" --title "$tag" --notes "$notes" --latest=false
+  create=(release create "$tag" "${args[@]}" --repo "$repo" --title "$tag" --notes "$notes" --latest=false)
+  if [ -n "${GITHUB_SHA:-}" ]; then
+    create+=(--target "$GITHUB_SHA")
+  fi
+  gh "${create[@]}"
 fi
 
 if gh release view latest --repo "$repo" >/dev/null 2>&1; then

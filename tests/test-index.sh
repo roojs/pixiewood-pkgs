@@ -272,27 +272,4 @@ grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-
 grep -q '"version": "1.261107"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
-# The source archive keeps the release date file and drops the rest of the tree.
-attr_work="$(mktemp -d)"
-attr_index="$(mktemp)"
-cp "$ROOT/.gitattributes" "$attr_work/.gitattributes"
-printf 'list\n' > "$attr_work/1.261107.tgz"
-printf 'no\n' > "$attr_work/1.not-a-release.tgz"
-printf 'no\n' > "$attr_work/README.md"
-mkdir -p "$attr_work/docs" "$attr_work/tests" "$attr_work/.github"
-printf 'no\n' > "$attr_work/docs/a.md"
-printf 'no\n' > "$attr_work/tests/a.sh"
-printf 'no\n' > "$attr_work/.github/workflow.yml"
-GIT_INDEX_FILE="$attr_index" git -C "$ROOT" read-tree --empty
-GIT_INDEX_FILE="$attr_index" git -C "$ROOT" --work-tree="$attr_work" add -- .gitattributes 1.261107.tgz 1.not-a-release.tgz README.md docs/a.md tests/a.sh .github/workflow.yml
-attr_tree="$(GIT_INDEX_FILE="$attr_index" git -C "$ROOT" write-tree)"
-rm -f "$attr_index"
-git -C "$ROOT" archive "$attr_tree" | tar -t > "$tmp/source-archive.txt"
-grep -qx '1.261107.tgz' "$tmp/source-archive.txt"
-if grep -q 'README.md\|docs/\|tests/\|.github\|.gitattributes\|1.not-a-release' "$tmp/source-archive.txt"; then
-  echo "source archive kept more than the release file" >&2
-  cat "$tmp/source-archive.txt" >&2
-  exit 1
-fi
-
 echo "index: ok"
