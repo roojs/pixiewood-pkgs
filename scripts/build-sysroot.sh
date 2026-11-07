@@ -22,7 +22,7 @@ ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ROOT/.cache/android-sdk}"
 
 distro_get() {
   local key=$1
-  sed -n "s/^${key}=//p" "$ROOT/distro.conf" | head -n1 | tr -d '[:space:]'
+  sed -n "s/^${key}=//p" "$ROOT/android-distro.conf" | head -n1 | tr -d '[:space:]'
 }
 
 ANDROID_NDK_VERSION="${ANDROID_NDK_VERSION:-$(distro_get ndk)}"

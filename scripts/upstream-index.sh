@@ -9,7 +9,7 @@ source "$ROOT/scripts/gtk-target.sh"
 
 distro_get() {
   local key=$1
-  sed -n "s/^${key}=//p" "$ROOT/distro.conf" | head -n1 | tr -d '[:space:]'
+  sed -n "s/^${key}=//p" "$ROOT/android-distro.conf" | head -n1 | tr -d '[:space:]'
 }
 
 wrap_field() {
@@ -59,7 +59,7 @@ index_shared_hash() {
   {
     index_hash_paths "" \
       "$ROOT/cross" \
-      "$ROOT/distro.conf" \
+      "$ROOT/android-distro.conf" \
       "$ROOT/scripts/build-sysroot.sh" \
       "$ROOT/scripts/sysroot-tree.sh" \
       "$ROOT/scripts/gtk-target.sh" \
