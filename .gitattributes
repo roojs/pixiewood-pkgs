@@ -1,0 +1,4 @@
+# Exclude documentation, tests, and CI configs from source archives
+/docs export-ignore
+/tests export-ignore
+/.github export-ignore
