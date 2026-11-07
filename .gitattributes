@@ -1,0 +1,3 @@
+# The repository source archive contains current.pins and nothing else.
+* export-ignore
+/current.pins !export-ignore

@@ -127,8 +127,9 @@ if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
   gh release upload "$tag" "${args[@]}" --repo "$repo" --clobber
 else
   create=(release create "$tag" "${args[@]}" --repo "$repo" --title "$tag" --notes "$notes" --latest=false)
-  if [ -n "${GITHUB_SHA:-}" ]; then
-    create+=(--target "$GITHUB_SHA")
+  target="${RELEASE_SHA:-${GITHUB_SHA:-}}"
+  if [ -n "$target" ]; then
+    create+=(--target "$target")
   fi
   gh "${create[@]}"
 fi

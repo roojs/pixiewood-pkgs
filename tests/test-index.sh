@@ -272,4 +272,48 @@ grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-
 grep -q '"version": "1.261107"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
+# current.pins is the download list, and the source archive contains only that file.
+gnome_url="$("$ROOT/scripts/current-pins.sh" url --abi arm64-v8a --gtk gnome)"
+ime_url="$("$ROOT/scripts/current-pins.sh" url --abi arm64-v8a --gtk Knowles.android-ime)"
+grep -qx "arm64-v8a gnome 1.261107 $gnome_url" "$ROOT/current.pins"
+grep -qx "arm64-v8a Knowles.android-ime 1.261107 $ime_url" "$ROOT/current.pins"
+if grep -q 'tgz' "$ROOT/.gitattributes"; then
+  echo "gitattributes names a generated release archive" >&2
+  exit 1
+fi
+grep -qx '/current.pins !export-ignore' "$ROOT/.gitattributes"
+"$ROOT/scripts/current-pins.sh" write \
+  --file "$tmp/pins" \
+  --arch aarch64 \
+  --created 2026-11-08T00:00:00Z \
+  --repo roojs/pixiewood-pkgs \
+  --gtk gnome
+printf '%s\n' 'x86_64 x86_64 1.261107 https://example.invalid/x86_64.json' >> "$tmp/pins"
+"$ROOT/scripts/current-pins.sh" write \
+  --file "$tmp/pins" \
+  --arch aarch64 \
+  --created 2026-11-08T00:00:00Z \
+  --repo roojs/pixiewood-pkgs \
+  --gtk gnome
+grep -qx 'arm64-v8a gnome 1.261108 https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/index-arm64-v8a-gnome.json' "$tmp/pins"
+grep -qx 'x86_64 x86_64 1.261107 https://example.invalid/x86_64.json' "$tmp/pins"
+[ "$("$ROOT/scripts/current-pins.sh" url --file "$tmp/pins" --abi x86_64 --gtk x86_64)" = "https://example.invalid/x86_64.json" ]
+
+attr_work="$(mktemp -d)"
+attr_index="$(mktemp)"
+cp "$ROOT/.gitattributes" "$attr_work/.gitattributes"
+cp "$ROOT/current.pins" "$attr_work/current.pins"
+printf 'no\n' > "$attr_work/README.md"
+GIT_INDEX_FILE="$attr_index" git -C "$ROOT" read-tree --empty
+GIT_INDEX_FILE="$attr_index" git -C "$ROOT" --work-tree="$attr_work" add -- .gitattributes current.pins README.md
+attr_tree="$(GIT_INDEX_FILE="$attr_index" git -C "$ROOT" write-tree)"
+rm -f "$attr_index"
+git -C "$ROOT" archive "$attr_tree" | tar -t > "$tmp/source-archive.txt"
+grep -qx 'current.pins' "$tmp/source-archive.txt"
+if grep -q 'README.md\|.gitattributes' "$tmp/source-archive.txt"; then
+  echo "source archive kept more than current.pins" >&2
+  cat "$tmp/source-archive.txt" >&2
+  exit 1
+fi
+
 echo "index: ok"
