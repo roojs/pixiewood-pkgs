@@ -160,10 +160,6 @@ jobs:
     timeout-minutes: 360
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        gtk: ${{ fromJson(needs.targets.outputs.names) }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -173,46 +169,46 @@ jobs:
         id: plan
         continue-on-error: true
         with:
-          name: upstream-plan-${{ matrix.gtk }}
-          path: plan
+          pattern: upstream-plan-*
+          path: plans
 
-      - name: Install host packages
-        if: steps.plan.outcome == 'success'
-        run: |
-          if ! grep -q '^# build=1$' plan/plan.tsv; then
-            echo "Index-only update"
-            exit 0
-          fi
-          scripts/ci-host-setup.sh
-
-      - name: Build changed packages
-        if: steps.plan.outcome == 'success'
-        env:
-          ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
-        run: |
-          if ! grep -q '^# build=1$' plan/plan.tsv; then
-            mkdir -p out/packages
-            exit 0
-          fi
-          scripts/build-changed.sh \
-            --plan plan/plan.tsv \
-            --arch "$ARCH" \
-            --gtk "${{ matrix.gtk }}" \
-            --tarball-dir "$PWD/out/packages"
-
-      - name: Publish index
-        if: steps.plan.outcome == 'success'
+      - name: Build gnome libraries first, then later GTK targets
         env:
           ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
           GH_TOKEN: ${{ github.token }}
           RELEASE_SHA: ${{ needs.pins.outputs.sha }}
           RELEASE_CREATED: ${{ needs.pins.outputs.created }}
         run: |
+          set -euo pipefail
+          shopt -s nullglob
           mkdir -p out/packages
-          scripts/publish-index.sh \
-            --plan plan/plan.tsv \
-            --tarball-dir out/packages \
-            --arch "$ARCH" \
-            --gtk "${{ matrix.gtk }}" \
-            --created "$RELEASE_CREATED" \
-            --out out/index.json
+          need_host=0
+          for plan in plans/upstream-plan-*/plan.tsv; do
+            if grep -q '^# build=1$' "$plan"; then
+              need_host=1
+            fi
+          done
+          if [ "$need_host" -eq 1 ]; then
+            scripts/ci-host-setup.sh
+          fi
+          while IFS= read -r gtk; do
+            plan="plans/upstream-plan-${gtk}/plan.tsv"
+            [ -f "$plan" ] || continue
+            grep -q '^# publish=1$' "$plan" || continue
+            built="plans/upstream-plan-${gtk}/build.tsv"
+            scripts/current-pins.sh apply --plan "$plan" --arch "$ARCH" --out "$built"
+            if grep -q $'^build\t' "$built"; then
+              scripts/build-changed.sh \
+                --plan "$built" \
+                --arch "$ARCH" \
+                --gtk "$gtk" \
+                --tarball-dir "$PWD/out/packages"
+            fi
+            scripts/publish-index.sh \
+              --plan "$built" \
+              --tarball-dir out/packages \
+              --arch "$ARCH" \
+              --gtk "$gtk" \
+              --created "$RELEASE_CREATED" \
+              --out "out/index-${gtk}.json"
+          done < <(awk 'NF && $1 !~ /^#/ { print $1 }' packages/gtk/targets)

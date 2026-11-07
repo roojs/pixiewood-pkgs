@@ -284,7 +284,19 @@ grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 # current.pins is the package list for the build that is publishing.
 grep -q $'arm64-v8a\tgnome\t1.261107\topenssl\t' "$ROOT/current.pins"
 grep -q $'\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/openssl-arm64-v8a-gnome.tar.xz$' "$ROOT/current.pins"
-grep -q $'arm64-v8a\tKnowles.android-ime\t1.261107\tgtk\t' "$ROOT/current.pins"
+grep -q $'arm64-v8a\tKnowles.android-ime\t1.261107\tgtk\tandroid-ime\t' "$ROOT/current.pins"
+grep -q $'\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/openssl-arm64-v8a-gnome.tar.xz$' "$ROOT/current.pins"
+if grep -q $'Knowles.android-ime\t1.261107\topenssl\t' "$ROOT/current.pins" \
+  && ! grep $'Knowles.android-ime\t1.261107\topenssl\t' "$ROOT/current.pins" \
+    | grep -q 'openssl-arm64-v8a-gnome.tar.xz'; then
+  echo "IME openssl was not reused from gnome" >&2
+  exit 1
+fi
+if ! grep $'Knowles.android-ime\t1.261107\tgtk\t' "$ROOT/current.pins" \
+  | grep -q 'gtk-arm64-v8a-Knowles.android-ime.tar.xz'; then
+  echo "IME gtk does not point at its own tarball" >&2
+  exit 1
+fi
 if grep -q 'index-.*\.json' "$ROOT/current.pins"; then
   echo "current.pins points at an index instead of package tarballs" >&2
   exit 1

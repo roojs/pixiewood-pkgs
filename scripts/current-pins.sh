@@ -60,10 +60,22 @@ cmd_write() {
     echo "Usage: $0 write --arch ARCH --created STAMP [--repo OWNER/NAME] [--file PATH] --plan FILE ..." >&2
     return 2
   fi
-  local abi version
+  local abi version base
   abi="$(sysroot_map "$ROOT/cross/abi" "$arch")" || return 1
   version="$(release_version "$created")" || return 1
+  base="$(gtk_target_base "$ROOT/packages/gtk/targets")" || return 1
+  declare -A before=()
+  local before_name
+  while IFS= read -r before_name || [ -n "$before_name" ]; do
+    before_name=${before_name%%#*}
+    before_name=${before_name#"${before_name%%[![:space:]]*}"}
+    before_name=${before_name%"${before_name##*[![:space:]]}"}
+    [ -n "$before_name" ] || continue
+    [ "$before_name" = gtk ] && break
+    before[$before_name]=1
+  done < "$ROOT/build-order.txt"
   declare -A groups=()
+  declare -A base_url=()
   local got_abi got_gtk release name track resolved inputs url key
   if [ -f "$file" ]; then
     while IFS=$'\t' read -r got_abi got_gtk release name track resolved inputs url _; do
@@ -73,10 +85,26 @@ cmd_write() {
       [ -n "$url" ] || continue
       key="${got_abi} ${got_gtk}"
       groups[$key]+="${got_abi}"$'\t'"${got_gtk}"$'\t'"${release}"$'\t'"${name}"$'\t'"${track}"$'\t'"${resolved}"$'\t'"${inputs}"$'\t'"${url}"$'\n'
+      if [ "$got_gtk" = "$base" ] && [ "$got_abi" = "$abi" ]; then
+        base_url[$name]=$url
+      fi
     done < "$file"
   fi
   local plan gtk status kind
+  local -a ordered=()
+  local -a later=()
   for plan in "${plans[@]}"; do
+    gtk="$(sed -n 's/^# gtk_target=//p' "$plan" | head -n1)"
+    if [ "$gtk" = "$base" ]; then
+      ordered+=("$plan")
+    else
+      later+=("$plan")
+    fi
+  done
+  if [ "${#later[@]}" -gt 0 ]; then
+    ordered+=("${later[@]}")
+  fi
+  for plan in "${ordered[@]}"; do
     gtk="$(sed -n 's/^# gtk_target=//p' "$plan" | head -n1)"
     if [ -z "$gtk" ]; then
       echo "plan is missing gtk_target: $plan" >&2
@@ -84,14 +112,22 @@ cmd_write() {
     fi
     key="${abi} ${gtk}"
     groups[$key]=""
+    if [ "$gtk" = "$base" ]; then
+      base_url=()
+    fi
     while IFS=$'\t' read -r status name kind track resolved inputs url _; do
       [ -n "${status:-}" ] || continue
       case "$status" in \#*) continue ;; esac
-      if [ "$status" = build ] || [ -z "$url" ] || [ "$url" = "-" ]; then
+      if [ "$gtk" != "$base" ] && [ -n "${before[$name]:-}" ] && [ -n "${base_url[$name]:-}" ]; then
+        url="${base_url[$name]}"
+      elif [ "$status" = build ] || [ -z "$url" ] || [ "$url" = "-" ]; then
         url="https://github.com/${repo}/releases/download/${version}/${name}-${abi}-${gtk}.tar.xz"
       elif [ "$status" != keep ]; then
         echo "Bad plan status: $status" >&2
         return 1
+      fi
+      if [ "$gtk" = "$base" ]; then
+        base_url[$name]=$url
       fi
       groups[$key]+="${abi}"$'\t'"${gtk}"$'\t'"${version}"$'\t'"${name}"$'\t'"${track}"$'\t'"${resolved}"$'\t'"${inputs}"$'\t'"${url}"$'\n'
     done < "$plan"
@@ -109,6 +145,78 @@ cmd_write() {
     done < <(printf '%s\n' "${!groups[@]}" | LC_ALL=C sort)
   } > "$tmp"
   mv "$tmp" "$file"
+}
+
+cmd_apply() {
+  local plan="" out="" arch="" file=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --plan) plan=$2; shift 2 ;;
+      --out) out=$2; shift 2 ;;
+      --arch) arch=$2; shift 2 ;;
+      --file) file=$2; shift 2 ;;
+      *) echo "Unknown argument: $1" >&2; return 2 ;;
+    esac
+  done
+  file="$(pins_file "$file")"
+  if [ -z "$plan" ] || [ -z "$out" ] || [ -z "$arch" ]; then
+    echo "Usage: $0 apply --plan FILE --out FILE --arch ARCH [--file PATH]" >&2
+    return 2
+  fi
+  local base gtk abi
+  base="$(gtk_target_base "$ROOT/packages/gtk/targets")" || return 1
+  gtk="$(sed -n 's/^# gtk_target=//p' "$plan" | head -n1)"
+  if [ -z "$gtk" ]; then
+    echo "plan is missing gtk_target: $plan" >&2
+    return 1
+  fi
+  abi="$(sysroot_map "$ROOT/cross/abi" "$arch")" || return 1
+  if [ "$gtk" = "$base" ]; then
+    cp "$plan" "$out"
+    return 0
+  fi
+  declare -A before=()
+  declare -A reuse=()
+  local before_name got_abi got_gtk release name track resolved inputs url
+  while IFS= read -r before_name || [ -n "$before_name" ]; do
+    before_name=${before_name%%#*}
+    before_name=${before_name#"${before_name%%[![:space:]]*}"}
+    before_name=${before_name%"${before_name##*[![:space:]]}"}
+    [ -n "$before_name" ] || continue
+    [ "$before_name" = gtk ] && break
+    before[$before_name]=1
+  done < "$ROOT/build-order.txt"
+  if [ -f "$file" ]; then
+    while IFS=$'\t' read -r got_abi got_gtk release name track resolved inputs url _; do
+      if [ -z "${got_abi:-}" ] || [ "${got_abi#\#}" != "$got_abi" ]; then
+        continue
+      fi
+      if [ "$got_abi" = "$abi" ] && [ "$got_gtk" = "$base" ] && [ -n "$url" ]; then
+        reuse[$name]=$url
+      fi
+    done < "$file"
+  fi
+  local tmp status kind
+  tmp="$(mktemp)"
+  while IFS=$'\t' read -r status name kind track resolved inputs url || [ -n "${status:-}" ]; do
+    if [ -z "${status:-}" ]; then
+      continue
+    fi
+    case "$status" in
+      \#*)
+        printf '%s\n' "$status"
+        continue
+        ;;
+    esac
+    if [ -n "${before[$name]:-}" ] && [ -n "${reuse[$name]:-}" ]; then
+      printf 'keep\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$name" "$kind" "$track" "$resolved" "$inputs" "${reuse[$name]}"
+    else
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$status" "$name" "$kind" "$track" "$resolved" "$inputs" "$url"
+    fi
+  done < "$plan" > "$tmp"
+  mv "$tmp" "$out"
 }
 
 cmd_index() {
@@ -162,9 +270,10 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   shift || true
   case "$command" in
     write) cmd_write "$@" ;;
+    apply) cmd_apply "$@" ;;
     index) cmd_index "$@" ;;
     *)
-      echo "Usage: $0 write|index ..." >&2
+      echo "Usage: $0 write|apply|index ..." >&2
       exit 2
       ;;
   esac

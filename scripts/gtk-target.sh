@@ -48,6 +48,17 @@ gtk_target_names() {
   awk 'NF && $1 !~ /^#/ { print $1 }' "$1"
 }
 
+# The first target owns the shared libraries. Later targets reuse them.
+gtk_target_base() {
+  local file=$1 name
+  name="$(awk 'NF && $1 !~ /^#/ { print $1; exit }' "$file")"
+  if [ -z "$name" ]; then
+    echo "GTK target list is empty: $file" >&2
+    return 1
+  fi
+  printf '%s\n' "$name"
+}
+
 gtk_target_read() {
   local file=$1 name=$2 line
   if [ ! -f "$file" ]; then
