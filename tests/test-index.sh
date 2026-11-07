@@ -171,6 +171,15 @@ printf '%s\n' 'prefix=/' 'Name: gtk4' 'Version: 4.0.0' > "$pkg/lib/$abi/pkgconfi
     "gtk"$'\t'"android-ime"$'\t'"hashi"$'\t'"inputsi"$'\t'"$tmp/gtk.tar.xz") \
   --abi "$abi" --arch aarch64 --gtk Knowles.android-ime --created 2026-11-07T00:00:00Z \
   --out "$tmp/local-index.json"
+grep -q '"version": "1.261107"' "$tmp/local-index.json"
+
+"$ROOT/scripts/upstream-index.sh" write \
+  --list <(printf '%s\n' \
+    "openssl"$'\t'"3.0.8"$'\t'"hasho"$'\t'"inputso"$'\t'"$tmp/glib.tar.xz") \
+  --abi "$abi" --arch aarch64 --gtk Knowles.android-ime --created deps-libxml2 \
+  --out "$tmp/deps-index.json"
+grep -q '"version": "deps-libxml2"' "$tmp/deps-index.json"
+grep -q '"created": "deps-libxml2"' "$tmp/deps-index.json"
 
 "$ROOT/scripts/integrate-sysroot.sh" pin "$tmp/local-index.json" --dest "$tmp/sysroot"
 grep -q "^prefix=$tmp/sysroot$" "$tmp/sysroot/lib/$abi/pkgconfig/glib-2.0.pc"

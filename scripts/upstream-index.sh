@@ -100,7 +100,13 @@ index_write() {
   api="$(distro_get api)"
   ndk="$(distro_get ndk)"
   pixiewood="$(distro_get pixiewood)"
-  version="$(release_version "$created")" || return 1
+  # A published index is stamped YYYY-MM-DD and versioned 1.yymmdd.
+  # A dependency index built for the next package uses its own stamp.
+  if printf '%s' "$created" | grep -q '^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}'; then
+    version="$(release_version "$created")" || return 1
+  else
+    version="$created"
+  fi
   if ! target_line="$(gtk_target_read "$ROOT/packages/gtk/targets" "$gtk")"; then
     return 1
   fi
