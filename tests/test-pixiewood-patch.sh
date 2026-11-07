@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# The sysroot patch applies to the Pixiewood revision in distro.conf.
+# The sysroot patch applies to the Pixiewood revision in android-distro.conf.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REV="$(sed -n 's/^pixiewood=//p' "$ROOT/distro.conf" | head -n1 | tr -d '[:space:]')"
+REV="$(sed -n 's/^pixiewood=//p' "$ROOT/android-distro.conf" | head -n1 | tr -d '[:space:]')"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 

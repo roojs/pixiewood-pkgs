@@ -43,7 +43,7 @@ scripts/build-sysroot.sh --arch aarch64
 scripts/build-sysroot.sh --gtk ime --arch aarch64
 ```
 
-`scripts/build-sysroot.sh --only gtk` builds one package of the default GTK. `--gtk ime` selects the Knowles branch. Pins and Android patches live in `packages/`. Cross files live in `cross/`. NDK and API levels are in `distro.conf`.
+`scripts/build-sysroot.sh --only gtk` builds one package of the default GTK. `--gtk ime` selects the Knowles branch. Pins and Android patches live in `packages/`. Cross files live in `cross/`. NDK and API levels are in `android-distro.conf`.
 
 A push does not publish packages. Once a day, **Monitor upstreams** resolves every package for `ime` and for `gnome`. It uploads tarballs only for packages whose upstream revision or local inputs changed, writes an index that reuses the previous URL for the rest, and skips the release entirely when nothing changed. **Build Android sysroot** can still be started by hand for one combined tree.
 

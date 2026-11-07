@@ -35,7 +35,7 @@ URLs for packages that did not change, then activates the tree.
 
 `integration/0001-sysroot-prebuilt-dependencies.patch` applies to
 gtk-android-builder `00b1862b6434a8778557dc3d3074f43f5fdead1b` (the revision
-in `distro.conf`). From a checkout of that revision:
+in `android-distro.conf`). From a checkout of that revision:
 
 ```bash
 patch -p1 < /path/to/pixiewood-pkgs/integration/0001-sysroot-prebuilt-dependencies.patch
