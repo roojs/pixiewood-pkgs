@@ -1,6 +1,4 @@
 out/
 .cache/
-__pycache__/
-*.pyc
 *.tar.xz
 *.tar.gz
