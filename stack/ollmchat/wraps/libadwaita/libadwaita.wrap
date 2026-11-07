@@ -1,0 +1,10 @@
+[wrap-git]
+directory=libadwaita
+url=https://gitlab.gnome.org/GNOME/libadwaita.git
+# Pixiewood defaults this wrap to main. Pin 1.10.0 (glib >= 2.89.3).
+# Matches Android glib.wrap 2.90.0 after GTK android-ime rebase.
+revision=c9ab118612eee92324143783c4641c98eaded3f0
+depth=1
+
+[provide]
+libadwaita-1=liblibadwaita_dep

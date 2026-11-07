@@ -1,0 +1,50 @@
+name: Build Android sysroot
+
+on:
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: Android arch (aarch64 or x86_64)
+        type: choice
+        options:
+          - aarch64
+          - x86_64
+        default: aarch64
+
+jobs:
+  sysroot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install host packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            cmake \
+            curl \
+            git \
+            glslc \
+            gperf \
+            libtext-template-perl \
+            meson \
+            nasm \
+            ninja-build \
+            pkg-config \
+            python3 \
+            sassc \
+            unzip \
+            valac
+
+      - name: Build sysroot tarball
+        run: scripts/build-sysroot.sh --arch "${{ inputs.arch }}"
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@v7
+        with:
+          name: pixiewood-android-sysroot-${{ inputs.arch }}
+          path: out/*.tar.xz
+          if-no-files-found: error

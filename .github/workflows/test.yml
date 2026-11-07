@@ -1,0 +1,20 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  sysroot-helpers:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Pack, activate, and stage a fake sysroot
+        run: python3 tests/test_sysroot_tree.py
+
+      - name: Check wrap pins and the Meson wrapper
+        run: bash tests/test-pins-and-wrapper.sh
+
+      - name: Check the Pixiewood patch applies
+        run: bash tests/test-pixiewood-patch.sh

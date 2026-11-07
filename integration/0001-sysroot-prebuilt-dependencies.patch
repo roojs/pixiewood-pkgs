@@ -1,0 +1,167 @@
+diff --git a/pixiewood b/pixiewood
+index e221344..82d6aba 100755
+--- a/pixiewood
++++ b/pixiewood
+@@ -72,6 +72,8 @@ Actions:
+     -s, --sdk <DIR>                 Install location of the Android SDK
+     -t, --toolchain <DIR>           Install location of the Android NDK (typically within the SDK)
+     --meson <EXECUTABLE>            Specify the executable for the meson buildsystem
++    --sysroot <DIR>                 Activated pixiewood-pkgs sysroot. Dependencies listed in
++                                    its manifest are not built from source.
+ 
+   generate                        Generate an Android application skeleton based on the manifest.
+ 
+@@ -192,6 +194,8 @@ sub read_configuration {
+ 	my $toolchain = $cfg->get_string("pixiewood", "android-ndk");
+ 	my $meson = $cfg->get_string("pixiewood", "meson-bin");
+ 	my $release = $cfg->get_boolean("pixiewood", "release");
++	my $sysroot = "";
++	$sysroot = $cfg->get_string("pixiewood", "sysroot") if $cfg->has_key("pixiewood", "sysroot");
+ 
+ 	my $app_doc = $parser->load_xml(location => $app_path, xinclude => 1);
+ 
+@@ -201,7 +205,8 @@ sub read_configuration {
+ 		'android-sdk' => $sdk,
+ 		'android-ndk' => $toolchain,
+ 		'meson' => $meson,
+-		'release' => $release
++		'release' => $release,
++		'sysroot' => $sysroot
+ 	});
+ }
+ 
+@@ -286,12 +291,15 @@ my %actions = (
+ 
+ 		my $release = 0;
+ 
++		my $sysroot;
++
+ 		GetOptions(
+ 			"android-studio-dir|a=s" => \$studio_dir,
+ 			"sdk|s=s" => \$sdk,
+ 			"toolchain|t=s" => \$toolchain,
+ 			"meson=s" => \$meson,
+ 			"release" => \$release,
++			"sysroot=s" => \$sysroot,
+ 		) or usage("Incorrect usage of command line options");
+ 
+ 		my $app_path = rel2abs(shift @ARGV, $original_dir);
+@@ -302,6 +310,23 @@ my %actions = (
+ 		$studio_dir = rel2abs($studio_dir, $original_dir);
+ 		$sdk = rel2abs($sdk, $original_dir);
+ 		$toolchain = rel2abs($toolchain, $original_dir) if defined $toolchain;
++		$sysroot = rel2abs($sysroot, $original_dir) if defined $sysroot;
++
++		my %sysroot_provides;
++		if (defined $sysroot) {
++			my $manifest = catfile($sysroot, "share/pixiewood/MANIFEST.json");
++			my $cross = catfile($sysroot, "share/pixiewood/sysroot.cross");
++			die "Sysroot manifest missing: $manifest (run activate-sysroot.sh first)\n" unless -f $manifest;
++			die "Sysroot cross file missing: $cross (run activate-sysroot.sh first)\n" unless -f $cross;
++			open my $mf, "<", $manifest or die "Failed to read $manifest: $!";
++			local $/;
++			my $meta = decode_json <$mf>;
++			close $mf;
++			my $provided = $meta->{provided_dependencies} || [];
++			die "Sysroot manifest provided_dependencies is not a list\n" unless ref $provided eq "ARRAY";
++			%sysroot_provides = map { $_ => 1 } @$provided;
++			print "Using prebuilt sysroot $sysroot\n" if $verbose;
++		}
+ 
+ 		$toolchain = do {
+ 			opendir(my $dir, "$sdk/ndk") or die "Failed to open NDK toolchain dir: $!";
+@@ -328,6 +353,14 @@ my %actions = (
+ 			make_path "subprojects";
+ 
+ 			my $depname = $dependency->localname;
++			if ($sysroot_provides{$depname}) {
++				my $wrap_path = "subprojects/$depname.wrap";
++				if (-f $wrap_path) {
++					unlink $wrap_path or die "Failed to remove prebuilt wrap $wrap_path: $!";
++				}
++				print "Skipping $depname (provided by sysroot)\n" if $verbose;
++				next;
++			}
+ 			my $wrap = Glib::KeyFile->new;
+ 			$wrap->set_list_separator(ord(','));
+ 			$wrap->load_from_file("$asset_dir/prepare/wraps/$depname/$depname.wrap", "keep-comments");
+@@ -363,10 +396,13 @@ my %actions = (
+ 		my $configures = ParallelRunner->new;
+ 		my @options = map { $_->textContent } $appx->findnodes('//pw:app/pw:build/pw:configure-options/pw:option');
+ 		while (defined(my $arch = $arches->each)) {
++			my @sysroot_cross = ();
++			@sysroot_cross = ("--cross-file", catfile($sysroot, "share/pixiewood/sysroot.cross")) if defined $sysroot;
+ 			my @cmd = ($meson, "setup",
+ 			           "--cross-file", "$pixiewood_dirname/toolchain.cross",
+ 			           "--cross-file", "$asset_dir/prepare/arch/$arch.cross",
+ 			           "--cross-file", "$asset_dir/prepare/android.cross",
++			           @sysroot_cross,
+ 			           "--buildtype", $release ? "release" : "debug",
+ 			           $release ? "--strip" : (),
+ 			           @options,
+@@ -386,9 +422,12 @@ my %actions = (
+ 			my $arch = $arches->each;
+ 			$arches->size; # reset the iterator
+ 
++			my @sysroot_cross = ();
++			@sysroot_cross = ("--cross-file", rel2abs(catfile($sysroot, "share/pixiewood/sysroot.cross"))) if defined $sysroot;
+ 			my @args = ("--cross-file", rel2abs("$pixiewood_dirname/toolchain.cross"),
+ 			            "--cross-file", rel2abs("$asset_dir/prepare/arch/$arch.cross"),
+ 			            "--cross-file", rel2abs("$asset_dir/prepare/android.cross"),
++			            @sysroot_cross,
+ 			            @options);
+ 			# Escape commands with spaces in single quotes (and hope that they don't themselves contain single quotes)
+ 			# this should be replaced by Glib::shell_quote, but the Glib module seemingly doesn't provide functions
+@@ -410,6 +449,7 @@ my %actions = (
+ 		$cfg->set_string("pixiewood", "android-ndk", $toolchain);
+ 		$cfg->set_string("pixiewood", "meson-bin", $meson);
+ 		$cfg->set_boolean("pixiewood", "release", $release);
++		$cfg->set_string("pixiewood", "sysroot", $sysroot) if defined $sysroot;
+ 		open my $cfgfh, ">", "$pixiewood_dirname/pixiewood.ini" or die("Failed to open build configuration for writing");
+ 		print $cfgfh $cfg->to_data;
+ 		close $cfgfh;
+@@ -709,8 +749,12 @@ my %actions = (
+ 			return undef;
+ 		}
+ 
+-		# A small hack to let pixiewood build applications within the gtk codebase
++		# A small hack to let pixiewood build applications within the gtk codebase.
++		# A prebuilt sysroot ships the same glue (including app patches) under share/pixiewood.
+ 		my $java_sources = $appx->findvalue('//pw:app/pw:build/@java-sources');
++		if (!$java_sources && $cfg->{'sysroot'}) {
++			$java_sources = catfile($cfg->{'sysroot'}, "share/pixiewood/gtk-android-java");
++		}
+ 		$java_sources = "subprojects/gtk/gdk/android/glue/java/" unless $java_sources;
+ 		force_symlink(rel2abs(catfile($java_sources, "org/gtk/android")), catfile($output_dir, "app/src/main/java/org/gtk/android")) or die "Failed to symlink java sources: $!";
+ 
+@@ -749,6 +793,30 @@ my %actions = (
+ 			run \@cmd or die('Failed to install files');
+ 		}
+ 
++		# External pkg-config dependencies are not copied by meson install.
++		# Stage the sysroot's shared libraries and GSettings schemas into the
++		# same root tree the APK packaging already consumes.
++		if ($cfg->{'sysroot'}) {
++			my $sysroot = $cfg->{'sysroot'};
++			my $manifest = catfile($sysroot, "share/pixiewood/MANIFEST.json");
++			open my $mf, "<", $manifest or die "Failed to read $manifest: $!";
++			local $/;
++			my $meta = decode_json <$mf>;
++			close $mf;
++			my $abi = $meta->{abi} or die "Sysroot manifest has no abi\n";
++			my $src_lib = catfile($sysroot, "lib", $abi);
++			die "Sysroot library directory missing: $src_lib\n" unless -d $src_lib;
++			my $dest_lib = catfile($pixiewood_dirname, "root", "lib", $abi);
++			make_path($dest_lib);
++			run ["cp", "-a", "$src_lib/.", $dest_lib] or die "Failed to stage sysroot libraries";
++			my $src_schemas = catfile($sysroot, "share/glib-2.0/schemas");
++			if (-d $src_schemas) {
++				my $dest_schemas = catfile($pixiewood_dirname, "root", "share/glib-2.0/schemas");
++				make_path($dest_schemas);
++				run ["cp", "-a", "$src_schemas/.", $dest_schemas] or die "Failed to stage GSettings schemas";
++			}
++		}
++
+ 		our $asset_install_dir = "$pixiewood_dirname/android/app/src/main/assets/";
+ 
+ 		our $root = "$pixiewood_dirname/root";

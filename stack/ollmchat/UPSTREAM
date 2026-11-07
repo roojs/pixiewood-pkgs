@@ -1,0 +1,6 @@
+# Revisions this profile was taken from. The sysroot build records the
+# commits it actually compiled in the tarball manifest.
+ollmchat_wraps=e6118e43d91445d8d4a285db3080793da8febcee
+pixiewood=00b1862b6434a8778557dc3d3074f43f5fdead1b
+ndk=28.2.13676358
+api=31

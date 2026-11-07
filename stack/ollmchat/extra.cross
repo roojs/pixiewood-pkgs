@@ -1,0 +1,36 @@
+[binaries]
+# Host glib-mkenums from a distro GLib 2.84 cannot parse GLib 2.86+ input.
+# Point at the wrap's script. @GLOBAL_SOURCE_ROOT@ is this sysroot project.
+glib-mkenums = ['python3', '@GLOBAL_SOURCE_ROOT@/subprojects/glib/gobject/glib-mkenums.in']
+
+[json-glib:project options]
+introspection = 'disabled'
+documentation = 'disabled'
+
+[libsoup:project options]
+tests = false
+introspection = 'disabled'
+docs = 'disabled'
+brotli = 'disabled'
+gssapi = 'disabled'
+ntlm = 'disabled'
+tls_check = false
+sysprof = 'disabled'
+
+[glib:built-in options]
+# GLib 2.90 needs C11. The NDK clang build otherwise stays on gnu99 and
+# rejects a duplicate typedef under -Werror.
+c_std = 'gnu11'
+
+[glib-networking:project options]
+default_library = 'static'
+gnutls = 'disabled'
+openssl = 'enabled'
+libproxy = 'disabled'
+gnome_proxy = 'disabled'
+environment_proxy = 'enabled'
+installed_tests = false
+
+[fontconfig:project options]
+nls = 'disabled'
+tests = 'disabled'
