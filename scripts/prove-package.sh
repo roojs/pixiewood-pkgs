@@ -69,17 +69,33 @@ prove_tarball() {
     rm -f "$listing"
     return 1
   fi
+  # A probe name is either a pkg-config file (glib-2.0.pc, pixiewood-gdk.pc)
+  # or the installed library (OpenSSL installs libssl.so and does not ship a .pc).
   pc=""
-  while IFS= read -r want_pc; do
-    [ -n "$want_pc" ] || continue
-    if ! grep -E -q "^(\./)?lib/${abi}/pkgconfig/${want_pc}\.pc$" "$listing"; then
-      echo "$name tarball is missing lib/${abi}/pkgconfig/${want_pc}.pc" >&2
+  lib=""
+  while IFS= read -r token; do
+    [ -n "$token" ] || continue
+    local found=""
+    found="$(grep -E "^(\./)?lib/${abi}/pkgconfig/${token}\.pc$" "$listing" | head -n1 || true)"
+    if [ -n "$found" ] && [ -z "$pc" ]; then
+      pc="$found"
+    fi
+    if [ -z "$found" ]; then
+      found="$(grep -E "^(\./)?lib/${abi}/${token}\.(so|a)(\.|$)" "$listing" | head -n1 || true)"
+    fi
+    if [ -z "$found" ]; then
+      found="$(grep -E "^(\./)?lib/${abi}/lib${token}\.(so|a)(\.|$)" "$listing" | head -n1 || true)"
+    fi
+    if [ -z "$found" ]; then
+      echo "$name tarball has no pkg-config file or library for ${token}" >&2
+      grep -E "^(\./)?lib/${abi}/" "$listing" | sed 's|^\./||' | head -n 40 >&2 || true
       rm -f "$listing"
       return 1
     fi
-    if [ -z "$pc" ]; then
-      pc="$(grep -E "^(\./)?lib/${abi}/pkgconfig/${want_pc}\.pc$" "$listing" | head -n1)"
-    fi
+    case "$found" in
+      *.pc) ;;
+      *) [ -z "$lib" ] && lib="$found" ;;
+    esac
   done <<< "$want"
   while read -r other rest; do
     [ -n "${other:-}" ] || continue
@@ -99,13 +115,18 @@ prove_tarball() {
     rm -f "$listing"
     return 1
   fi
-  lib="$(grep -E "^(\./)?lib/${abi}/lib[^/]+\.(so|a)(\.|$)" "$listing" | head -n1 || true)"
+  if [ -z "$lib" ]; then
+    lib="$(grep -E "^(\./)?lib/${abi}/lib[^/]+\.(so|a)(\.|$)" "$listing" | head -n1 || true)"
+  fi
   rm -f "$listing"
   if [ -z "$lib" ]; then
     echo "No library under lib/${abi} in $tarball" >&2
     return 1
   fi
-  meta="$(tar -xJf "$tarball" -O "$pc" | awk -F ': ' '/^(Name|Version):/ { printf "%s ", $2 }')"
+  meta=""
+  if [ -n "$pc" ]; then
+    meta="$(tar -xJf "$tarball" -O "$pc" | awk -F ': ' '/^(Name|Version):/ { printf "%s ", $2 }')"
+  fi
   lib="${lib#./}"
   echo "proved ${name}: ${meta}(${lib})"
 }

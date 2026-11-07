@@ -54,18 +54,28 @@ tar -C "$pkg" -cJf "$tmp/sqlite3-${abi}.tar.xz" .
 "$ROOT/scripts/prove-package.sh" --check "$tmp/sqlite3-${abi}.tar.xz" --package sqlite3 --arch aarch64 > "$tmp/check.out"
 grep -q 'proved sqlite3: sqlite3 3.53.2 (lib/arm64-v8a/libsqlite3.so)' "$tmp/check.out"
 
-rm -f "$pkg/lib/$abi/pkgconfig/sqlite3.pc"
+rm -rf "$pkg"
+mkdir -p "$pkg/lib/$abi"
+printf 'empty\n' > "$pkg/lib/$abi/README"
 tar -C "$pkg" -cJf "$tmp/bare.tar.xz" .
 if "$ROOT/scripts/prove-package.sh" --check "$tmp/bare.tar.xz" --package sqlite3 --arch aarch64 > "$tmp/bare.out" 2> "$tmp/bare.err"; then
-  echo "tarball without pkg-config was accepted" >&2
+  echo "tarball without the sqlite library was accepted" >&2
   exit 1
 fi
-grep -q 'missing lib/arm64-v8a/pkgconfig/sqlite3.pc' "$tmp/bare.err"
+grep -q 'no pkg-config file or library for sqlite3' "$tmp/bare.err"
 
+ssl="$tmp/ssl"
+mkdir -p "$ssl/lib/$abi"
+printf 'ssl\n' > "$ssl/lib/$abi/libssl.so"
+printf 'crypto\n' > "$ssl/lib/$abi/libcrypto.so"
+tar -C "$ssl" -cJf "$tmp/openssl-${abi}.tar.xz" .
+"$ROOT/scripts/prove-package.sh" --check "$tmp/openssl-${abi}.tar.xz" --package openssl --arch aarch64 > "$tmp/ssl.out"
+grep -q 'proved openssl: (lib/arm64-v8a/libssl.so)' "$tmp/ssl.out"
+
+mkdir -p "$pkg/lib/$abi/pkgconfig" "$pkg/bin/$abi"
 printf '%s\n' 'prefix=/' 'Name: pixiewood-gdk' 'Version: 4' > "$pkg/lib/$abi/pkgconfig/pixiewood-gdk.pc"
 printf '%s\n' 'prefix=/' 'Name: glib' 'Version: 2.80.0' > "$pkg/lib/$abi/pkgconfig/glib-2.0.pc"
 printf 'gdk\n' > "$pkg/lib/$abi/libgdk.a"
-mkdir -p "$pkg/bin/$abi"
 printf '#!/bin/sh\n' > "$pkg/bin/$abi/gdbus-codegen"
 tar -C "$pkg" -cJf "$tmp/polluted-gdk.tar.xz" .
 if "$ROOT/scripts/prove-package.sh" --check "$tmp/polluted-gdk.tar.xz" --package gdk --arch aarch64 > "$tmp/polluted.out" 2> "$tmp/polluted.err"; then
