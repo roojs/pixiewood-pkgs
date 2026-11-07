@@ -15,6 +15,26 @@ find "$ROOT/packages" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C 
 grep -v '^#' "$ROOT/build-order.txt" | grep -v '^$' | LC_ALL=C sort > "$tmp/order"
 diff -u "$tmp/pkgs" "$tmp/order"
 
+# shellcheck source=../scripts/sysroot-common.sh
+source "$ROOT/scripts/sysroot-common.sh"
+[ "$(sysroot_map "$ROOT/cross/abi" aarch64)" = arm64-v8a ]
+[ "$(sysroot_map "$ROOT/cross/abi" x86_64)" = x86_64 ]
+if sysroot_map "$ROOT/cross/abi" mips >/dev/null; then
+  echo "unknown arch was accepted" >&2
+  exit 1
+fi
+while IFS= read -r name; do
+  [ -n "$name" ] || continue
+  if ! awk -v name="$name" '$1 !~ /^#/ && $1 == name { found = 1 } END { exit !found }' "$ROOT/packages/probes"; then
+    echo "packages/probes is missing $name" >&2
+    exit 1
+  fi
+done < "$tmp/order"
+openssl_probe="$(awk '$1 == "openssl" { $1 = ""; sub(/^ /, ""); print }' "$ROOT/packages/probes")"
+[ "$openssl_probe" = "libssl libcrypto" ]
+networking_probe="$(awk '$1 == "glib-networking" { $1 = ""; sub(/^ /, ""); print }' "$ROOT/packages/probes")"
+[ "$networking_probe" = "+subproject gioopenssl" ]
+
 repo="$(mktemp -d)"
 git -C "$repo" init -q -b main
 git -C "$repo" config user.email test@example.com

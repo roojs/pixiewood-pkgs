@@ -8,6 +8,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=gtk-target.sh
 source "$ROOT/scripts/gtk-target.sh"
+# shellcheck source=sysroot-common.sh
+source "$ROOT/scripts/sysroot-common.sh"
 
 ARCH="${ARCH:-aarch64}"
 JOBS="${JOBS:-$(nproc)}"
@@ -44,14 +46,9 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-case "$ARCH" in
-  aarch64) ABI="arm64-v8a" ;;
-  x86_64) ABI="x86_64" ;;
-  *)
-    echo "Unsupported arch: $ARCH" >&2
-    exit 2
-    ;;
-esac
+if ! ABI="$(sysroot_map "$ROOT/cross/abi" "$ARCH")"; then
+  exit 2
+fi
 
 if ! target_line="$(gtk_target_read "$ROOT/packages/gtk/targets" "$GTK_TARGET")"; then
   exit 1
@@ -76,12 +73,6 @@ need_tool() {
 for tool in git meson ninja pkg-config patch curl cmake valac sassc nasm glslc gperf; do
   need_tool "$tool"
 done
-need_tool python3
-if ! perl -MText::Template -e 1 >/dev/null 2>&1; then
-  echo "Missing Perl module Text::Template (package libtext-template-perl)." >&2
-  echo "The OpenSSL wrap runs generator.sh on the host during configure." >&2
-  exit 1
-fi
 
 field() {
   local file="$1" key="$2"
@@ -248,47 +239,25 @@ fi
 
 if [ -n "$ONLY" ]; then
   printf 'int main(void) { return 0; }\n' > "$WORK/probe.c"
-  case "$ONLY" in
-    openssl)
-      cat > "$WORK/meson.build" << EOF
-project('pixiewood-pkg-openssl', 'c', meson_version: '>=1.3.0', default_options: ['c_std=gnu11'])
-executable('probe', 'probe.c', dependencies: [dependency('libssl'), dependency('libcrypto')], install: false)
-EOF
-      ;;
-    glib-networking)
-      cat > "$WORK/meson.build" << EOF
-project('pixiewood-pkg-glib-networking', 'c', meson_version: '>=1.3.0', default_options: ['c_std=gnu11'])
-subproject('glib-networking')
-executable('probe', 'probe.c', dependencies: dependency('gioopenssl'), install: false)
-EOF
-      ;;
-    *)
-      dep=""
-      case "$ONLY" in
-        glib) dep="dependency('glib-2.0')" ;;
-        fontconfig) dep="dependency('fontconfig')" ;;
-        gtk) dep="dependency('gtk4')" ;;
-        libadwaita) dep="dependency('libadwaita-1')" ;;
-        gtksourceview) dep="dependency('gtksourceview-5')" ;;
-        gee) dep="dependency('gee-0.8')" ;;
-        json-glib) dep="dependency('json-glib-1.0')" ;;
-        libxml2) dep="dependency('libxml-2.0')" ;;
-        sqlite3) dep="dependency('sqlite3')" ;;
-        nghttp2) dep="dependency('libnghttp2')" ;;
-        libpsl) dep="dependency('libpsl')" ;;
-        libsoup) dep="dependency('libsoup-3.0')" ;;
-        webkitgtk-android) dep="dependency('webkitgtk-android-1')" ;;
-        *)
-          echo "No meson probe for $ONLY" >&2
-          exit 1
-          ;;
-      esac
-      cat > "$WORK/meson.build" << EOF
+  probe_line="$(awk -v name="$ONLY" '$1 !~ /^#/ && $1 == name { $1 = ""; sub(/^ /, ""); print; found = 1 } END { exit !found }' "$ROOT/packages/probes")" || {
+    echo "No meson probe for $ONLY" >&2
+    exit 1
+  }
+  subproject_line=""
+  dep_args=()
+  for word in $probe_line; do
+    if [ "$word" = "+subproject" ]; then
+      subproject_line="subproject('$ONLY')"
+      continue
+    fi
+    dep_args+=("dependency('$word')")
+  done
+  joined="$(IFS=,; printf '%s' "${dep_args[*]}")"
+  cat > "$WORK/meson.build" << EOF
 project('pixiewood-pkg-${ONLY}', 'c', meson_version: '>=1.3.0', default_options: ['c_std=gnu11'])
-executable('probe', 'probe.c', dependencies: ${dep}, install: false)
+$subproject_line
+executable('probe', 'probe.c', dependencies: [$joined], install: false)
 EOF
-      ;;
-  esac
 fi
 
 cat > "$WORK/toolchain.cross" << EOF

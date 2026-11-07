@@ -6,6 +6,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=upstream-index.sh
 source "$ROOT/scripts/upstream-index.sh"
+# shellcheck source=sysroot-common.sh
+source "$ROOT/scripts/sysroot-common.sh"
 
 plan=""
 tarball_dir=""
@@ -44,14 +46,9 @@ if [ "$publish" != 1 ]; then
   exit 0
 fi
 
-case "$arch" in
-  aarch64) abi=arm64-v8a ;;
-  x86_64) abi=x86_64 ;;
-  *)
-    echo "Unsupported arch: $arch" >&2
-    exit 2
-    ;;
-esac
+if ! abi="$(sysroot_map "$ROOT/cross/abi" "$arch")"; then
+  exit 2
+fi
 
 created="${created:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 stamp="$(printf '%s' "$created" | tr -d ':-')"

@@ -20,7 +20,6 @@ fi
   git \
   glslc \
   gperf \
-  libtext-template-perl \
   meson \
   nasm \
   ninja-build \

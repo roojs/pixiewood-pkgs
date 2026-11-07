@@ -1,0 +1,3 @@
+# Android arch and the ABI directory used in lib/ and package names.
+aarch64 arm64-v8a
+x86_64 x86_64

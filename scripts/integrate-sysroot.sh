@@ -27,18 +27,6 @@ fetch_url() {
   esac
 }
 
-abi_for_arch() {
-  case "$1" in
-    aarch64) printf '%s' arm64-v8a ;;
-    x86_64) printf '%s' x86_64 ;;
-    arm64-v8a) printf '%s' arm64-v8a ;;
-    *)
-      echo "Unsupported arch or abi: $1" >&2
-      return 2
-      ;;
-  esac
-}
-
 mode=${1:-}
 shift || usage
 
@@ -85,7 +73,7 @@ dest="$(cd "$dest" && pwd)"
 case "$mode" in
   latest)
     if [ -n "$arch" ] && [ -z "$abi" ]; then
-      abi="$(abi_for_arch "$arch")"
+      abi="$(sysroot_map "$ROOT/cross/abi" "$arch")"
     fi
     abi="${abi:-arm64-v8a}"
     if [ -z "$index_url" ]; then

@@ -5,6 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=upstream-index.sh
 source "$ROOT/scripts/upstream-index.sh"
+# shellcheck source=sysroot-common.sh
+source "$ROOT/scripts/sysroot-common.sh"
 
 plan=""
 arch="${ARCH:-aarch64}"
@@ -33,14 +35,9 @@ if [ -z "$plan" ] || [ -z "$tarball_dir" ]; then
   usage
 fi
 
-case "$arch" in
-  aarch64) abi=arm64-v8a ;;
-  x86_64) abi=x86_64 ;;
-  *)
-    echo "Unsupported arch: $arch" >&2
-    exit 2
-    ;;
-esac
+if ! abi="$(sysroot_map "$ROOT/cross/abi" "$arch")"; then
+  exit 2
+fi
 
 declare -A status=() kind=() track=() resolved=() inputs=() url=()
 declare -A built=()

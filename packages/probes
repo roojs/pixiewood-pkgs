@@ -1,0 +1,17 @@
+# Meson dependency names for a one-package build.
+# +subproject configures that package before the dependency lookup.
+glib glib-2.0
+fontconfig fontconfig
+gtk gtk4
+libadwaita libadwaita-1
+gtksourceview gtksourceview-5
+gee gee-0.8
+json-glib json-glib-1.0
+libxml2 libxml-2.0
+sqlite3 sqlite3
+nghttp2 libnghttp2
+libpsl libpsl
+libsoup libsoup-3.0
+webkitgtk-android webkitgtk-android-1
+openssl libssl libcrypto
+glib-networking +subproject gioopenssl

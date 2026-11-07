@@ -122,3 +122,23 @@ sysroot_pc_contains() {
   [ -d "$dir" ] || return 1
   find "$dir" -name '*.pc' -type f -print0 | xargs -0 grep -F -q -- "$text"
 }
+
+# Two-column name map: "from to". Comments start with #.
+sysroot_map() {
+  local file=$1 key=$2 from to
+  if [ ! -f "$file" ]; then
+    echo "Missing name map: $file" >&2
+    return 1
+  fi
+  while read -r from to _; do
+    if [ -z "$from" ] || [ "${from#\#}" != "$from" ]; then
+      continue
+    fi
+    if [ "$from" = "$key" ] && [ -n "$to" ]; then
+      printf '%s\n' "$to"
+      return 0
+    fi
+  done < "$file"
+  echo "Unknown name: $key" >&2
+  return 1
+}
