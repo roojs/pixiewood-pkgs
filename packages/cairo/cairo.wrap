@@ -1,0 +1,9 @@
+[wrap-git]
+directory = cairo
+url = https://gitlab.freedesktop.org/cairo/cairo.git
+revision = 1.18.2
+depth = 1
+
+[provide]
+cairo = libcairo_dep
+cairo-gobject = libcairogobject_dep

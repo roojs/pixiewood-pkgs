@@ -7,6 +7,16 @@ fontconfig
 glib
 gee
 json-glib
+fribidi
+pixman
+cairo
+harfbuzz
+pango
+libjpeg-turbo
+libtiff
+gdk-pixbuf
+libepoxy
+graphene
 gdk
 gtk
 libadwaita

@@ -24,3 +24,9 @@ jobs:
 
       - name: Check the one-package proof plan
         run: bash tests/test-prove-package.sh
+
+      - name: Check pin, cache, and checkout reuse
+        run: |
+          bash tests/test-obtain-package.sh
+          bash tests/test-checkout-cache.sh
+          bash tests/test-packaged-deps.sh

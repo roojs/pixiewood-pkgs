@@ -24,6 +24,13 @@ assert_pinned "$ROOT/packages/gtk/gtk.wrap"
 assert_pinned "$ROOT/packages/libadwaita/libadwaita.wrap"
 assert_pinned "$ROOT/packages/gtk/pango.wrap.pin"
 assert_pinned "$ROOT/packages/gtk/harfbuzz.wrap.pin"
+assert_pinned "$ROOT/packages/fribidi/fribidi.wrap"
+assert_pinned "$ROOT/packages/harfbuzz/harfbuzz.wrap"
+assert_pinned "$ROOT/packages/cairo/cairo.wrap"
+assert_pinned "$ROOT/packages/pango/pango.wrap"
+assert_pinned "$ROOT/packages/gdk-pixbuf/gdk-pixbuf.wrap"
+assert_pinned "$ROOT/packages/libepoxy/libepoxy.wrap"
+assert_pinned "$ROOT/packages/graphene/graphene.wrap"
 
 fontconfig_rev="$(revision_of "$ROOT/packages/fontconfig/fontconfig.wrap")"
 if [ "$fontconfig_rev" != "main" ]; then

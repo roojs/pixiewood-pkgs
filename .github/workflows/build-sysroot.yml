@@ -22,6 +22,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Restore package cache and checkouts
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .cache/packages
+            .cache/checkouts
+          key: packages-${{ inputs.arch || 'aarch64' }}-${{ github.run_id }}
+          restore-keys: |
+            packages-${{ inputs.arch || 'aarch64' }}-
+
       - name: Install host packages
         run: scripts/ci-host-setup.sh
 
@@ -30,6 +40,16 @@ jobs:
           ARCH: ${{ inputs.arch || 'aarch64' }}
           GTK_TARGET: ${{ inputs.gtk || 'gnome' }}
         run: scripts/build-sysroot.sh --arch "$ARCH" --gtk "$GTK_TARGET"
+
+      - name: Save package cache and checkouts
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .cache/packages
+            .cache/checkouts
+          key: packages-${{ inputs.arch || 'aarch64' }}-${{ github.run_id }}
 
       - name: Upload tarball
         uses: actions/upload-artifact@v7

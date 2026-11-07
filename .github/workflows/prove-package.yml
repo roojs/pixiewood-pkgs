@@ -30,14 +30,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Restore proved packages
+      - name: Restore package cache and checkouts
         id: cache
         uses: actions/cache/restore@v4
         with:
-          path: .cache/prove
-          key: prove-${{ inputs.arch || 'aarch64' }}-${{ github.run_id }}
+          path: |
+            .cache/packages
+            .cache/checkouts
+          key: packages-${{ inputs.arch || 'aarch64' }}-${{ github.run_id }}
           restore-keys: |
-            prove-${{ inputs.arch || 'aarch64' }}-
+            packages-${{ inputs.arch || 'aarch64' }}-
 
       - name: Install host packages
         run: scripts/ci-host-setup.sh
@@ -52,7 +54,7 @@ jobs:
           set -euo pipefail
           hash -r
           meson --version
-          args=(--arch "$ARCH" --gtk "$GTK_TARGET" --cache "$PWD/.cache/prove")
+          args=(--arch "$ARCH" --gtk "$GTK_TARGET" --cache "$PWD/.cache/packages")
           if [ -n "$PACKAGES" ]; then
             args+=(--packages "$PACKAGES")
           else
@@ -60,13 +62,15 @@ jobs:
           fi
           scripts/prove-package.sh "${args[@]}"
 
-      - name: Save proved packages
+      - name: Save package cache and checkouts
         if: always()
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
-          path: .cache/prove
-          key: prove-${{ inputs.arch || 'aarch64' }}-${{ github.run_id }}
+          path: |
+            .cache/packages
+            .cache/checkouts
+          key: packages-${{ inputs.arch || 'aarch64' }}-${{ github.run_id }}
 
       - name: Upload proved tarballs
         if: success()

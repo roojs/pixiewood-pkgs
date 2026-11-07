@@ -10,6 +10,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/gtk-target.sh"
 # shellcheck source=sysroot-common.sh
 source "$ROOT/scripts/sysroot-common.sh"
+# shellcheck source=packaged-deps.sh
+source "$ROOT/scripts/packaged-deps.sh"
 
 ARCH="${ARCH:-aarch64}"
 JOBS="${JOBS:-$(nproc)}"
@@ -63,6 +65,11 @@ if [ -n "$ONLY" ] && [ ! -f "$ROOT/packages/$ONLY/$ONLY.wrap" ]; then
   exit 2
 fi
 
+# The full sysroot is assembled from pins, the package cache, then source.
+if [ -z "$ONLY" ]; then
+  exec "$ROOT/scripts/assemble-sysroot.sh" --arch "$ARCH" --gtk "$GTK_TARGET" --jobs "$JOBS"
+fi
+
 need_tool() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "Missing required tool: $1" >&2
@@ -80,24 +87,7 @@ field() {
 }
 
 ensure_git_checkout() {
-  local dir=$1 url=$2 rev=$3 actual peeled
-  if [ -d "$dir/.git" ]; then
-    actual="$(git -C "$dir" rev-parse HEAD 2>/dev/null || true)"
-    if [ "$actual" = "$rev" ]; then
-      return 0
-    fi
-    peeled="$(git -C "$dir" rev-parse --verify -q "${rev}^{commit}" 2>/dev/null || true)"
-    if [ -n "$peeled" ] && [ "$actual" = "$peeled" ]; then
-      return 0
-    fi
-  fi
-  echo "Checking out $(basename "$dir") at $rev"
-  rm -rf "$dir"
-  mkdir -p "$dir"
-  git -C "$dir" init -q
-  git -C "$dir" remote add origin "$url"
-  git -C "$dir" fetch --depth 1 origin "$rev"
-  git -C "$dir" checkout --detach FETCH_HEAD
+  "$ROOT/scripts/checkout-cache.sh" ensure "$1" "$2" "$3"
 }
 
 if [ ! -d "$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION" ]; then
@@ -188,18 +178,16 @@ if [ "$build_gtk" -eq 1 ]; then
   fi
   for pin in "$ROOT/packages/gtk/"*.wrap.pin; do
     [ -f "$pin" ] || continue
+    base="$(basename "$pin" .pin)"
+    if [ -f "$WORK/subprojects/$base" ]; then
+      continue
+    fi
     mkdir -p "$WORK/subprojects/gtk/subprojects"
-    cp -a "$pin" "$WORK/subprojects/gtk/subprojects/$(basename "$pin" .pin)"
+    cp -a "$pin" "$WORK/subprojects/gtk/subprojects/$base"
   done
 fi
 
-for wrap in "$WORK/subprojects/"*.wrap; do
-  [ -f "$wrap" ] || continue
-  if grep -qE '^pango[[:space:]]*=' "$wrap"; then
-    echo "Removing extra top-level pango wrap: $wrap"
-    rm -f "$wrap"
-  fi
-done
+drop_satisfied_wraps "$WORK" "$DEPS_SYSROOT" "$ABI"
 
 checkout_wrap() {
   local wrap="$1" dir url rev
@@ -213,12 +201,6 @@ checkout_wrap() {
   if [ -n "$ONLY" ] && [ "$(basename "$wrap" .wrap)" = "$ONLY" ] && [ -n "$RESOLVED" ]; then
     rev="$RESOLVED"
   fi
-  case "$rev" in
-    main|master|HEAD)
-      echo "Leaving $dir for Meson (wrap tracks $rev)."
-      return 0
-      ;;
-  esac
   ensure_git_checkout "$WORK/subprojects/$dir" "$url" "$rev"
   # Meson applies diff_files only when it clones the wrap. This checkout
   # already exists, so the patches have to be applied here.
@@ -243,11 +225,16 @@ apply_wrap_diff() {
   done
 }
 
-checkout_wrap "$WORK/subprojects/glib.wrap"
-checkout_wrap "$WORK/subprojects/libadwaita.wrap"
+for wrap in "$WORK/subprojects/"*.wrap; do
+  checkout_wrap "$wrap"
+done
 if [ "$build_gtk" -eq 1 ]; then
   for pin in "$ROOT/packages/gtk/"*.wrap.pin; do
     [ -f "$pin" ] || continue
+    base="$(basename "$pin" .pin)"
+    if [ ! -f "$WORK/subprojects/gtk/subprojects/$base" ]; then
+      continue
+    fi
     dir="$(field "$pin" directory)"
     url="$(field "$pin" url)"
     rev="$(field "$pin" revision)"
@@ -324,6 +311,7 @@ echo "Downloading Meson subprojects"
   cd "$WORK"
   meson subprojects download
 )
+drop_satisfied_wraps "$WORK" "$DEPS_SYSROOT" "$ABI"
 
 builddir="$WORK/build-$ARCH"
 meson_args=(

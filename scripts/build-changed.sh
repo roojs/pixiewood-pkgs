@@ -12,10 +12,11 @@ plan=""
 arch="${ARCH:-aarch64}"
 gtk="${GTK_TARGET:-gnome}"
 tarball_dir=""
+cache=""
 dry=0
 
 usage() {
-  echo "Usage: $0 --plan FILE [--arch aarch64|x86_64] [--gtk TARGET] --tarball-dir DIR [--dry-run]" >&2
+  echo "Usage: $0 --plan FILE [--arch aarch64|x86_64] [--gtk TARGET] --tarball-dir DIR [--cache DIR] [--dry-run]" >&2
   exit 2
 }
 
@@ -25,6 +26,7 @@ while [ "$#" -gt 0 ]; do
     --arch) arch=$2; shift 2 ;;
     --gtk) gtk=$2; shift 2 ;;
     --tarball-dir) tarball_dir=$2; shift 2 ;;
+    --cache) cache=$2; shift 2 ;;
     --dry-run) dry=1; shift ;;
     -h|--help) usage ;;
     *) echo "Unknown argument: $1" >&2; usage ;;
@@ -98,6 +100,17 @@ for name in "${order[@]}"; do
       fi
     fi
   done
+  if [ -n "$cache" ] && [ -f "$cache/$abi/$name.tar.xz" ] && [ -f "$cache/$abi/$name.inputs" ] \
+    && [ "$(cat "$cache/$abi/$name.inputs")" = "${inputs[$name]}" ]; then
+    echo "cache $name"
+    if [ "$dry" -eq 1 ]; then
+      built[$name]="$cache/$abi/$name.tar.xz"
+      continue
+    fi
+    cp -a "$cache/$abi/$name.tar.xz" "$tarball_dir/${name}-${abi}.tar.xz"
+    built[$name]="$tarball_dir/${name}-${abi}.tar.xz"
+    continue
+  fi
   echo "build $name"
   if [ "$dry" -eq 1 ]; then
     built[$name]="new"
@@ -124,4 +137,9 @@ for name in "${order[@]}"; do
   fi
   "$ROOT/scripts/build-sysroot.sh" "${args[@]}"
   built[$name]="$tarball_dir/${name}-${abi}.tar.xz"
+  if [ -n "$cache" ]; then
+    mkdir -p "$cache/$abi"
+    cp -a "${built[$name]}" "$cache/$abi/$name.tar.xz"
+    printf '%s\n' "${inputs[$name]}" > "$cache/$abi/$name.inputs"
+  fi
 done

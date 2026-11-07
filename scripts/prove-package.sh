@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Prove packages in build order, reusing a cache of tarballs whose inputs
-# have not changed. This does not publish. Monitor upstreams is the release path.
+# Prove packages in build order. This does not publish.
+# Each package is the release pin when that recipe is unchanged, otherwise
+# a tarball in the package cache, and otherwise a source build.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -13,15 +14,16 @@ packages=""
 through=""
 out=""
 cache=""
+pins=""
 dry=0
 check=""
 package_name=""
 
 usage() {
-  echo "Usage: $0 [--arch aarch64|x86_64] [--gtk TARGET] [--through PACKAGE] [--packages NAMES] [--cache DIR] [--out DIR] [--dry-run]" >&2
+  echo "Usage: $0 [--arch aarch64|x86_64] [--gtk TARGET] [--through PACKAGE] [--packages NAMES] [--cache DIR] [--pins FILE] [--out DIR] [--dry-run]" >&2
   echo "       $0 --check TARBALL --package NAME [--arch aarch64|x86_64]" >&2
   echo "The default proves every package from the start of build-order.txt through gtk." >&2
-  echo "A cached tarball is reused when its inputs hash still matches." >&2
+  echo "A package is taken from the release pins, then the package cache, then source." >&2
   exit 2
 }
 
@@ -32,6 +34,7 @@ while [ "$#" -gt 0 ]; do
     --packages) packages=$2; shift 2 ;;
     --through) through=$2; shift 2 ;;
     --cache) cache=$2; shift 2 ;;
+    --pins) pins=$2; shift 2 ;;
     --out) out=$2; shift 2 ;;
     --dry-run) dry=1; shift ;;
     --check) check=$2; shift 2 ;;
@@ -148,6 +151,9 @@ fi
 if [ -z "$out" ]; then
   out="$ROOT/out/prove"
 fi
+if [ -z "$pins" ]; then
+  pins="$ROOT/current.pins"
+fi
 
 declare -A order_at=()
 order_names=()
@@ -203,28 +209,15 @@ mkdir -p "$out"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-declare -A inputs_of=()
+declare -A inputs_of=() resolved_of=()
 if [ "$dry" -eq 0 ]; then
   "$ROOT/scripts/upstream-index.sh" resolve --gtk "$gtk" --out "$work/resolved.tsv"
-  while IFS=$'\t' read -r name _kind _track _resolved inputs; do
+  while IFS=$'\t' read -r name _kind _track resolved inputs; do
     [ -n "$name" ] || continue
+    resolved_of[$name]=$resolved
     inputs_of[$name]=$inputs
   done < "$work/resolved.tsv"
 fi
-
-cache_hit() {
-  local name=$1 cached_tar cached_stamp
-  [ -n "$cache" ] || return 1
-  cached_tar="$cache/$abi/$name.tar.xz"
-  cached_stamp="$cache/$abi/$name.inputs"
-  [ -f "$cached_tar" ] || return 1
-  if [ "$dry" -eq 1 ]; then
-    return 0
-  fi
-  [ -f "$cached_stamp" ] || return 1
-  [ "$(cat "$cached_stamp")" = "${inputs_of[$name]:-}" ] || return 1
-  prove_tarball "$cached_tar" "$abi" "$name"
-}
 
 list="$work/proved.tsv"
 : > "$list"
@@ -233,33 +226,47 @@ proved=()
 
 for name in "${names[@]}"; do
   tarball="$out/${name}-${abi}.tar.xz"
-  if cache_hit "$name"; then
-    if [ "${#proved[@]}" -eq 0 ]; then
-      echo "cached $name alone"
-    else
-      echo "cached $name on ${proved[*]}"
-    fi
-    if [ "$dry" -eq 0 ]; then
-      cp -a "$cache/$abi/$name.tar.xz" "$tarball"
-    fi
-  elif [ "$dry" -eq 1 ]; then
-    if [ "${#proved[@]}" -eq 0 ]; then
-      echo "build $name alone"
-    else
-      echo "build $name on ${proved[*]}"
-    fi
+  obtain_args=(
+    --name "$name"
+    --abi "$abi"
+    --gtk "$gtk"
+    --pins "$pins"
+  )
+  if [ -n "$cache" ]; then
+    obtain_args+=(--cache "$cache")
+  fi
+  if [ "$dry" -eq 0 ]; then
+    obtain_args+=(--resolved "${resolved_of[$name]:-}" --inputs "${inputs_of[$name]:-}")
+  fi
+  decision="$("$ROOT/scripts/obtain-package.sh" "${obtain_args[@]}")"
+  IFS=$'\t' read -r kind loc <<< "$decision"
+  if [ "${#proved[@]}" -eq 0 ]; then
+    echo "$kind $name alone"
   else
-    args=(--only "$name" --arch "$arch" --gtk "$gtk" --tarball "$tarball")
-    if [ -n "$deps" ]; then
-      args+=(--deps-sysroot "$deps")
+    echo "$kind $name on ${proved[*]}"
+  fi
+  if [ "$dry" -eq 0 ]; then
+    if [ "$kind" = pin ]; then
+      if ! curl -fsSL "$loc" -o "$tarball"; then
+        echo "Release pin for $name did not download; building it" >&2
+        kind=build
+      fi
+    elif [ "$kind" = cache ]; then
+      cp -a "$loc" "$tarball"
     fi
-    "$ROOT/scripts/build-sysroot.sh" "${args[@]}"
+    if [ "$kind" = build ]; then
+      args=(--only "$name" --arch "$arch" --gtk "$gtk" --tarball "$tarball")
+      if [ -n "$deps" ]; then
+        args+=(--deps-sysroot "$deps")
+      fi
+      "$ROOT/scripts/build-sysroot.sh" "${args[@]}"
+      if [ -n "$cache" ]; then
+        mkdir -p "$cache/$abi"
+        cp -a "$tarball" "$cache/$abi/$name.tar.xz"
+        printf '%s\n' "${inputs_of[$name]}" > "$cache/$abi/$name.inputs"
+      fi
+    fi
     prove_tarball "$tarball" "$abi" "$name"
-    if [ -n "$cache" ]; then
-      mkdir -p "$cache/$abi"
-      cp -a "$tarball" "$cache/$abi/$name.tar.xz"
-      printf '%s\n' "${inputs_of[$name]}" > "$cache/$abi/$name.inputs"
-    fi
   fi
   proved+=("$name")
   if [ "$dry" -eq 1 ]; then

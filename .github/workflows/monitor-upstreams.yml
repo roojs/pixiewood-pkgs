@@ -165,6 +165,16 @@ jobs:
         with:
           ref: ${{ needs.pins.outputs.sha }}
 
+      - name: Restore package cache and checkouts
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .cache/packages
+            .cache/checkouts
+          key: packages-${{ github.event.inputs.arch || 'aarch64' }}-${{ github.run_id }}
+          restore-keys: |
+            packages-${{ github.event.inputs.arch || 'aarch64' }}-
+
       - uses: actions/download-artifact@v7
         id: plan
         continue-on-error: true
@@ -204,6 +214,7 @@ jobs:
                 --plan "$built" \
                 --arch "$ARCH" \
                 --gtk "$gtk" \
+                --cache "$PWD/.cache/packages" \
                 --tarball-dir "$PWD/out/packages"
             fi
             scripts/publish-index.sh \
@@ -214,3 +225,13 @@ jobs:
               --created "$RELEASE_CREATED" \
               --out "out/index-${gtk}.json"
           done < <(awk 'NF && $1 !~ /^#/ { print $1 }' packages/gtk/targets)
+
+      - name: Save package cache and checkouts
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .cache/packages
+            .cache/checkouts
+          key: packages-${{ github.event.inputs.arch || 'aarch64' }}-${{ github.run_id }}

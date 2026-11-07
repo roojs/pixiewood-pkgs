@@ -9,29 +9,46 @@ trap 'rm -rf "$tmp"' EXIT
 bash -n "$ROOT/scripts/prove-package.sh"
 
 "$ROOT/scripts/prove-package.sh" --dry-run > "$tmp/default.out"
-grep -qx 'build openssl alone' "$tmp/default.out"
+grep -qx 'pin openssl alone' "$tmp/default.out"
 grep -q '^build glib on ' "$tmp/default.out"
+grep -q '^build pango on ' "$tmp/default.out"
 grep -q '^build gdk on ' "$tmp/default.out"
 grep -q '^build gtk on ' "$tmp/default.out"
 if grep -q webkitgtk-android "$tmp/default.out"; then
   echo "default proof continued past gtk" >&2
   exit 1
 fi
+awk '
+  /^pin / || /^cache / || /^build / {
+    if ($2 == "cairo") cairo = NR
+    if ($2 == "pango") pango = NR
+    if ($2 == "gdk") gdk = NR
+    if ($2 == "gtk") gtk = NR
+  }
+  END {
+    if (!(cairo && pango && gdk && gtk && cairo < pango && pango < gdk && gdk < gtk)) exit 1
+  }
+' "$tmp/default.out"
 
 "$ROOT/scripts/prove-package.sh" --dry-run --packages sqlite3 > "$tmp/one.out"
-grep -qx 'build sqlite3 alone' "$tmp/one.out"
+grep -qx 'pin sqlite3 alone' "$tmp/one.out"
 
 "$ROOT/scripts/prove-package.sh" --dry-run --packages 'sqlite3, nghttp2,libpsl' > "$tmp/stack.out"
-grep -qx 'build sqlite3 alone' "$tmp/stack.out"
-grep -qx 'build nghttp2 on sqlite3' "$tmp/stack.out"
-grep -qx 'build libpsl on sqlite3 nghttp2' "$tmp/stack.out"
+grep -qx 'pin sqlite3 alone' "$tmp/stack.out"
+grep -qx 'pin nghttp2 on sqlite3' "$tmp/stack.out"
+grep -qx 'pin libpsl on sqlite3 nghttp2' "$tmp/stack.out"
 
+: > "$tmp/empty.pins"
 mkdir -p "$tmp/cache/arm64-v8a"
 touch "$tmp/cache/arm64-v8a/openssl.tar.xz" "$tmp/cache/arm64-v8a/libxml2.tar.xz"
-"$ROOT/scripts/prove-package.sh" --dry-run --through gtk --cache "$tmp/cache" > "$tmp/cache.out"
-grep -qx 'cached openssl alone' "$tmp/cache.out"
-grep -qx 'cached libxml2 on openssl' "$tmp/cache.out"
+"$ROOT/scripts/prove-package.sh" --dry-run --through gtk --pins "$tmp/empty.pins" --cache "$tmp/cache" > "$tmp/cache.out"
+grep -qx 'cache openssl alone' "$tmp/cache.out"
+grep -qx 'cache libxml2 on openssl' "$tmp/cache.out"
 grep -qx 'build sqlite3 on openssl libxml2' "$tmp/cache.out"
+
+"$ROOT/scripts/prove-package.sh" --dry-run --through libxml2 --cache "$tmp/cache" > "$tmp/pinwins.out"
+grep -qx 'pin openssl alone' "$tmp/pinwins.out"
+grep -qx 'pin libxml2 on openssl' "$tmp/pinwins.out"
 
 if "$ROOT/scripts/prove-package.sh" --dry-run --packages 'nghttp2,sqlite3' > "$tmp/order.out" 2> "$tmp/order.err"; then
   echo "out-of-order packages were accepted" >&2

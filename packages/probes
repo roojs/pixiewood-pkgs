@@ -8,6 +8,16 @@ libadwaita libadwaita-1
 gtksourceview gtksourceview-5
 gee gee-0.8
 json-glib json-glib-1.0
+fribidi fribidi
+pixman pixman-1
+cairo cairo cairo-gobject
+harfbuzz harfbuzz harfbuzz-subset
+pango pango pangocairo pangoft2
+libjpeg-turbo libjpeg libturbojpeg
+libtiff libtiff-4
+gdk-pixbuf gdk-pixbuf-2.0
+libepoxy epoxy
+graphene graphene-1.0 graphene-gobject-1.0
 libxml2 libxml-2.0
 sqlite3 sqlite3
 nghttp2 libnghttp2
