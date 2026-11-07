@@ -19,21 +19,38 @@ assert_pinned() {
   esac
 }
 
-assert_pinned "$ROOT/stack/ollmchat/wraps/glib/glib.wrap"
-assert_pinned "$ROOT/stack/ollmchat/wraps/gtk/gtk.wrap"
-assert_pinned "$ROOT/stack/ollmchat/wraps/libadwaita/libadwaita.wrap"
-assert_pinned "$ROOT/stack/ollmchat/wraps/gtk/pango.wrap.pin"
-assert_pinned "$ROOT/stack/ollmchat/wraps/gtk/harfbuzz.wrap.pin"
+assert_pinned "$ROOT/packages/glib/glib.wrap"
+assert_pinned "$ROOT/packages/gtk/gtk.wrap"
+assert_pinned "$ROOT/packages/libadwaita/libadwaita.wrap"
+assert_pinned "$ROOT/packages/gtk/pango.wrap.pin"
+assert_pinned "$ROOT/packages/gtk/harfbuzz.wrap.pin"
 
-fontconfig_rev="$(revision_of "$ROOT/stack/ollmchat/wraps/fontconfig/fontconfig.wrap")"
+fontconfig_rev="$(revision_of "$ROOT/packages/fontconfig/fontconfig.wrap")"
 if [ "$fontconfig_rev" != "main" ]; then
   echo "fontconfig.wrap changed upstream pin unexpectedly: $fontconfig_rev" >&2
   echo "If you pinned it, update this test and the release notes." >&2
   exit 1
 fi
 
+# shellcheck source=../scripts/gtk-target.sh
+source "$ROOT/scripts/gtk-target.sh"
+read -r gnome_url gnome_rev gnome_patch < <(gtk_target_read "$ROOT/packages/gtk/targets" gnome)
+read -r ime_url ime_rev ime_patch < <(gtk_target_read "$ROOT/packages/gtk/targets" ime)
+[ "$gnome_url" = "https://gitlab.gnome.org/GNOME/gtk.git" ]
+[ "$gnome_rev" = "$(revision_of "$ROOT/packages/gtk/gtk.wrap")" ]
+[ "$gnome_patch" = android-bugs.patch ]
+[ "$ime_url" = "https://gitlab.gnome.org/Knowles/gtk.git" ]
+[ "$ime_rev" = android-ime ]
+[ "$ime_patch" = "-" ]
+wrap_copy="$(mktemp)"
+cp "$ROOT/packages/gtk/gtk.wrap" "$wrap_copy"
+gtk_target_apply_wrap "$wrap_copy" "$ime_url" "$ime_rev"
+grep -q "^url = $ime_url$" "$wrap_copy"
+grep -q "^revision = $ime_rev$" "$wrap_copy"
+rm -f "$wrap_copy"
+
 # pango pin must not be named *.wrap or install would publish a second provider.
-if compgen -G "$ROOT/stack/ollmchat/wraps/gtk/*.wrap" | grep -q 'pango\|harfbuzz'; then
+if compgen -G "$ROOT/packages/gtk/*.wrap" | grep -q 'pango\|harfbuzz'; then
   echo "pango/harfbuzz pins must stay *.wrap.pin" >&2
   exit 1
 fi

@@ -1,0 +1,5 @@
+# GTK sources this distro can build.
+# name url revision patch
+# patch is a file under packages/gtk, or - when that revision already has the Android work.
+gnome https://gitlab.gnome.org/GNOME/gtk.git ae709f962a51f9108a1e6381bcfbd05bbaecc840 android-bugs.patch
+ime https://gitlab.gnome.org/Knowles/gtk.git android-ime -

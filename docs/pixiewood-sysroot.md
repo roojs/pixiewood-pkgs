@@ -15,18 +15,27 @@ the glue is not inside a wrap anymore:
 2. `lib/<abi>` and `share/glib-2.0/schemas` from the tarball must be copied
    into `.pixiewood/root` after the app install and before Gradle.
 3. `java-sources` must point at `share/pixiewood/gtk-android-java` in the
-   extracted tree (that directory contains `org/gtk/android`, including the
-   OLLMchat Android patches).
+   extracted tree (that directory contains `org/gtk/android`).
 
-Activate the extracted tarball first (`scripts/activate-sysroot.sh`). That
-rewrites `prefix=@PIXIEWOOD_SYSROOT@` in the `.pc` files and writes
-`share/pixiewood/sysroot.cross`.
+Fetch a set first. `latest` follows one GTK target (`ime` is Knowles/gtk
+branch `android-ime`; `gnome` is standard GTK). `pin` keeps a single index
+file:
+
+```bash
+scripts/integrate-sysroot.sh latest --gtk ime --dest "$HOME/pixiewood-sysroot"
+scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysroot"
+```
+
+That downloads each package URL from the index, including previous release
+URLs for packages that did not change, then activates the tree.
+`scripts/activate-sysroot.sh` rewrites `prefix=@PIXIEWOOD_SYSROOT@` in the
+`.pc` files and writes `share/pixiewood/sysroot.cross`.
 
 ## Patch Pixiewood
 
 `integration/0001-sysroot-prebuilt-dependencies.patch` applies to
 gtk-android-builder `00b1862b6434a8778557dc3d3074f43f5fdead1b` (the revision
-OLLMchat pins). From a checkout of that revision:
+in `distro.conf`). From a checkout of that revision:
 
 ```bash
 patch -p1 < /path/to/pixiewood-pkgs/integration/0001-sysroot-prebuilt-dependencies.patch
@@ -54,7 +63,7 @@ Prepare then looks like:
 pixiewood prepare \
   --sdk "$ANDROID_SDK_ROOT" \
   --sysroot "$HOME/pixiewood-sysroot" \
-  android/pixiewood-chat-poc.xml
+  android/app.xml
 pixiewood generate
 pixiewood build
 ```
@@ -64,8 +73,8 @@ application can keep a wrap for something that is not in the tarball.
 
 ## Without waiting for the patch
 
-OLLMchat already passes `--meson` and reconfigures with its own cross file.
-Point that Meson at `scripts/meson-wrapper.sh` and set two variables:
+If the application passes `--meson` and reconfigures with its own cross file,
+point that Meson at `scripts/meson-wrapper.sh` and set two variables:
 
 ```bash
 export PIXIEWOOD_SYSROOT="$HOME/pixiewood-sysroot"
@@ -73,7 +82,7 @@ export PIXIEWOOD_REAL_MESON="$(command -v meson)"
 pixiewood prepare \
   --sdk "$ANDROID_SDK_ROOT" \
   --meson /path/to/pixiewood-pkgs/scripts/meson-wrapper.sh \
-  android/pixiewood-chat-poc.xml
+  android/app.xml
 ```
 
 The wrapper inserts `--cross-file $PIXIEWOOD_SYSROOT/share/pixiewood/sysroot.cross`
@@ -82,12 +91,10 @@ pkg-config when the `.pc` file satisfies the dependency, so those wraps are
 not compiled. Delete `subprojects/*.wrap` for the provided names if a version
 check would otherwise fall back to building them.
 
-OLLMchat runs Meson a second time from `reconfigure_pixiewood_build` in
-`scripts/android/build-pixiewood-apk.sh`, and that call does not go through
-Pixiewood's `--meson`. Add the same `--cross-file` there, after
-`android/pixiewood-extra.cross`, and pass it on every reconfigure. A
+If the application runs Meson a second time outside Pixiewood's `--meson`,
+add the same `--cross-file` there and pass it on every reconfigure. A
 reconfigure that omits the file drops the sysroot and Meson goes back to the
-wraps. With the sysroot file last, its `glib-mkenums` entry overrides the
+wraps. With the sysroot file last, its `glib-mkenums` entry overrides an
 extra cross file's path into `subprojects/glib`.
 
 Stock Pixiewood does not copy external libraries into `.pixiewood/root` and
@@ -96,7 +103,7 @@ element:
 
 ```xml
 <build
-  target="ollmchat-android-poc"
+  target="app"
   java-sources="/home/you/pixiewood-sysroot/share/pixiewood/gtk-android-java">
 ```
 
@@ -115,29 +122,25 @@ That is the same copy the patch performs inside `build`. Schemas must be in
 using the patch. Staging libraries before `meson install` is safe: install
 does not delete extra files already in the destdir.
 
-## What an app such as OLLMchat changes
+## What the application changes
 
-In `android/pixiewood-chat-poc.xml`, the `<dependencies>` entries that
-`MANIFEST.json` lists (`glib`, `fontconfig`, `gtk`, `libadwaita`,
-`gtksourceview`, `libxml2`, `sqlite3`, `gee`, `json-glib`, `nghttp2`,
-`libsoup`, `openssl`, `glib-networking`, and the extra wraps `libpsl` and
-`webkitgtk-android`) no longer need source wraps. The application meson
-targets stay as they are: `dependency('gtk4')`, `dependency('gioopenssl')`,
-`dependency('webkitgtk-android-1')`, and the others resolve through pkg-config.
+Dependencies listed in `MANIFEST.json` no longer need source wraps. The
+application meson targets stay as they are: `dependency('gtk4')`,
+`dependency('gioopenssl')`, `dependency('webkitgtk-android-1')`, and the
+others resolve through pkg-config. The manifest's `gtk_target` is `ime` for
+Knowles/gtk branch `android-ime`, or `gnome` for standard GTK.
 
 Stop pointing `glib-mkenums` at `subprojects/glib` once GLib is not a
 subproject. The activated cross file uses the script from the sysroot when
 that file is a host script. Drop the app's `android/pixiewood-extra.cross`
 `glib-mkenums` line, or let `sysroot.cross` come last so it wins.
 
-Keep the app-specific pieces Pixiewood already does not build: Adwaita icon
-subset, shared-mime-info, CA certificates, the application Java classes, and
-the webkitgtk-android Java classes installed by
-`scripts/android/install-webview-java.sh`.
+Keep the pieces this distro does not build: icon themes, shared-mime-info,
+CA certificates, and the application's own Java classes.
 
-`g_set_user_dirs` and the GTK Android bug patch are already compiled into the
-sysroot. The app does not need `android/pixiewood-wraps/gtk/android-bugs.patch`
-or the GLib hack at prepare time for this profile.
+`g_set_user_dirs` is already compiled into the GLib package. The `gnome`
+target also includes `packages/gtk/android-bugs.patch`. The `ime` target is
+the Knowles `android-ime` branch and does not apply that patch.
 
 ## Why the pkg-config wrapper exists
 

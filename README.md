@@ -1,75 +1,54 @@
 # pixiewood-pkgs
 
-Prebuilt Android sysroots for the GTK stack an application such as
-[OLLMchat](https://github.com/roojs/OLLMchat) links, plus the Pixiewood changes
-that consume those sysroots instead of compiling every library from source.
+Prebuilt Android packages for the GTK stack [Pixiewood](https://github.com/sp1ritCS/gtk-android-builder) links. This is a distribution of those libraries, not an application profile. Each upstream project is its own package. A published index lists a URL for every package. Packages that did not change keep the URL of the earlier release. If nothing changed, no release is published.
 
-Pixiewood (`gtk-android-builder`) currently writes Meson wraps for GLib, GTK,
-libadwaita, and the rest, then builds them inside the application. That is the
-slow part of an OLLMchat Android APK. This repository builds that stack once
-per ABI and publishes it as a tarball.
+## GTK targets
 
-## What a release contains
+| Target | Source | What it tracks |
+| --- | --- | --- |
+| `ime` (default) | https://gitlab.gnome.org/Knowles/gtk.git | branch `android-ime` |
+| `gnome` | https://gitlab.gnome.org/GNOME/gtk.git | pinned upstream commit, plus `packages/gtk/android-bugs.patch` |
 
-One tarball per Android ABI, named
-`pixiewood-android-sysroot-<version>-<abi>.tar.xz`. The `ollmchat` profile
-matches the libraries the remote-chat APK links:
+`packages/gtk/targets` is the list. The IME branch is the Android input-method tree. Standard GTK stays available as `gnome`.
 
-- GLib (with the `g_set_user_dirs` hack), fontconfig, HarfBuzz, Pango, Cairo,
-  gdk-pixbuf, GTK (Android backend plus the OLLMchat `android-bugs` patch),
-  libadwaita, GtkSourceView
-- libxml2, sqlite, libgee, json-glib, nghttp2, libpsl, libsoup, OpenSSL
-- static glib-networking OpenSSL backend (`gioopenssl`)
-- webkitgtk-android
+## Fetch a sysroot
 
-The tree is a Meson prefix (`prefix=/`, `libdir=lib/<abi>`):
+`latest` reads the current index for one GTK target and downloads every package. `pin` uses one index file and does not look for a newer set.
 
-| Path | Role |
-| --- | --- |
-| `lib/<abi>/*.so` | Shared libraries Gradle packages from `jniLibs` |
-| `lib/<abi>/gio/modules/libgioopenssl.a` | Static TLS backend the app links |
-| `lib/<abi>/pkgconfig/*.pc` | Development files for `dependency()` |
-| `include/` | Headers |
-| `share/glib-2.0/schemas/` | Schemas Pixiewood compiles into the APK |
-| `share/pixiewood/gtk-android-java/` | Patched GTK Android Java glue |
-| `share/pixiewood/MANIFEST.json` | Versions, ABI, and the dependency names the sysroot replaces |
+```bash
+scripts/integrate-sysroot.sh latest --gtk ime --dest "$HOME/pixiewood-sysroot"
+scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysroot"
+```
 
-Icons, the CA bundle, shared-mime-info, and the webkitgtk-android Java host
-classes stay with the application. They are not part of this stack.
+The default target is `ime`. `--gtk gnome` fetches the standard GTK set. Copy `share/pixiewood/INDEX.json` out of an assembled tree and pass it to `pin` to stay on that set.
 
-## Build a tarball
+The index URL for the moving release is:
 
-Host packages are the same ones OLLMchat's Android job uses (compilers, Meson,
-Ninja, Vala, `glslc`, `sassc`, `nasm`, JDK is not required for the sysroot
-itself). Then:
+`https://github.com/roojs/pixiewood-pkgs/releases/download/latest/index-<abi>-<gtk>.json`
+
+Unchanged package entries in a new index still point at the tarball from the release that built them.
+
+## What a package contains
+
+Headers, shared libraries, pkg-config files, and GSettings schemas for one upstream project, installed with `prefix=/` and `libdir=lib/<abi>`. The `gtk` package also carries the Android Java glue. `glib-networking` carries the static `gioopenssl` module.
+
+Other packages in the default set: GLib, fontconfig, GTK, libadwaita, GtkSourceView, libxml2, sqlite, libgee, json-glib, nghttp2, libpsl, libsoup, OpenSSL, and webkitgtk-android. Pango and HarfBuzz are built with GTK. Icons, the CA bundle, shared-mime-info, and application Java classes stay with the app.
+
+## Build
 
 ```bash
 scripts/install-sdk.sh
-scripts/build-sysroot.sh --arch aarch64
+scripts/build-sysroot.sh --gtk ime --arch aarch64
+scripts/build-sysroot.sh --gtk gnome --arch aarch64
 ```
 
-The tarball is written to `out/`. `--arch x86_64` builds the other ABI
-Pixiewood knows. Pins and patches live in `stack/ollmchat/wraps/` and follow
-OLLMchat's Android wraps (GLib 2.90.0, Pango 1.58.2, the `android-bugs` patch).
-`stack/cross/` is the cross files from gtk-android-builder
-`00b1862b6434a8778557dc3d3074f43f5fdead1b`. Fontconfig still tracks that
-checkout's `main` wrap; the tarball is the artifact that freezes the result.
+`scripts/build-sysroot.sh --only gtk --gtk ime` builds one package. Pins and Android patches live in `packages/`. Cross files live in `cross/`. NDK and API levels are in `distro.conf`.
 
-A push to `main` runs **Build Android sysroot** for aarch64 and attaches the tarball to the `v<version>` GitHub Release. **Build Android sysroot** can also be started by hand for `aarch64` or `x86_64`.
+A push does not publish packages. Once a day, **Monitor upstreams** resolves every package for `ime` and for `gnome`. It uploads tarballs only for packages whose upstream revision or local inputs changed, writes an index that reuses the previous URL for the rest, and skips the release entirely when nothing changed. **Build Android sysroot** can still be started by hand for one combined tree.
 
-## Use a tarball
+## Use the sysroot from Pixiewood
 
-Extract it and bind pkg-config to that directory. Paths inside the `.pc` files
-are rewritten to the extract location, so run this again if you move the tree:
-
-```bash
-tar -C "$HOME/pixiewood-sysroot" -xJf pixiewood-android-sysroot-0.1.0-arm64-v8a.tar.xz
-scripts/activate-sysroot.sh "$HOME/pixiewood-sysroot"
-```
-
-How to point Pixiewood at the result, including the patch against
-gtk-android-builder and the wrapper that works before that patch is merged, is
-in [docs/pixiewood-sysroot.md](docs/pixiewood-sysroot.md).
+See [docs/pixiewood-sysroot.md](docs/pixiewood-sysroot.md).
 
 ## Tests
 
@@ -77,7 +56,7 @@ in [docs/pixiewood-sysroot.md](docs/pixiewood-sysroot.md).
 bash tests/test-sysroot-tree.sh
 bash tests/test-pins-and-wrapper.sh
 bash tests/test-pixiewood-patch.sh
+bash tests/test-index.sh
 ```
 
-These cover packing, activation, runtime staging, wrap pins, and the Pixiewood
-patch. They do not cross-compile GTK.
+These cover packing, activation, runtime staging, wrap pins, both GTK targets, and the index. They do not cross-compile GTK.

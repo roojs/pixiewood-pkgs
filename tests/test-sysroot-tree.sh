@@ -31,14 +31,15 @@ printf 'glib\ngtk\nopenssl\n' > "$tmp/provided.txt"
 
 "$ROOT/scripts/sysroot-tree.sh" finalize \
   --destdir "$destdir" \
-  --profile ollmchat \
   --version 0.1.0 \
   --abi "$abi" \
   --arch aarch64 \
   --api 31 \
   --ndk 28.2.13676358 \
   --pixiewood-revision abc \
-  --ollmchat-wraps-revision def \
+  --gtk-target ime \
+  --gtk-url https://gitlab.gnome.org/Knowles/gtk.git \
+  --gtk-revision android-ime \
   --provided "$tmp/provided.txt" \
   --java-glue "$tmp/java"
 
@@ -52,6 +53,8 @@ gio="$(cat "$destdir/lib/$abi/pkgconfig/gioopenssl.pc")"
 printf '%s\n' "$gio" | grep -q '^prefix=@PIXIEWOOD_SYSROOT@$'
 printf '%s\n' "$gio" | grep -q 'libgioopenssl.a'
 manifest="$destdir/share/pixiewood/MANIFEST.json"
+grep -q '"gtk_target": "ime"' "$manifest"
+grep -q 'Knowles/gtk' "$manifest"
 grep -q '"format": 1' "$manifest"
 grep -q '"provided_dependencies": \["glib", "gtk", "openssl"\]' "$manifest"
 grep -q '"pc": "gtk4"' "$manifest"

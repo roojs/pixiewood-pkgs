@@ -1,0 +1,10 @@
+[wrap-git]
+url = https://gitlab.gnome.org/GNOME/gtk.git
+# Standard GNOME GTK. packages/gtk/targets names this row "gnome".
+# The default build target is "ime": Knowles/gtk branch android-ime, with no patch.
+# android-bugs.patch applies only to this pinned GNOME revision.
+revision = ae709f962a51f9108a1e6381bcfbd05bbaecc840
+depth = 1
+
+[provide]
+dependency_names = gtk4

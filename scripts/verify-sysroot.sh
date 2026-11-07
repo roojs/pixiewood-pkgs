@@ -19,7 +19,7 @@ if [ ! -f "$manifest" ]; then
 fi
 
 abi="$(sysroot_json_get abi "$manifest")"
-profile="$(sysroot_json_get profile "$manifest")"
+gtk_target="$(sysroot_json_get gtk_target "$manifest")"
 version="$(sysroot_json_get version "$manifest")"
 pkgconfig="$sysroot/$(sysroot_json_get pkgconfig_dir "$manifest")"
 java_glue="$sysroot/$(sysroot_json_get java_glue "$manifest")/org/gtk/android"
@@ -55,4 +55,4 @@ while IFS= read -r -d '' pc; do
   fi
 done < <(find "$pkgconfig" -name '*.pc' -type f -print0)
 count="$(find "$pkgconfig" -name '*.pc' -type f | wc -l)"
-echo "sysroot ok: profile=$profile version=$version abi=$abi pcs=$count"
+echo "sysroot ok: gtk_target=$gtk_target version=$version abi=$abi pcs=$count"

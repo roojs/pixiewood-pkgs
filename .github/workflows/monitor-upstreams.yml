@@ -1,0 +1,143 @@
+name: Monitor upstreams
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: Android arch
+        type: choice
+        options:
+          - aarch64
+          - x86_64
+        default: aarch64
+      gtk:
+        description: GTK target. ime is Knowles/gtk branch android-ime. gnome is standard GTK. both checks each.
+        type: choice
+        options:
+          - both
+          - ime
+          - gnome
+        default: both
+      force:
+        description: Rebuild these packages even when unchanged (all, or comma-separated names).
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        gtk:
+          - ime
+          - gnome
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve and compare
+        id: result
+        env:
+          ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
+          FORCE: ${{ github.event.inputs.force || '' }}
+          WANT: ${{ github.event.inputs.gtk || 'both' }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gtk="${{ matrix.gtk }}"
+          if [ "$WANT" != both ] && [ "$WANT" != "$gtk" ]; then
+            echo "publish=0" >> "$GITHUB_OUTPUT"
+            echo "Skipping $gtk"
+            exit 0
+          fi
+          case "$ARCH" in
+            aarch64) abi=arm64-v8a ;;
+            x86_64) abi=x86_64 ;;
+          esac
+          scripts/upstream-index.sh resolve --gtk "$gtk" --out resolved.tsv
+          if ! gh release download latest --repo "${GITHUB_REPOSITORY}" --pattern "index-${abi}-${gtk}.json" --output previous.json; then
+            rm -f previous.json
+          fi
+          args=(plan --resolved resolved.tsv --gtk "$gtk" --out plan.tsv)
+          if [ -n "$FORCE" ]; then
+            args+=(--force "$FORCE")
+          fi
+          if [ -f previous.json ]; then
+            args+=(--previous previous.json)
+          fi
+          scripts/upstream-index.sh "${args[@]}"
+          publish="$(sed -n 's/^# publish=//p' plan.tsv)"
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v7
+        if: steps.result.outputs.publish == '1'
+        with:
+          name: upstream-plan-${{ matrix.gtk }}
+          path: |
+            plan.tsv
+            resolved.tsv
+
+  publish:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        gtk:
+          - ime
+          - gnome
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v7
+        id: plan
+        continue-on-error: true
+        with:
+          name: upstream-plan-${{ matrix.gtk }}
+          path: plan
+
+      - name: Install host packages
+        if: steps.plan.outcome == 'success'
+        run: |
+          if ! grep -q '^# build=1$' plan/plan.tsv; then
+            echo "Index-only update"
+            exit 0
+          fi
+          scripts/ci-host-setup.sh
+
+      - name: Build changed packages
+        if: steps.plan.outcome == 'success'
+        env:
+          ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
+        run: |
+          if ! grep -q '^# build=1$' plan/plan.tsv; then
+            mkdir -p out/packages
+            exit 0
+          fi
+          scripts/build-changed.sh \
+            --plan plan/plan.tsv \
+            --arch "$ARCH" \
+            --gtk "${{ matrix.gtk }}" \
+            --tarball-dir "$PWD/out/packages"
+
+      - name: Publish index
+        if: steps.plan.outcome == 'success'
+        env:
+          ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p out/packages
+          scripts/publish-index.sh \
+            --plan plan/plan.tsv \
+            --tarball-dir out/packages \
+            --arch "$ARCH" \
+            --gtk "${{ matrix.gtk }}" \
+            --out out/index.json

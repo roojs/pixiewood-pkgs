@@ -9,7 +9,9 @@ source "$ROOT/sysroot-common.sh"
 TOKEN='@PIXIEWOOD_SYSROOT@'
 
 usage() {
-  echo "Usage: $0 finalize --destdir DIR --profile NAME --version VER --abi ABI --arch ARCH --api N --ndk VER --pixiewood-revision REV --ollmchat-wraps-revision REV --provided FILE --java-glue DIR" >&2
+  echo "Usage: $0 finalize --destdir DIR --version VER --abi ABI --arch ARCH --api N --ndk VER --pixiewood-revision REV --gtk-target NAME --gtk-url URL --gtk-revision REV --provided FILE --java-glue DIR" >&2
+  echo "       $0 seal --destdir DIR --version VER --abi ABI --arch ARCH --api N --ndk VER --pixiewood-revision REV --gtk-target NAME --gtk-url URL --gtk-revision REV --provided FILE" >&2
+  echo "       $0 pack-fragment --destdir DIR --abi ABI --tarball PATH [--java-glue DIR]" >&2
   echo "       $0 activate SYSROOT" >&2
   exit 2
 }
@@ -26,7 +28,7 @@ write_gioopenssl_pc() {
   pkg="$destdir/lib/$abi/pkgconfig"
   mkdir -p "$pkg"
   # glib-networking's generated .pc describes the shared GIO module.
-  # OLLMchat links the static archive and calls g_io_openssl_load().
+  # Apps link the static archive and call g_io_openssl_load().
   cat > "$pkg/gioopenssl.pc" << EOF
 prefix=/
 libdir=\${prefix}/lib/${abi}
@@ -42,8 +44,8 @@ EOF
 }
 
 write_manifest() {
-  local destdir=$1 profile=$2 version=$3 abi=$4 arch=$5 api=$6 ndk=$7
-  local pixiewood_rev=$8 ollmchat_rev=$9 provided=${10}
+  local destdir=$1 version=$2 abi=$3 arch=$4 api=$5 ndk=$6
+  local pixiewood_rev=$7 gtk_target=$8 gtk_url=$9 gtk_revision=${10} provided=${11}
   local pkgconfig="$destdir/lib/$abi/pkgconfig"
   local meta="$destdir/share/pixiewood"
   local manifest="$meta/MANIFEST.json"
@@ -67,14 +69,15 @@ write_manifest() {
     printf '{\n'
     printf '  "format": 1,\n'
     printf '  "name": "pixiewood-android-sysroot",\n'
-    printf '  "profile": "%s",\n' "$(sysroot_json_escape "$profile")"
     printf '  "version": "%s",\n' "$(sysroot_json_escape "$version")"
     printf '  "abi": "%s",\n' "$(sysroot_json_escape "$abi")"
     printf '  "arch": "%s",\n' "$(sysroot_json_escape "$arch")"
     printf '  "api": %s,\n' "$api"
     printf '  "ndk": "%s",\n' "$(sysroot_json_escape "$ndk")"
     printf '  "pixiewood_revision": "%s",\n' "$(sysroot_json_escape "$pixiewood_rev")"
-    printf '  "ollmchat_wraps_revision": "%s",\n' "$(sysroot_json_escape "$ollmchat_rev")"
+    printf '  "gtk_target": "%s",\n' "$(sysroot_json_escape "$gtk_target")"
+    printf '  "gtk_url": "%s",\n' "$(sysroot_json_escape "$gtk_url")"
+    printf '  "gtk_revision": "%s",\n' "$(sysroot_json_escape "$gtk_revision")"
     printf '  "pkgconfig_dir": "%s",\n' "$(sysroot_json_escape "lib/$abi/pkgconfig")"
     printf '  "java_glue": "share/pixiewood/gtk-android-java",\n'
     printf '  "prefix_token": "%s",\n' "$TOKEN"
@@ -121,27 +124,36 @@ write_manifest() {
   echo "Wrote $manifest ($count pkg-config files)"
 }
 
-cmd_finalize() {
-  local destdir= profile= version= abi= arch= api= ndk=
-  local pixiewood_rev= ollmchat_rev= provided= java_glue=
+read_meta_args() {
+  destdir=
+  version=
+  abi=
+  arch=
+  api=
+  ndk=
+  pixiewood_rev=
+  gtk_target=
+  gtk_url=
+  gtk_revision=
+  provided=
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --destdir) destdir=$2; shift 2 ;;
-      --profile) profile=$2; shift 2 ;;
       --version) version=$2; shift 2 ;;
       --abi) abi=$2; shift 2 ;;
       --arch) arch=$2; shift 2 ;;
       --api) api=$2; shift 2 ;;
       --ndk) ndk=$2; shift 2 ;;
       --pixiewood-revision) pixiewood_rev=$2; shift 2 ;;
-      --ollmchat-wraps-revision) ollmchat_rev=$2; shift 2 ;;
+      --gtk-target) gtk_target=$2; shift 2 ;;
+      --gtk-url) gtk_url=$2; shift 2 ;;
+      --gtk-revision) gtk_revision=$2; shift 2 ;;
       --provided) provided=$2; shift 2 ;;
-      --java-glue) java_glue=$2; shift 2 ;;
       *) echo "Unknown argument: $1" >&2; usage ;;
     esac
   done
-  for value in "$destdir" "$profile" "$version" "$abi" "$arch" "$api" "$ndk" \
-    "$pixiewood_rev" "$ollmchat_rev" "$provided" "$java_glue"; do
+  for value in "$destdir" "$version" "$abi" "$arch" "$api" "$ndk" \
+    "$pixiewood_rev" "$gtk_target" "$gtk_url" "$gtk_revision" "$provided"; do
     if [ -z "$value" ]; then
       usage
     fi
@@ -150,18 +162,78 @@ cmd_finalize() {
     echo "Destdir missing: $destdir" >&2
     exit 1
   fi
-  if [ ! -d "$java_glue" ]; then
+  destdir="$(cd "$destdir" && pwd)"
+}
+
+cmd_finalize() {
+  local destdir version abi arch api ndk pixiewood_rev gtk_target gtk_url gtk_revision provided java_glue
+  java_glue=
+  local -a meta=()
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --java-glue) java_glue=$2; shift 2 ;;
+      *) meta+=("$1"); shift ;;
+    esac
+  done
+  read_meta_args "${meta[@]}"
+  if [ -z "$java_glue" ] || [ ! -d "$java_glue" ]; then
     echo "Java glue directory missing: $java_glue" >&2
     exit 1
   fi
-  destdir="$(cd "$destdir" && pwd)"
   java_glue="$(cd "$java_glue" && pwd)"
   write_gioopenssl_pc "$destdir" "$abi"
   sysroot_rewrite_prefix '/' "$TOKEN" "$destdir"
   mkdir -p "$destdir/share/pixiewood/gtk-android-java"
   cp -a "$java_glue/." "$destdir/share/pixiewood/gtk-android-java/"
-  write_manifest "$destdir" "$profile" "$version" "$abi" "$arch" "$api" "$ndk" \
-    "$pixiewood_rev" "$ollmchat_rev" "$provided"
+  write_manifest "$destdir" "$version" "$abi" "$arch" "$api" "$ndk" \
+    "$pixiewood_rev" "$gtk_target" "$gtk_url" "$gtk_revision" "$provided"
+}
+
+cmd_seal() {
+  local destdir version abi arch api ndk pixiewood_rev gtk_target gtk_url gtk_revision provided
+  read_meta_args "$@"
+  write_gioopenssl_pc "$destdir" "$abi"
+  sysroot_rewrite_prefix '/' "$TOKEN" "$destdir"
+  write_manifest "$destdir" "$version" "$abi" "$arch" "$api" "$ndk" \
+    "$pixiewood_rev" "$gtk_target" "$gtk_url" "$gtk_revision" "$provided"
+}
+
+cmd_pack_fragment() {
+  local destdir= abi= tarball= java_glue=
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --destdir) destdir=$2; shift 2 ;;
+      --abi) abi=$2; shift 2 ;;
+      --tarball) tarball=$2; shift 2 ;;
+      --java-glue) java_glue=$2; shift 2 ;;
+      *) echo "Unknown argument: $1" >&2; usage ;;
+    esac
+  done
+  if [ -z "$destdir" ] || [ -z "$abi" ] || [ -z "$tarball" ]; then
+    usage
+  fi
+  if [ ! -d "$destdir" ]; then
+    echo "Destdir missing: $destdir" >&2
+    exit 1
+  fi
+  destdir="$(cd "$destdir" && pwd)"
+  write_gioopenssl_pc "$destdir" "$abi"
+  if [ -n "$java_glue" ]; then
+    if [ ! -d "$java_glue" ]; then
+      echo "Java glue directory missing: $java_glue" >&2
+      exit 1
+    fi
+    mkdir -p "$destdir/share/pixiewood/gtk-android-java"
+    cp -a "$java_glue/." "$destdir/share/pixiewood/gtk-android-java/"
+  fi
+  rm -f "$destdir/share/pixiewood/MANIFEST.json" \
+    "$destdir/share/pixiewood/INDEX.json" \
+    "$destdir/share/pixiewood/sysroot.cross" \
+    "$destdir/share/pixiewood/pkg-config-wrapper"
+  sysroot_rewrite_prefix '/' "$TOKEN" "$destdir"
+  mkdir -p "$(dirname "$tarball")"
+  tar -C "$destdir" -cJf "$tarball" .
+  echo "Wrote $tarball"
 }
 
 sh_single_quote() {
@@ -252,6 +324,8 @@ command=${1:-}
 shift || usage
 case "$command" in
   finalize) cmd_finalize "$@" ;;
+  seal) cmd_seal "$@" ;;
+  pack-fragment) cmd_pack_fragment "$@" ;;
   activate) cmd_activate "$@" ;;
   *) usage ;;
 esac

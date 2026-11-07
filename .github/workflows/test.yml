@@ -18,3 +18,6 @@ jobs:
 
       - name: Check the Pixiewood patch applies
         run: bash tests/test-pixiewood-patch.sh
+
+      - name: Check the package index and GTK targets
+        run: bash tests/test-index.sh

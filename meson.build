@@ -6,7 +6,7 @@ project(
   default_options: ['c_std=gnu11'],
 )
 
-# Every dependency() below is one an Android app such as OLLMchat links.
+# Every dependency() below is one the Android GTK distro publishes.
 # Meson builds the wraps and `meson install` publishes headers, shared
 # libraries, and pkg-config files into the sysroot. This probe is not installed.
 gtk_dep = dependency('gtk4')
@@ -38,7 +38,7 @@ deps = [
 ]
 
 # glib-networking exposes gioopenssl only after its subproject has run
-# override_dependency(). OLLMchat does the same before linking the app.
+# override_dependency(). Apps link that static module the same way.
 subproject('glib-networking')
 deps += dependency('gioopenssl')
 

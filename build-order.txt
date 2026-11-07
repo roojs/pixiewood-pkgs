@@ -1,0 +1,15 @@
+openssl
+libxml2
+sqlite3
+nghttp2
+libpsl
+fontconfig
+glib
+gee
+json-glib
+gtk
+libadwaita
+gtksourceview
+libsoup
+glib-networking
+webkitgtk-android
