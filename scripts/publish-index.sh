@@ -51,14 +51,13 @@ if ! abi="$(sysroot_map "$ROOT/cross/abi" "$arch")"; then
 fi
 
 created="${created:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
-stamp="$(printf '%s' "$created" | tr -d ':-')"
-tag="index-${gtk}-${stamp}"
+tag="$(release_version "$created")" || exit 1
 asset="index-${abi}-${gtk}.json"
 out="${out:-$tarball_dir/$asset}"
 
 built="$(mktemp)"
 : > "$built"
-notes="Android sysroot index for GTK target ${gtk}."
+notes="Release file ${tag}.tgz is the package list for ${gtk}. Package tarballs are separate assets named in that list. GitHub also attaches a source archive of this repository; that is not the release."
 changed=""
 while IFS=$'\t' read -r status name _kind _track _resolved _inputs _url; do
   [ -n "${status:-}" ] || continue
@@ -69,8 +68,8 @@ while IFS=$'\t' read -r status name _kind _track _resolved _inputs _url; do
     echo "Missing tarball: $tarball" >&2
     exit 1
   fi
-  printf '%s\thttps://github.com/%s/releases/download/%s/%s-%s.tar.xz\n' \
-    "$name" "$repo" "$tag" "$name" "$abi" >> "$built"
+  printf '%s\thttps://github.com/%s/releases/download/%s/%s-%s-%s.tar.xz\n' \
+    "$name" "$repo" "$tag" "$name" "$abi" "$gtk" >> "$built"
   changed="${changed} ${name}"
 done < "$plan"
 if [ -n "$changed" ]; then
@@ -88,28 +87,56 @@ fi
   --created "$created" \
   --out "$out"
 
-stage="$(mktemp -d)"
-cp "$out" "$stage/$asset"
+list="$(mktemp -d)"
+cp "$out" "$list/$asset"
+pkgs="$(mktemp -d)"
 while IFS=$'\t' read -r name _url; do
   [ -n "$name" ] || continue
-  cp "$tarball_dir/${name}-${abi}.tar.xz" "$stage/${name}-${abi}.tar.xz"
+  cp "$tarball_dir/${name}-${abi}.tar.xz" "$pkgs/${name}-${abi}-${gtk}.tar.xz"
 done < "$built"
 
-args=(release create "$tag" "$stage/$asset")
+# A later target on the same day adds its list. The archive stays a list.
+prev="$(mktemp -d)"
+if gh release download "$tag" --repo "$repo" --pattern "${tag}.tgz" --dir "$prev" >/dev/null 2>&1 \
+  && [ -f "$prev/${tag}.tgz" ]; then
+  old="$prev/old"
+  mkdir -p "$old"
+  tar -C "$old" -xzf "$prev/${tag}.tgz"
+  while IFS= read -r rel; do
+    case "$rel" in
+      *.json) ;;
+      *) continue ;;
+    esac
+    if [ ! -e "$list/$rel" ]; then
+      mkdir -p "$list/$(dirname "$rel")"
+      cp "$old/$rel" "$list/$rel"
+    fi
+  done < <(cd "$old" && find . -type f -printf '%P\n')
+fi
+archive="$(dirname "$out")/${tag}.tgz"
+(
+  cd "$list"
+  tar -czf "$archive" -- *
+)
+args=("$archive" "$list/$asset")
 while IFS=$'\t' read -r name _url; do
   [ -n "$name" ] || continue
-  args+=("$stage/${name}-${abi}.tar.xz")
+  args+=("$pkgs/${name}-${abi}-${gtk}.tar.xz")
 done < "$built"
-args+=(--repo "$repo" --title "Android sysroot index ${gtk} ${created}" --notes "$notes" --latest=false)
-if [ -n "${GITHUB_SHA:-}" ]; then
-  args+=(--target "$GITHUB_SHA")
+if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
+  gh release upload "$tag" "${args[@]}" --repo "$repo" --clobber
+else
+  create=(release create "$tag" "${args[@]}" --repo "$repo" --title "$tag" --notes "$notes" --latest=false)
+  if [ -n "${GITHUB_SHA:-}" ]; then
+    create+=(--target "$GITHUB_SHA")
+  fi
+  gh "${create[@]}"
 fi
-gh "${args[@]}"
 
 if gh release view latest --repo "$repo" >/dev/null 2>&1; then
-  gh release upload latest "$stage/$asset" --repo "$repo" --clobber
+  gh release upload latest "$list/$asset" --repo "$repo" --clobber
 else
-  gh release create latest "$stage/$asset" --repo "$repo" \
+  gh release create latest "$list/$asset" --repo "$repo" \
     --title "Latest Android sysroot indexes" \
     --notes "Current indexes. Unchanged packages point at earlier releases." \
     --latest

@@ -254,14 +254,22 @@ GH_LOG="$tmp/gh.log" PATH="$tmp/bin:$PATH" \
   --repo roojs/pixiewood-pkgs \
   --created 2026-11-07T00:00:00Z \
   --out "$tmp/published.json"
-grep -q 'index-Knowles.android-ime-20261107T000000Z' "$tmp/gh.log"
-grep -q 'gtk-arm64-v8a.tar.xz' "$tmp/gh.log"
+grep -q 'release create 1.261107' "$tmp/gh.log"
+grep -q '1.261107.tgz' "$tmp/gh.log"
+grep -q 'gtk-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/gh.log"
+tar -tzf "$tmp/1.261107.tgz" > "$tmp/release-list.txt"
+grep -qx 'index-arm64-v8a-Knowles.android-ime.json' "$tmp/release-list.txt"
+if grep -q '\.tar\.xz$' "$tmp/release-list.txt"; then
+  echo "release file contains a package tarball" >&2
+  exit 1
+fi
 grep -q 'release create latest' "$tmp/gh.log"
 if grep -q 'openssl-arm64-v8a.tar.xz' "$tmp/gh.log"; then
   echo "unchanged openssl was uploaded" >&2
   exit 1
 fi
-grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/index-Knowles.android-ime-20261107T000000Z/gtk-arm64-v8a.tar.xz' "$tmp/published.json"
+grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/published.json"
+grep -q '"version": "1.261107"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
 echo "index: ok"

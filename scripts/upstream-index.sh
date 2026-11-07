@@ -80,23 +80,38 @@ index_packages() {
   sed -n 's/^    {"name": "\([^"]*\)", "track": "\([^"]*\)", "resolved": "\([^"]*\)", "inputs": "\([^"]*\)", "url": "\([^"]*\)".*/\1\t\2\t\3\t\4\t\5/p' "$file"
 }
 
+# 1.yymmdd from a UTC stamp such as 2026-11-07T00:00:00Z.
+release_version() {
+  local stamp=$1 year month day
+  year="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\).*/\1/p')"
+  month="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\).*/\2/p')"
+  day="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\).*/\3/p')"
+  if [ -z "$year" ] || [ -z "$month" ] || [ -z "$day" ]; then
+    echo "Release stamp must start with YYYY-MM-DD: $stamp" >&2
+    return 1
+  fi
+  printf '1.%s%s%s\n' "${year:2:2}" "$month" "$day"
+}
+
 index_write() {
   local out=$1 abi=$2 arch=$3 gtk=$4 created=$5 list=$6
-  local api ndk pixiewood url rev patch target_line
+  local api ndk pixiewood url rev patch target_line version
   local name track resolved inputs pkg_url first
   api="$(distro_get api)"
   ndk="$(distro_get ndk)"
   pixiewood="$(distro_get pixiewood)"
+  version="$(release_version "$created")" || return 1
   if ! target_line="$(gtk_target_read "$ROOT/packages/gtk/targets" "$gtk")"; then
     return 1
   fi
   read -r url rev patch <<< "$target_line"
-  for value in "$abi" "$arch" "$gtk" "$created" "$url" "$rev" "$api" "$ndk" "$pixiewood"; do
+  for value in "$abi" "$arch" "$gtk" "$created" "$version" "$url" "$rev" "$api" "$ndk" "$pixiewood"; do
     index_check_token "$value"
   done
   {
     printf '{\n'
     printf '  "format": 1,\n'
+    printf '  "version": "%s",\n' "$version"
     printf '  "abi": "%s",\n' "$abi"
     printf '  "arch": "%s",\n' "$arch"
     printf '  "api": %s,\n' "$api"

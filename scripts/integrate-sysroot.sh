@@ -145,7 +145,7 @@ fi
 
 "$ROOT/scripts/sysroot-tree.sh" seal \
   --destdir "$dest" \
-  --version "$(sysroot_json_get created "$index_file")" \
+  --version "$(sysroot_json_get version "$index_file")" \
   --abi "$(sysroot_json_get abi "$index_file")" \
   --arch "$(sysroot_json_get arch "$index_file")" \
   --api "$(sysroot_json_get api "$index_file")" \
