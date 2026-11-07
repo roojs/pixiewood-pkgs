@@ -104,8 +104,58 @@ jobs:
             plan.tsv
             resolved.tsv
 
-  publish:
+  pins:
     needs: [targets, plan]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.record.outputs.sha }}
+      created: ${{ steps.record.outputs.created }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v7
+        continue-on-error: true
+        with:
+          pattern: upstream-plan-*
+          path: plans
+
+      - name: Commit the package list before the build
+        id: record
+        env:
+          ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
+        run: |
+          set -euo pipefail
+          created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          sha="$(git rev-parse HEAD)"
+          shopt -s nullglob
+          args=()
+          for plan in plans/upstream-plan-*/plan.tsv; do
+            if grep -q '^# publish=1$' "$plan"; then
+              args+=(--plan "$plan")
+            fi
+          done
+          if [ "${#args[@]}" -gt 0 ]; then
+            scripts/current-pins.sh write \
+              --arch "$ARCH" \
+              --created "$created" \
+              --repo "${GITHUB_REPOSITORY}" \
+              "${args[@]}"
+            git add current.pins
+            if ! git diff --cached --quiet; then
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git commit -m "Record the current package list"
+              git push origin "HEAD:${GITHUB_REF_NAME}"
+              sha="$(git rev-parse HEAD)"
+            fi
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "created=$created" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: [targets, plan, pins]
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     permissions:
@@ -116,6 +166,8 @@ jobs:
         gtk: ${{ fromJson(needs.targets.outputs.names) }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.pins.outputs.sha }}
 
       - uses: actions/download-artifact@v7
         id: plan
@@ -153,6 +205,8 @@ jobs:
         env:
           ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
           GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.pins.outputs.sha }}
+          RELEASE_CREATED: ${{ needs.pins.outputs.created }}
         run: |
           mkdir -p out/packages
           scripts/publish-index.sh \
@@ -160,4 +214,5 @@ jobs:
             --tarball-dir out/packages \
             --arch "$ARCH" \
             --gtk "${{ matrix.gtk }}" \
+            --created "$RELEASE_CREATED" \
             --out out/index.json

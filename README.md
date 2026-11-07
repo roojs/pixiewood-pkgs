@@ -13,7 +13,7 @@ Prebuilt Android packages for the GTK stack [Pixiewood](https://github.com/sp1ri
 
 ## Fetch a sysroot
 
-`latest` downloads the index for one GTK target from the moving release. `pin` uses one index file and does not look for a newer set. [How releases work](docs/releases.md) explains the source archive and the generated release file.
+`latest` reads `current.pins` and downloads the package tarballs named there. `pin` uses one index file and does not look for a newer set. [How releases work](docs/releases.md) explains the source archive, the package list, and the generated release file.
 
 ```bash
 scripts/integrate-sysroot.sh latest --dest "$HOME/pixiewood-sysroot"
@@ -23,11 +23,7 @@ scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysr
 
 The default target is native GTK (`gnome`), with no Android patch. `--gtk Knowles.android-ime` fetches that owner and branch, which is where the Android fixes live. Copy `share/pixiewood/INDEX.json` out of an assembled tree and pass it to `pin` to stay on that set.
 
-The index URL for the moving release is:
-
-`https://github.com/roojs/pixiewood-pkgs/releases/download/latest/index-<abi>-<gtk>.json`
-
-A day that publishes packages is release `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. See [docs/releases.md](docs/releases.md).
+A day that publishes packages is release `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. `current.pins` is committed before that build and lists every package tarball. See [docs/releases.md](docs/releases.md).
 
 ## What a package contains
 

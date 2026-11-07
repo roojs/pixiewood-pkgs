@@ -11,13 +11,27 @@ GitHub builds a source archive from the git tag with `git archive`. `.gitattribu
 /current.pins !export-ignore
 ```
 
-Every path is dropped except `current.pins`. That file is meant to be the package list itself. The copy that only stored index URLs was not the list, so it is not in the tree. Until `current.pins` is that list, the source archive is empty. It does not contain the build scripts, the package wraps, or the generated release file.
+Every path is dropped except `current.pins`. That file is the package list. Each line is one package and the tarball URL to download:
 
-`scripts/integrate-sysroot.sh latest` downloads the index from the moving release. `pin path/to/index.json` uses the file you pass.
+```
+# abi gtk release name track resolved inputs url
+arm64-v8a gnome 1.261107 gtk ae709f96... ae709f96... 40415ca3... https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-arm64-v8a-gnome.tar.xz
+```
+
+A package that did not change keeps the tarball URL from the earlier release. The line is not a pointer at `index-<abi>-<gtk>.json`.
+
+`scripts/integrate-sysroot.sh latest` reads this list and downloads those tarballs. `pin path/to/index.json` uses the file you pass.
 
 ## What a publishing day does
 
-On a day when something upstream changed, **Monitor upstreams** resolves every package for each name in `packages/gtk/targets`, builds the packages that changed, and uploads the release. A hand-started **Build Android sysroot** run does not publish.
+On a day when something upstream changed, **Monitor upstreams** does this in order:
+
+1. Resolve every package for each name in `packages/gtk/targets`.
+2. Write `current.pins` for the packages that will be published and commit it.
+3. Build from that commit.
+4. Upload the release. The release tag points at the pins commit, so the source archive of the tag is that list.
+
+A hand-started **Build Android sysroot** run does not publish and does not rewrite `current.pins`.
 
 ## Release file
 

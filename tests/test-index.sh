@@ -281,11 +281,40 @@ grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-
 grep -q '"version": "1.261107"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
-# The pointer file is not the package list, so it is not in the tree.
-if [ -e "$ROOT/current.pins" ]; then
-  echo "current.pins is still in the tree" >&2
+# current.pins is the package list for the build that is publishing.
+grep -q $'arm64-v8a\tgnome\t1.261107\topenssl\t' "$ROOT/current.pins"
+grep -q $'\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/openssl-arm64-v8a-gnome.tar.xz$' "$ROOT/current.pins"
+grep -q $'arm64-v8a\tKnowles.android-ime\t1.261107\tgtk\t' "$ROOT/current.pins"
+if grep -q 'index-.*\.json' "$ROOT/current.pins"; then
+  echo "current.pins points at an index instead of package tarballs" >&2
   exit 1
 fi
+"$ROOT/scripts/current-pins.sh" index --abi arm64-v8a --gtk gnome --out "$tmp/pins-index.json"
+grep -q '"version": "1.261107"' "$tmp/pins-index.json"
+grep -q 'openssl-arm64-v8a-gnome.tar.xz' "$tmp/pins-index.json"
+
+{
+  printf '%s\n' '# publish=1' '# gtk_target=gnome'
+  printf 'keep\topenssl\tfile\t3.0.8\thasho\tinputso\thttps://example.invalid/old/openssl.tar.xz\n'
+  printf 'build\tgtk\tgit\tandroid-ime\thashi\tinputsi\t-\n'
+} > "$tmp/keep-plan.tsv"
+"$ROOT/scripts/current-pins.sh" write \
+  --file "$tmp/pins" \
+  --arch aarch64 \
+  --created 2026-11-08T00:00:00Z \
+  --repo roojs/pixiewood-pkgs \
+  --plan "$tmp/keep-plan.tsv"
+printf '%s\n' $'x86_64\tx86_64\t1.261107\tglib\t2.90.0\thashg\tinputsg\thttps://example.invalid/glib.tar.xz' >> "$tmp/pins"
+"$ROOT/scripts/current-pins.sh" write \
+  --file "$tmp/pins" \
+  --arch aarch64 \
+  --created 2026-11-08T00:00:00Z \
+  --repo roojs/pixiewood-pkgs \
+  --plan "$tmp/keep-plan.tsv"
+grep -q $'arm64-v8a\tgnome\t1.261108\topenssl\t3.0.8\thasho\tinputso\thttps://example.invalid/old/openssl.tar.xz' "$tmp/pins"
+grep -q $'arm64-v8a\tgnome\t1.261108\tgtk\tandroid-ime\thashi\tinputsi\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gtk-arm64-v8a-gnome.tar.xz' "$tmp/pins"
+grep -q $'x86_64\tx86_64\t1.261107\tglib\t' "$tmp/pins"
+
 if grep -q 'tgz' "$ROOT/.gitattributes"; then
   echo "gitattributes names a generated release archive" >&2
   exit 1

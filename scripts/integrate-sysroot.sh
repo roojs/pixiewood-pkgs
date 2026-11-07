@@ -76,11 +76,12 @@ case "$mode" in
       abi="$(sysroot_map "$ROOT/cross/abi" "$arch")"
     fi
     abi="${abi:-arm64-v8a}"
-    if [ -z "$index_url" ]; then
-      index_url="https://github.com/${repo}/releases/download/latest/index-${abi}-${gtk}.json"
-    fi
     index_file="$(mktemp)"
-    fetch_url "$index_url" "$index_file"
+    if [ -n "$index_url" ]; then
+      fetch_url "$index_url" "$index_file"
+    else
+      "$ROOT/scripts/current-pins.sh" index --abi "$abi" --gtk "$gtk" --out "$index_file"
+    fi
     ;;
   pin)
     if [ -z "$index_file" ]; then

@@ -28,10 +28,9 @@ scripts/integrate-sysroot.sh latest --gtk Knowles.android-ime --dest "$HOME/pixi
 scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysroot"
 ```
 
-`latest` downloads `index-<abi>-<gtk>.json` from the moving release. That
-index lists each package URL, including previous release URLs for packages
-that did not change. The fetch then activates the tree. See
-[releases.md](releases.md).
+`latest` reads `current.pins` and downloads each package tarball named
+there, including earlier release URLs for packages that did not change.
+The fetch then activates the tree. See [releases.md](releases.md).
 `scripts/activate-sysroot.sh` rewrites `prefix=@PIXIEWOOD_SYSROOT@` in the
 `.pc` files and writes `share/pixiewood/sysroot.cross`.
 
