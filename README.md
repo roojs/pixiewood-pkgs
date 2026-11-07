@@ -29,7 +29,7 @@ A day that publishes packages is release `1.yymmdd` in UTC. 7 November 2026 is `
 
 Headers, shared libraries, pkg-config files, and GSettings schemas for one upstream project, installed with `prefix=/` and `libdir=lib/<abi>`. The `gtk` package also carries the Android Java glue. `glib-networking` carries the static `gioopenssl` module.
 
-Other packages in the default set: GLib, fontconfig, GDK, GTK, libadwaita, GtkSourceView, libxml2, sqlite, libgee, json-glib, nghttp2, libpsl, libsoup, OpenSSL, and webkitgtk-android. Pango and HarfBuzz are built with GTK. Icons, the CA bundle, shared-mime-info, and application Java classes stay with the app. webkitgtk-android is the roojs project and is pinned as `roojs`. GDK is its own package. A later GTK target reuses the first target's GDK when the `gdk/` trees match, and builds its own when they do not.
+Other packages in the default set: GLib, fontconfig, GDK, GTK, libadwaita, GtkSourceView, libxml2, sqlite, libgee, json-glib, nghttp2, libpsl, libsoup, OpenSSL, and webkitgtk-android. Pango and HarfBuzz are built with GTK. Icons, the CA bundle, shared-mime-info, and application Java classes stay with the app. webkitgtk-android is the roojs project and is pinned as `roojs`. GDK is its own package. A later GTK target reuses the first target's GDK when `gdk/` and `gtk/css` match, and builds its own when they do not.
 
 ## Build
 

@@ -374,17 +374,51 @@ subdir('gsk')
 subdir('gtk')
 
 subdir('tools')
+# config.h
+configure_file(output: 'config.h',
+               configuration: cdata)
 pkg_config.generate(libgtk,
 )
 EOF
 printf '%s\n' 'link_with: [libgtk_css, libgtk_svg, libgdk, libgsk ],' > "$part/gtk/meson.build"
+printf '%s\n' 'link_whole: [libgtk_static, libgtk_css, libgtk_svg, libgdk, libgsk ],' >> "$part/gtk/meson.build"
+printf '%s\n' 'link_with: [libgtk_static, libgtk_css, libgdk, libgsk ],' >> "$part/gtk/meson.build"
 printf '%s\n' 'link_with: [ libgdk, libgsk_f16c],' > "$part/gsk/meson.build"
 "$ROOT/scripts/gtk-part.sh" patch "$part"
 grep -q "pixiewood-part" "$part/meson.options"
 grep -q "pixiewood_part == 'gtk'" "$part/meson.build"
 grep -q 'gdk_link' "$part/gtk/meson.build"
 grep -q 'gdk_link' "$part/gsk/meson.build"
-grep -q "endif" "$part/meson.build"
+if grep -Eq 'link_(with|whole):[^#]*\blibgdk\b' "$part/gtk/meson.build" "$part/gsk/meson.build"; then
+  echo "fixture still links libgdk directly" >&2
+  exit 1
+fi
+cfg_line="$(grep -n "output: 'config.h'" "$part/meson.build" | head -n1 | cut -d: -f1)"
+pkg_line="$(grep -n 'pkg_config.generate(libgtk' "$part/meson.build" | head -n1 | cut -d: -f1)"
+mapfile -t skip_ifs < <(grep -n "if pixiewood_part != 'gdk'" "$part/meson.build" | cut -d: -f1)
+[ "${#skip_ifs[@]}" -eq 2 ]
+[ "$cfg_line" -gt "${skip_ifs[0]}" ]
+[ "$cfg_line" -lt "${skip_ifs[1]}" ]
+[ "$pkg_line" -gt "${skip_ifs[1]}" ]
+# Pack libgdk, keep a backend whose objects are not already in it, and skip css.
+pack_build="$tmp/gdk-build"
+pack_dest="$tmp/gdk-dest"
+mkdir -p "$pack_build/subprojects/gtk/gdk/android" "$pack_build/subprojects/gtk/gtk/css" "$pack_dest" "$pack_build/subprojects/gtk/gdk"
+printf 'gdk\n' > "$tmp/gdk.o"
+printf 'gdk\n' > "$tmp/android-kept.o"
+printf 'only-android\n' > "$tmp/android-extra.o"
+printf 'css\n' > "$tmp/css.o"
+ar rc "$pack_build/subprojects/gtk/gdk/libgdk.a" "$tmp/gdk.o" "$tmp/android-kept.o"
+ar rc "$pack_build/subprojects/gtk/gdk/android/libgdk-android.a" "$tmp/android-kept.o" "$tmp/android-extra.o"
+ar rc "$pack_build/subprojects/gtk/gtk/css/libgtk_css.a" "$tmp/css.o"
+printf 'config\n' > "$pack_build/subprojects/gtk/gdk/gdkconfig.h"
+"$ROOT/scripts/gtk-part.sh" pack "$pack_build" "$pack_dest" arm64-v8a
+[ -f "$pack_dest/lib/arm64-v8a/libgdk.a" ]
+[ -f "$pack_dest/lib/arm64-v8a/libgdk-android.a" ]
+[ ! -e "$pack_dest/lib/arm64-v8a/libgtk_css.a" ]
+[ -f "$pack_dest/include/gtk-4.0/gdk/gdkconfig.h" ]
+grep -q ' -lgdk -lgdk-android ' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
+grep -q -- '-I${includedir}/gtk-4.0' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
 
 src="$(mktemp -d)"
 git -C "$src" init -q -b main
@@ -407,6 +441,13 @@ hash_two="$(gdk_tree_hash "$src" "$two")"
 [ "$hash_one" != "$hash_two" ]
 hash_one_again="$(gdk_tree_hash "$src" "$one")"
 [ "$hash_one" = "$hash_one_again" ]
+mkdir -p "$src/gtk/css"
+printf 'int c;\n' > "$src/gtk/css/a.c"
+git -C "$src" add gtk/css/a.c
+git -C "$src" commit -q -m css
+three="$(git -C "$src" rev-parse HEAD)"
+hash_three="$(gdk_tree_hash "$src" "$three")"
+[ "$hash_three" != "$hash_two" ]
 
 {
   printf '%s\n' '# publish=1' '# gtk_target=gnome'

@@ -34,6 +34,10 @@ EOF
   if ! grep -q 'pixiewood_part' "$meson"; then
     local tmp
     tmp="$(mktemp)"
+    # config.h is written after the subdirs because gtk/meson.build still
+    # adds to cdata. A GDK-only build must still generate it: gtk/css and
+    # gdk include it, and the file is otherwise inside the skipped tail.
+    # pkg_config.generate(libgtk) stays in that tail.
     awk '
       BEGIN { state = 0 }
       state == 0 && $0 == "subdir('\''gdk/version'\'')" {
@@ -54,11 +58,24 @@ EOF
         state = 2
         next
       }
+      state == 2 && $0 ~ /^# config\.h[[:space:]]*$/ {
+        print "endif"
+        print
+        state = 3
+        next
+      }
+      state == 3 && index($0, "configuration: cdata)") {
+        print
+        print "if pixiewood_part != '\''gdk'\''"
+        state = 4
+        next
+      }
       { print }
       END {
-        if (state == 2) {
+        if (state == 4) {
           print "endif"
         } else {
+          print "gtk-part split stopped in state " state > "/dev/stderr"
           exit 2
         }
       }
@@ -81,29 +98,79 @@ EOF
       -e 's/link_with: \[libgtk_static, libgtk_css, libgdk, libgsk \],/link_with: [libgtk_static, libgtk_css, libgsk] + gdk_link,/' \
       -e 's/link_with: \[ libgdk, libgsk_f16c\],/link_with: [libgsk_f16c] + gdk_link,/' \
       "$file"
+    if grep -Eq 'link_(with|whole):[^#]*\blibgdk\b' "$file"; then
+      echo "GTK still links libgdk directly in $file" >&2
+      grep -nE 'link_(with|whole):[^#]*\blibgdk\b' "$file" >&2
+      return 1
+    fi
   done
+}
+
+archive_members() {
+  local archive=$1
+  if command -v ar >/dev/null 2>&1 && ar t "$archive" >/dev/null 2>&1; then
+    ar t "$archive" | LC_ALL=C sort -u
+    return 0
+  fi
+  if command -v llvm-ar >/dev/null 2>&1 && llvm-ar t "$archive" >/dev/null 2>&1; then
+    llvm-ar t "$archive" | LC_ALL=C sort -u
+    return 0
+  fi
+  return 1
 }
 
 pack_archives() {
   local builddir=$1 destdir=$2 abi=$3
-  local libdir="$destdir/lib/$abi" archive base name flags
+  local libdir="$destdir/lib/$abi" gdk_build libgdk archive base name flags header rel listed
   if [ ! -d "$builddir" ] || [ ! -d "$destdir" ]; then
     echo "GDK pack needs a build directory and a destdir" >&2
     return 1
   fi
-  mkdir -p "$libdir/pkgconfig"
-  flags=""
-  while IFS= read -r archive; do
-    [ -n "$archive" ] || continue
-    base="$(basename "$archive")"
-    cp -a "$archive" "$libdir/$base"
-    name="${base#lib}"
-    name="${name%.a}"
-    flags="$flags -l$name"
-  done < <(find "$builddir" -type f -name '*.a' | LC_ALL=C sort)
-  if [ -z "$flags" ]; then
-    echo "GDK build produced no static libraries in $builddir" >&2
+  gdk_build="$builddir/subprojects/gtk/gdk"
+  libgdk="$gdk_build/libgdk.a"
+  if [ ! -f "$libgdk" ]; then
+    libgdk="$(find "$builddir" -type f -name 'libgdk.a' ! -path '*.p/*' -print -quit)"
+  fi
+  if [ -z "$libgdk" ] || [ ! -f "$libgdk" ]; then
+    echo "GDK build produced no libgdk.a under $builddir" >&2
+    find "$builddir" -type f -name '*.a' >&2 || true
     return 1
+  fi
+  mkdir -p "$libdir/pkgconfig" "$destdir/include/gtk-4.0/gdk"
+  cp -a "$libgdk" "$libdir/libgdk.a"
+  flags=" -lgdk"
+  if listed="$(archive_members "$libgdk")"; then
+    while IFS= read -r archive; do
+      [ -n "$archive" ] || continue
+      [ "$archive" = "$libgdk" ] && continue
+      local members missing=0 member
+      if ! members="$(archive_members "$archive")"; then
+        missing=1
+      else
+        while IFS= read -r member; do
+          [ -n "$member" ] || continue
+          if ! grep -Fqx -- "$member" <<< "$listed"; then
+            missing=1
+            break
+          fi
+        done <<< "$members"
+      fi
+      if [ "$missing" -eq 1 ]; then
+        base="$(basename "$archive")"
+        cp -a "$archive" "$libdir/$base"
+        name="${base#lib}"
+        name="${name%.a}"
+        flags="$flags -l$name"
+      fi
+    done < <(find "$gdk_build" -type f -name 'lib*.a' ! -path '*.p/*' | LC_ALL=C sort)
+  fi
+  if [ -d "$gdk_build" ]; then
+    while IFS= read -r header; do
+      [ -n "$header" ] || continue
+      rel="${header#"$gdk_build"/}"
+      mkdir -p "$destdir/include/gtk-4.0/gdk/$(dirname "$rel")"
+      cp -a "$header" "$destdir/include/gtk-4.0/gdk/$rel"
+    done < <(find "$gdk_build" -type f -name '*.h' ! -path '*.p/*' | LC_ALL=C sort)
   fi
   cat > "$libdir/pkgconfig/pixiewood-gdk.pc" << EOF
 prefix=/

@@ -56,7 +56,7 @@ gdk_tree_hash() {
   local url=$1 rev=$2 cache dir hash
   cache="${PIXIEWOOD_GDK_CACHE:-${TMPDIR:-/tmp}/pixiewood-gdk-tree}"
   dir="$cache/$rev"
-  if [ ! -s "$dir/.gdk-hash" ]; then
+  if [ ! -s "$dir/.part-hash" ]; then
     rm -rf "$dir"
     mkdir -p "$dir"
     git -C "$dir" init -q
@@ -67,10 +67,15 @@ gdk_tree_hash() {
       echo "GTK checkout has no gdk directory: $rev" >&2
       return 1
     fi
-    hash="$(index_hash_paths "" "$dir/gdk" | sha256sum | awk '{print $1}')"
-    printf '%s\n' "$hash" > "$dir/.gdk-hash"
+    # GDK compiles against gtk/css. A css-only change still needs its own GDK.
+    local paths=("$dir/gdk")
+    if [ -d "$dir/gtk/css" ]; then
+      paths+=("$dir/gtk/css")
+    fi
+    hash="$(index_hash_paths "" "${paths[@]}" | sha256sum | awk '{print $1}')"
+    printf '%s\n' "$hash" > "$dir/.part-hash"
   fi
-  cat "$dir/.gdk-hash"
+  cat "$dir/.part-hash"
 }
 
 index_shared_hash() {
