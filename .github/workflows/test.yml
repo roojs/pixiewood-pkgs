@@ -30,3 +30,4 @@ jobs:
           bash tests/test-obtain-package.sh
           bash tests/test-checkout-cache.sh
           bash tests/test-packaged-deps.sh
+          bash tests/test-list-package-cache.sh

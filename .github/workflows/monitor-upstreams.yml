@@ -166,6 +166,7 @@ jobs:
           ref: ${{ needs.pins.outputs.sha }}
 
       - name: Restore package cache and checkouts
+        id: packages
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -174,6 +175,15 @@ jobs:
           key: packages-${{ github.event.inputs.arch || 'aarch64' }}-${{ github.run_id }}
           restore-keys: |
             packages-${{ github.event.inputs.arch || 'aarch64' }}-
+
+      - name: List restored packages
+        env:
+          CACHE_HIT: ${{ steps.packages.outputs.cache-hit }}
+          CACHE_MATCHED_KEY: ${{ steps.packages.outputs.cache-matched-key }}
+        run: |
+          echo "cache-hit=${CACHE_HIT:-false}"
+          echo "cache-matched-key=${CACHE_MATCHED_KEY:-none}"
+          scripts/list-package-cache.sh
 
       - uses: actions/download-artifact@v7
         id: plan
