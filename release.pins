@@ -123,7 +123,7 @@
       "name": "libjpeg-turbo",
       "track": "libjpeg-turbo-3.1.1.tar.gz",
       "resolved": "aadc97ea91f6ef078b0ae3a62bba69e008d9a7db19b34e4ac973b19b71b4217c",
-      "inputs": "8ad7dee1c38fabedce27dba313c23d2d3782126b8d636bdf2876acf9fe7180c8",
+      "inputs": "1f677ff44a0d3a4692cceca63b80b03c7403e32732e7ce6feb49ea53e3cd844f",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libjpeg-turbo-arm-v31-3.1.1.pixie"
     },
     {
