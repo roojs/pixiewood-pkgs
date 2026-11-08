@@ -41,11 +41,3 @@ Release or snapshot is the pin file. `release.pins` is the release list. `snapsh
 5. The GitHub release holds the `.pixie` files. The pin files stay in git.
 
 A line's URL can point at a `.pixie` file published by another repository. The Android IME branch and webkitgtk-android are separate projects, with their own branches and their own pin files.
-
-`.gitattributes` can limit the git source archive to the pin files:
-
-```
-* export-ignore
-/release.pins !export-ignore
-/snapshot.pins !export-ignore
-```
