@@ -87,7 +87,7 @@
       "name": "pixman",
       "track": "pixman-0.43.4.tar.gz",
       "resolved": "a0624db90180c7ddb79fc7a9151093dc37c646d8c38d3f232f767cf64b85a226",
-      "inputs": "e14a4dae922537d5bdc37f6028b6522cc10c7f84222342189c0bd7fecb12930e",
+      "inputs": "9cdaa668a58b62bc265f61af7b29a0d6880a1acabdb7e7e063979db8d0ef1d9d",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/pixman-arm-v31-0.43.4.pixie"
     },
     {
