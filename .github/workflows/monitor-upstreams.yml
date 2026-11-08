@@ -31,6 +31,8 @@ jobs:
       names: ${{ steps.list.outputs.names }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - id: list
         env:
@@ -70,6 +72,8 @@ jobs:
         gtk: ${{ fromJson(needs.targets.outputs.names) }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Resolve and compare
         id: result
@@ -114,6 +118,8 @@ jobs:
       created: ${{ steps.record.outputs.created }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v7
         continue-on-error: true
@@ -164,6 +170,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.pins.outputs.sha }}
+          fetch-depth: 0
 
       - name: Restore package cache and checkouts
         id: packages

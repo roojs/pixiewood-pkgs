@@ -248,10 +248,25 @@ for name in "${names[@]}"; do
   if [ "$dry" -eq 0 ]; then
     if [ "$kind" = pin ]; then
       if ! curl -fsSL "$loc" -o "$tarball"; then
-        echo "Release pin for $name did not download; building it" >&2
-        kind=build
+        echo "Release pin for $name did not download" >&2
+        rm -f "$tarball"
+        fallback="$("$ROOT/scripts/obtain-package.sh" \
+          --name "$name" \
+          --abi "$abi" \
+          --gtk "$gtk" \
+          --cache "$cache" \
+          --pins /dev/null \
+          --resolved "${resolved_of[$name]:-}" \
+          --inputs "${inputs_of[$name]:-}")"
+        IFS=$'\t' read -r kind loc <<< "$fallback"
+        if [ "${#proved[@]}" -eq 0 ]; then
+          echo "$kind $name alone"
+        else
+          echo "$kind $name on ${proved[*]}"
+        fi
       fi
-    elif [ "$kind" = cache ]; then
+    fi
+    if [ "$kind" = cache ]; then
       cp -a "$loc" "$tarball"
     fi
     if [ "$kind" = build ]; then

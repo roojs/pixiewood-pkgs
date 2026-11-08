@@ -29,6 +29,8 @@ jobs:
     timeout-minutes: 240
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Restore package cache and checkouts
         id: packages

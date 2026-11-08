@@ -89,8 +89,21 @@ while IFS= read -r name || [ -n "$name" ]; do
   echo "$kind $name"
   if [ "$kind" != build ]; then
     if ! take_tarball "$kind" "$loc" "$tarball"; then
-      echo "Could not use the $kind tarball for $name; building it" >&2
-      kind=build
+      echo "Could not use the $kind tarball for $name" >&2
+      rm -f "$tarball"
+      fallback="$("$ROOT/scripts/obtain-package.sh" \
+        --name "$name" \
+        --abi "$abi" \
+        --gtk "$gtk" \
+        --cache "$cache" \
+        --pins /dev/null \
+        --resolved "${resolved_of[$name]:-}" \
+        --inputs "${inputs_of[$name]:-}")"
+      IFS=$'\t' read -r kind loc <<< "$fallback"
+      echo "$kind $name"
+      if [ "$kind" = cache ]; then
+        cp -a "$loc" "$tarball"
+      fi
     fi
   fi
   if [ "$kind" = build ]; then
