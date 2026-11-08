@@ -186,7 +186,7 @@
       "name": "gtksourceview",
       "track": "gtksourceview-5.16.0.tar.xz",
       "resolved": "ab35d420102f3e8b055dd3b8642d3a48209f888189e6254d0ffb4b6a7e8c3566",
-      "inputs": "3816ebbd0aba51cdc5ff3a94302b908247e1f2ba8c668ed85506aeeedbae13c6",
+      "inputs": "d7966b389bd6259ac7214a1ba35478027eba634c264d9902fe364483c2df603a",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gtksourceview-arm-v31-5.16.0.pixie"
     },
     {
