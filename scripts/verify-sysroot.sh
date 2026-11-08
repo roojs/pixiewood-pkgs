@@ -32,7 +32,6 @@ required=(
   gioopenssl.pc
   gee-0.8.pc
   gtksourceview-5.pc
-  webkitgtk-android-1.pc
 )
 missing=()
 for name in "${required[@]}"; do

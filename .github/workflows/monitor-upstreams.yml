@@ -13,7 +13,7 @@ on:
           - x86_64
         default: aarch64
       gtk:
-        description: GTK target from packages/gtk/targets, or both. A branch target is owner.branch, for example Knowles.android-ime.
+        description: GTK target from packages/gtk/targets, or both. This distribution lists gnome.
         type: string
         default: both
       force:
@@ -199,7 +199,7 @@ jobs:
           pattern: upstream-plan-*
           path: plans
 
-      - name: Build gnome libraries first, then later GTK targets
+      - name: Build the GTK targets in packages/gtk/targets
         env:
           ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
           GH_TOKEN: ${{ github.token }}

@@ -66,7 +66,7 @@ url = https://example.invalid/nope.git
 revision = 0123456789abcdef0123456789abcdef01234567
 EOF
 
-"$ROOT/scripts/upstream-index.sh" resolve --packages "$tmp/packages" --gtk Knowles.android-ime --out "$tmp/resolved.tsv"
+"$ROOT/scripts/upstream-index.sh" resolve --packages "$tmp/packages" --gtk gnome --out "$tmp/resolved.tsv"
 awk -F '\t' '$1 == "demo" { print $4 }' "$tmp/resolved.tsv" | grep -qx "$first"
 awk -F '\t' '$1 == "filepkg" { print $4 }' "$tmp/resolved.tsv" | grep -qx aaaa
 awk -F '\t' '$1 == "pinned" { print $4 }' "$tmp/resolved.tsv" | grep -qx 0123456789abcdef0123456789abcdef01234567
@@ -75,12 +75,12 @@ echo two > "$repo/file"
 git -C "$repo" add file
 git -C "$repo" commit -q -m two
 second="$(git -C "$repo" rev-parse HEAD)"
-"$ROOT/scripts/upstream-index.sh" resolve --packages "$tmp/packages" --gtk Knowles.android-ime --out "$tmp/resolved2.tsv"
+"$ROOT/scripts/upstream-index.sh" resolve --packages "$tmp/packages" --gtk gnome --out "$tmp/resolved2.tsv"
 awk -F '\t' '$1 == "demo" { print $4 }' "$tmp/resolved2.tsv" | grep -qx "$second"
 # Editing the wrap changes inputs, not only the resolved commit.
 inputs1="$(awk -F '\t' '$1 == "demo" { print $5 }' "$tmp/resolved.tsv")"
 echo '# edited' >> "$tmp/packages/demo/demo.wrap"
-"$ROOT/scripts/upstream-index.sh" resolve --packages "$tmp/packages" --gtk Knowles.android-ime --out "$tmp/resolved3.tsv"
+"$ROOT/scripts/upstream-index.sh" resolve --packages "$tmp/packages" --gtk gnome --out "$tmp/resolved3.tsv"
 inputs3="$(awk -F '\t' '$1 == "demo" { print $5 }' "$tmp/resolved3.tsv")"
 [ "$inputs1" != "$inputs3" ]
 
@@ -97,7 +97,7 @@ prev="$tmp/prev.json"
     $'openssl\topenssl.tar.gz\thasho\tinputso\thttps://example.invalid/old/openssl.tar.xz' \
     $'glib\t2.90.0\thashg\tinputsg\thttps://example.invalid/old/glib.tar.xz' \
     $'gtk\tandroid-ime\thash-old\tinputsi\thttps://example.invalid/old/gtk.tar.xz') \
-  --abi arm64-v8a --arch aarch64 --gtk Knowles.android-ime --created 2026-11-01T00:00:00Z --out "$prev"
+  --abi arm64-v8a --arch aarch64 --gtk gnome --created 2026-11-01T00:00:00Z --out "$prev"
 
 "$ROOT/scripts/upstream-index.sh" plan \
   --resolved "$tmp/resolved-plan.tsv" \
@@ -127,14 +127,14 @@ grep -q '^# build=0$' "$tmp/same.tsv"
 "$ROOT/scripts/upstream-index.sh" assemble \
   --plan "$tmp/plan.tsv" \
   --built <(printf '%s\n' $'gtk\thttps://example.invalid/new/gtk.tar.xz') \
-  --abi arm64-v8a --arch aarch64 --gtk Knowles.android-ime \
+  --abi arm64-v8a --arch aarch64 --gtk gnome \
   --created 2026-11-07T00:00:00Z \
   --out "$tmp/index.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/index.json"
 grep -q 'https://example.invalid/new/gtk.tar.xz' "$tmp/index.json"
-grep -q '"gtk_target": "Knowles.android-ime"' "$tmp/index.json"
-grep -q 'Knowles/gtk.git' "$tmp/index.json"
-grep -q '"gtk_track": "android-ime"' "$tmp/index.json"
+grep -q '"gtk_target": "gnome"' "$tmp/index.json"
+grep -q 'gitlab.gnome.org/GNOME/gtk.git' "$tmp/index.json"
+grep -q '"gtk_track": "ae709f962a51f9108a1e6381bcfbd05bbaecc840"' "$tmp/index.json"
 if grep -q 'https://example.invalid/old/gtk.tar.xz' "$tmp/index.json"; then
   echo "changed gtk kept the previous URL" >&2
   exit 1
@@ -169,14 +169,14 @@ printf '%s\n' 'prefix=/' 'Name: gtk4' 'Version: 4.0.0' > "$pkg/lib/$abi/pkgconfi
   --list <(printf '%s\n' \
     "glib"$'\t'"2.90.0"$'\t'"hashg"$'\t'"inputsg"$'\t'"$tmp/glib.tar.xz" \
     "gtk"$'\t'"android-ime"$'\t'"hashi"$'\t'"inputsi"$'\t'"$tmp/gtk.tar.xz") \
-  --abi "$abi" --arch aarch64 --gtk Knowles.android-ime --created 2026-11-07T00:00:00Z \
+  --abi "$abi" --arch aarch64 --gtk gnome --created 2026-11-07T00:00:00Z \
   --out "$tmp/local-index.json"
 grep -q '"version": "1.261107"' "$tmp/local-index.json"
 
 "$ROOT/scripts/upstream-index.sh" write \
   --list <(printf '%s\n' \
     "openssl"$'\t'"3.0.8"$'\t'"hasho"$'\t'"inputso"$'\t'"$tmp/glib.tar.xz") \
-  --abi "$abi" --arch aarch64 --gtk Knowles.android-ime --created deps-libxml2 \
+  --abi "$abi" --arch aarch64 --gtk gnome --created deps-libxml2 \
   --out "$tmp/deps-index.json"
 grep -q '"version": "deps-libxml2"' "$tmp/deps-index.json"
 grep -q '"created": "deps-libxml2"' "$tmp/deps-index.json"
@@ -184,7 +184,7 @@ grep -q '"created": "deps-libxml2"' "$tmp/deps-index.json"
 "$ROOT/scripts/integrate-sysroot.sh" pin "$tmp/local-index.json" --dest "$tmp/sysroot"
 grep -q "^prefix=$tmp/sysroot$" "$tmp/sysroot/lib/$abi/pkgconfig/glib-2.0.pc"
 grep -q "^prefix=$tmp/sysroot$" "$tmp/sysroot/lib/$abi/pkgconfig/gtk4.pc"
-grep -q '"gtk_target": "Knowles.android-ime"' "$tmp/sysroot/share/pixiewood/MANIFEST.json"
+grep -q '"gtk_target": "gnome"' "$tmp/sysroot/share/pixiewood/MANIFEST.json"
 test -f "$tmp/sysroot/share/pixiewood/INDEX.json"
 test -f "$tmp/sysroot/share/pixiewood/gtk-android-java/org/gtk/android/ToplevelActivity.java"
 
@@ -259,15 +259,15 @@ GH_LOG="$tmp/gh.log" PATH="$tmp/bin:$PATH" \
   --plan "$tmp/plan.tsv" \
   --tarball-dir "$tmp/tb" \
   --arch aarch64 \
-  --gtk Knowles.android-ime \
+  --gtk gnome \
   --repo roojs/pixiewood-pkgs \
   --created 2026-11-07T00:00:00Z \
   --out "$tmp/published.json"
 grep -q 'release create 1.261107' "$tmp/gh.log"
 grep -q '1.261107.tgz' "$tmp/gh.log"
-grep -q 'gtk-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/gh.log"
+grep -q 'gtk-arm64-v8a-gnome.tar.xz' "$tmp/gh.log"
 tar -tzf "$tmp/1.261107.tgz" > "$tmp/release-list.txt"
-grep -qx 'index-arm64-v8a-Knowles.android-ime.json' "$tmp/release-list.txt"
+grep -qx 'index-arm64-v8a-gnome.json' "$tmp/release-list.txt"
 if grep -q '\.tar\.xz$' "$tmp/release-list.txt"; then
   echo "release file contains a package tarball" >&2
   exit 1
@@ -277,28 +277,19 @@ if grep -q 'openssl-arm64-v8a.tar.xz' "$tmp/gh.log"; then
   echo "unchanged openssl was uploaded" >&2
   exit 1
 fi
-grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/published.json"
+grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-arm64-v8a-gnome.tar.xz' "$tmp/published.json"
 grep -q '"version": "1.261107"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
 # current.pins is the package list for the build that is publishing.
 grep -q $'arm64-v8a\tgnome\t1.261107\topenssl\t' "$ROOT/current.pins"
 grep -q $'\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/openssl-arm64-v8a-gnome.tar.xz$' "$ROOT/current.pins"
-grep -q $'arm64-v8a\tKnowles.android-ime\t1.261107\tgtk\tandroid-ime\t' "$ROOT/current.pins"
-if grep $'Knowles.android-ime\t' "$ROOT/current.pins" | awk -F '\t' '$4 != "gtk" && $4 != "gdk" { found = 1 } END { exit !found }'; then
-  echo "Knowles.android-ime is pinned for a library other than gtk or gdk" >&2
+if grep -q 'Knowles.android-ime' "$ROOT/current.pins" "$ROOT/packages/gtk/targets" "$ROOT/build-order.txt"; then
+  echo "the IME target is still in this distribution" >&2
   exit 1
 fi
-if ! grep $'Knowles.android-ime\t1.261107\tgtk\t' "$ROOT/current.pins" \
-  | grep -q 'gtk-arm64-v8a-Knowles.android-ime.tar.xz'; then
-  echo "IME gtk does not point at its own tarball" >&2
-  exit 1
-fi
-"$ROOT/scripts/current-pins.sh" index --abi arm64-v8a --gtk Knowles.android-ime --out "$tmp/ime-index.json"
-grep -q 'openssl-arm64-v8a-gnome.tar.xz' "$tmp/ime-index.json"
-grep -q 'gtk-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/ime-index.json"
-if grep -q 'libadwaita-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/ime-index.json"; then
-  echo "IME index rebuilt a library other than gtk" >&2
+if grep -q 'webkitgtk-android' "$ROOT/current.pins" "$ROOT/build-order.txt" "$ROOT/packages/probes"; then
+  echo "webkitgtk-android is still in this distribution" >&2
   exit 1
 fi
 if grep -q 'index-.*\.json' "$ROOT/current.pins"; then
@@ -308,25 +299,20 @@ fi
 "$ROOT/scripts/current-pins.sh" index --abi arm64-v8a --gtk gnome --out "$tmp/pins-index.json"
 grep -q '"version": "1.261107"' "$tmp/pins-index.json"
 grep -q 'openssl-arm64-v8a-gnome.tar.xz' "$tmp/pins-index.json"
-grep -q 'webkitgtk-android-arm64-v8a-roojs.tar.xz' "$tmp/pins-index.json"
-grep -q 'webkitgtk-android-arm64-v8a-roojs.tar.xz' "$tmp/ime-index.json"
-if awk -F '\t' '$2 == "gnome" && $4 == "webkitgtk-android" { found = 1 } END { exit !found }' "$ROOT/current.pins"; then
-  echo "webkitgtk-android is pinned as gnome" >&2
+if grep -q 'webkitgtk-android' "$tmp/pins-index.json"; then
+  echo "gnome index still lists webkitgtk-android" >&2
   exit 1
 fi
-grep -q $'arm64-v8a\troojs\t1.261107\twebkitgtk-android\t' "$ROOT/current.pins"
 
 {
   printf '%s\n' '# abi gtk release name track resolved inputs url'
   printf '%s\n' $'arm64-v8a\tgnome\t1.261107\tgdk\tgnome-rev\tgdkr\tsame-gdk\thttps://example.invalid/gdk-gnome.tar.xz'
   printf '%s\n' $'arm64-v8a\tgnome\t1.261107\tgtk\tgnome-rev\tgtkr\tgtk-in\thttps://example.invalid/gtk-gnome.tar.xz'
-  printf '%s\n' $'arm64-v8a\troojs\t1.261107\twebkitgtk-android\tv0.1.5\twr\twi\thttps://example.invalid/webkit-roojs.tar.xz'
 } > "$tmp/gdk-pins"
 {
   printf '%s\n' '# publish=1' '# gtk_target=Knowles.android-ime'
   printf '%s\n' $'build\tgdk\tgit\tandroid-ime\time-gdk\tsame-gdk\t-'
   printf '%s\n' $'build\tgtk\tgit\tandroid-ime\time-gtk\tgtk-in\t-'
-  printf '%s\n' $'keep\twebkitgtk-android\tgit\tv0.1.5\twr\twi\t-'
 } > "$tmp/gdk-same.tsv"
 "$ROOT/scripts/current-pins.sh" apply --plan "$tmp/gdk-same.tsv" --out "$tmp/gdk-same-built.tsv" --arch aarch64 --file "$tmp/gdk-pins" 2> "$tmp/gdk-same.out"
 grep -q 'gdk matches gnome' "$tmp/gdk-same.out"
@@ -343,7 +329,6 @@ grep -q $'^build\tgdk\t' "$tmp/gdk-diff-built.tsv"
   printf '%s\n' '# publish=1' '# gtk_target=gnome'
   printf '%s\n' $'build\tgdk\tgit\tgnome-rev\tgdkr\tsame-gdk\t-'
   printf '%s\n' $'build\tgtk\tgit\tgnome-rev\tgtkr\tgtk-in\t-'
-  printf '%s\n' $'build\twebkitgtk-android\tgit\tv0.1.5\twr\twi\t-'
 } > "$tmp/gnome-webkit.tsv"
 "$ROOT/scripts/current-pins.sh" write \
   --file "$tmp/owner-pins" \
@@ -352,12 +337,10 @@ grep -q $'^build\tgdk\t' "$tmp/gdk-diff-built.tsv"
   --repo roojs/pixiewood-pkgs \
   --plan "$tmp/gnome-webkit.tsv" \
   --plan "$tmp/gdk-diff.tsv"
-grep -q $'arm64-v8a\troojs\t1.261108\twebkitgtk-android\t' "$tmp/owner-pins"
-grep -q 'webkitgtk-android-arm64-v8a-roojs.tar.xz' "$tmp/owner-pins"
 grep -q $'arm64-v8a\tKnowles.android-ime\t1.261108\tgdk\t' "$tmp/owner-pins"
 grep -q 'gdk-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/owner-pins"
-if awk -F '\t' '$2 == "gnome" && $4 == "webkitgtk-android" { found = 1 } END { exit !found }' "$tmp/owner-pins"; then
-  echo "written pins still label webkit as gnome" >&2
+if grep -q 'webkitgtk-android' "$tmp/owner-pins"; then
+  echo "written pins still name webkitgtk-android" >&2
   exit 1
 fi
 

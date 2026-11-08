@@ -23,4 +23,3 @@ libadwaita
 gtksourceview
 libsoup
 glib-networking
-webkitgtk-android

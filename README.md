@@ -6,10 +6,9 @@ Prebuilt Android packages for the GTK stack [Pixiewood](https://github.com/sp1ri
 
 | Target | Source | What it tracks |
 | --- | --- | --- |
-| `gnome` (default) | https://gitlab.gnome.org/GNOME/gtk.git | pinned upstream commit, no Android patch |
-| `Knowles.android-ime` | https://gitlab.gnome.org/Knowles/gtk.git | branch `android-ime` |
+| `gnome` | https://gitlab.gnome.org/GNOME/gtk.git | pinned upstream commit, no Android patch |
 
-`packages/gtk/targets` is the list. A branch target is named `owner.branch`, so another fork is another line. Native GTK stays the default and is built as upstream publishes it. Android fixes come from `Knowles.android-ime`. [docs/plans.md](docs/plans.md) is the plan for which projects this repository keeps building. [docs/own-distribution.md](docs/own-distribution.md) is how an application checks out a distribution and downloads its `.pixie` bundles, and how another project publishes its own.
+`packages/gtk/targets` lists that one target. The Android IME branch and webkitgtk-android are separate distributions. [docs/plans.md](docs/plans.md) records that split. [docs/own-distribution.md](docs/own-distribution.md) is how an application checks out a distribution and downloads its `.pixie` bundles, and how another project publishes its own.
 
 ## Fetch a sysroot
 
@@ -17,11 +16,10 @@ Prebuilt Android packages for the GTK stack [Pixiewood](https://github.com/sp1ri
 
 ```bash
 scripts/integrate-sysroot.sh latest --dest "$HOME/pixiewood-sysroot"
-scripts/integrate-sysroot.sh latest --gtk Knowles.android-ime --dest "$HOME/pixiewood-sysroot"
 scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysroot"
 ```
 
-The default target is native GTK (`gnome`), with no Android patch. `--gtk Knowles.android-ime` fetches that owner and branch, which is where the Android fixes live. Copy `share/pixiewood/INDEX.json` out of an assembled tree and pass it to `pin` to stay on that set.
+The target is native GTK (`gnome`), with no Android patch. Copy `share/pixiewood/INDEX.json` out of an assembled tree and pass it to `pin` to stay on that set.
 
 A day that publishes packages is release `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. `current.pins` is committed before that build and lists every package tarball. See [docs/releases.md](docs/releases.md).
 
@@ -29,17 +27,16 @@ A day that publishes packages is release `1.yymmdd` in UTC. 7 November 2026 is `
 
 Headers, shared libraries, pkg-config files, and GSettings schemas for one upstream project, installed with `prefix=/` and `libdir=lib/<abi>`. The `gtk` package also carries the Android Java glue. `glib-networking` carries the static `gioopenssl` module.
 
-Other packages in the default set: GLib, fontconfig, GDK, GTK, libadwaita, GtkSourceView, libxml2, sqlite, libgee, json-glib, nghttp2, libpsl, libsoup, OpenSSL, and webkitgtk-android. Pango and HarfBuzz are built with GTK. Icons, the CA bundle, shared-mime-info, and application Java classes stay with the app. webkitgtk-android is the roojs project and is pinned as `roojs`. GDK is its own package. A later GTK target reuses the first target's GDK when `gdk/` and `gtk/css` match, and builds its own when they do not.
+Other packages in the set: GLib, fontconfig, GDK, GTK, libadwaita, GtkSourceView, libxml2, sqlite, libgee, json-glib, nghttp2, libpsl, libsoup, OpenSSL, Pango, Cairo, HarfBuzz, and the other libraries in `build-order.txt`. Icons, the CA bundle, shared-mime-info, and application Java classes stay with the app. webkitgtk-android and the Android IME branch are not in this set.
 
 ## Build
 
 ```bash
 scripts/install-sdk.sh
 scripts/build-sysroot.sh --arch aarch64
-scripts/build-sysroot.sh --gtk Knowles.android-ime --arch aarch64
 ```
 
-`scripts/build-sysroot.sh --only gtk` builds one package of native GTK. `--gtk Knowles.android-ime` selects that owner and branch. Pins live in `packages/`. Cross files live in `cross/`. NDK and API levels are in `android-distro.conf`.
+`scripts/build-sysroot.sh --only gtk` builds one package of native GTK. Pins live in `packages/`. Cross files live in `cross/`. NDK and API levels are in `android-distro.conf`.
 
 A push does not publish packages. Once a day, **Monitor upstreams** resolves every package for each name in `packages/gtk/targets`. It uploads tarballs only for packages whose upstream revision or local inputs changed, writes an index that reuses the previous URL for the rest, and skips the release entirely when nothing changed. **Build Android sysroot** can still be started by hand for one combined tree.
 

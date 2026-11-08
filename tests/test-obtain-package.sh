@@ -8,20 +8,34 @@ trap 'rm -rf "$tmp"' EXIT
 
 bash -n "$ROOT/scripts/obtain-package.sh"
 
-decision="$("$ROOT/scripts/obtain-package.sh" --name openssl --abi arm64-v8a --gtk gnome)"
-case "$decision" in
-  pin$'\t'https://*) ;;
-  *) echo "openssl should come from the release pins: $decision" >&2; exit 1 ;;
-esac
+pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
+openssl_recipe_current=0
+if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+  openssl_recipe_current=1
+fi
 
-# A cache entry does not replace a current pin.
+decision="$("$ROOT/scripts/obtain-package.sh" --name openssl --abi arm64-v8a --gtk gnome)"
+if [ "$openssl_recipe_current" -eq 1 ]; then
+  case "$decision" in
+    pin$'\t'https://*) ;;
+    *) echo "openssl should come from the release pins: $decision" >&2; exit 1 ;;
+  esac
+else
+  [ "$decision" = build ]
+fi
+
+# A cache entry does not replace a current pin. A stale pin falls through to the cache.
 mkdir -p "$tmp/cache/arm64-v8a"
 echo cached > "$tmp/cache/arm64-v8a/openssl.tar.xz"
 decision="$("$ROOT/scripts/obtain-package.sh" --name openssl --abi arm64-v8a --gtk gnome --cache "$tmp/cache")"
-case "$decision" in
-  pin$'\t'*) ;;
-  *) echo "cache replaced a current openssl pin: $decision" >&2; exit 1 ;;
-esac
+if [ "$openssl_recipe_current" -eq 1 ]; then
+  case "$decision" in
+    pin$'\t'*) ;;
+    *) echo "cache replaced a current openssl pin: $decision" >&2; exit 1 ;;
+  esac
+else
+  [ "$decision" = "cache"$'\t'"$tmp/cache/arm64-v8a/openssl.tar.xz" ]
+fi
 
 # No pin: the cache is the package.
 decision="$("$ROOT/scripts/obtain-package.sh" --name openssl --abi arm64-v8a --gtk gnome --cache "$tmp/cache" --pins "$tmp/missing.pins")"

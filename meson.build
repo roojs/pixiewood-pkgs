@@ -34,7 +34,6 @@ deps = [
   dependency('libcrypto'),
   dependency('libssl'),
   dependency('libpsl'),
-  dependency('webkitgtk-android-1'),
 ]
 
 # glib-networking exposes gioopenssl only after its subproject has run

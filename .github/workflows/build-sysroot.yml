@@ -11,7 +11,7 @@ on:
           - x86_64
         default: aarch64
       gtk:
-        description: GTK target from packages/gtk/targets. Default gnome. A branch target is owner.branch, for example Knowles.android-ime.
+        description: GTK target from packages/gtk/targets. This distribution lists gnome.
         type: string
         default: gnome
 

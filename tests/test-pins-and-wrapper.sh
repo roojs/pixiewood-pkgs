@@ -42,13 +42,15 @@ fi
 # shellcheck source=../scripts/gtk-target.sh
 source "$ROOT/scripts/gtk-target.sh"
 read -r gnome_url gnome_rev gnome_patch < <(gtk_target_read "$ROOT/packages/gtk/targets" gnome)
-read -r ime_url ime_rev ime_patch < <(gtk_target_read "$ROOT/packages/gtk/targets" Knowles.android-ime)
 [ "$gnome_url" = "https://gitlab.gnome.org/GNOME/gtk.git" ]
 [ "$gnome_rev" = "$(revision_of "$ROOT/packages/gtk/gtk.wrap")" ]
 [ "$gnome_patch" = "-" ]
-[ "$ime_url" = "https://gitlab.gnome.org/Knowles/gtk.git" ]
-[ "$ime_rev" = android-ime ]
-[ "$ime_patch" = "-" ]
+if gtk_target_read "$ROOT/packages/gtk/targets" Knowles.android-ime >/dev/null 2>&1; then
+  echo "this distribution still lists the IME target" >&2
+  exit 1
+fi
+ime_url=https://gitlab.gnome.org/Knowles/gtk.git
+ime_rev=android-ime
 wrap_copy="$(mktemp)"
 cp "$ROOT/packages/gtk/gtk.wrap" "$wrap_copy"
 gtk_target_apply_wrap "$wrap_copy" "$ime_url" "$ime_rev"

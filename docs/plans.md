@@ -6,18 +6,18 @@ The GNOME Android stack through GTK is proved as packages in this repository. Th
 
 This repository is the distribution of the shared Android libraries an app links: OpenSSL through GTK in `build-order.txt`, for the `gnome` target. That includes Pango, Cairo, HarfBuzz, GDK, and GTK from upstream GNOME. Those projects do not publish an Android sysroot package. The dated release `1.yymmdd` holds the `.pixie` bundles. `current.pins` in git names that release.
 
-A hand-started **Build Android sysroot** for `gnome` and aarch64 is the next build. It reuses the proved tarballs and compiles the packages that prove did not reach: libadwaita, GtkSourceView, libsoup, glib-networking, and webkitgtk-android. Those five stay here until the projects below publish their own packages.
+A hand-started **Build Android sysroot** for `gnome` and aarch64 is the next build. It reuses the proved tarballs and compiles the packages that prove did not reach: libadwaita, GtkSourceView, libsoup, and glib-networking.
 
 ## What other projects can release themselves
 
-`Knowles.android-ime` and `webkitgtk-android` are forks we maintain. Their Android package can be built in the project that owns the code and uploaded to that project's releases.
+`Knowles.android-ime` and `webkitgtk-android` are not packages in this repository. Their Android package is built in the project that owns the code and uploaded to that project's releases.
 
 - The Android IME branch lives at `Knowles/gtk` branch `android-ime`. A workflow there can build the `gdk` and `gtk` packages against a pixiewood-pkgs sysroot and upload `gdk-*.pixie` and `gtk-*.pixie`.
-- webkitgtk-android lives at `roojs/webkitgtk-android`, currently wrap revision `v0.1.5`. A workflow there can build that one package and upload its `.pixie` bundle.
+- webkitgtk-android lives at `roojs/webkitgtk-android`. A workflow there can build that one package and upload its `.pixie` bundle.
 
-This repository's `current.pins` names the release that holds each `.pixie` bundle. A line for a package built in another repository names that repository too. The IME target in `packages/gtk/targets` and the webkit wrap stay as the record of which revision the distro release uses. The compile moves to the project. [How to implement your own distribution](own-distribution.md) is the checkout, pin, and release layout.
+This repository's `current.pins` names the release that holds each `.pixie` bundle for the GNOME stack. It does not name the IME target or webkitgtk-android. [How to implement your own distribution](own-distribution.md) is the checkout, pin, and release layout.
 
-Until those workflows exist, this repository keeps building the IME target and webkitgtk-android. Adding the toolkit to the other repository comes after the GNOME sysroot build, because that build is what their workflow consumes.
+`packages/gtk/targets` lists `gnome` only. `build-order.txt` ends at glib-networking.
 
 ## Release or main
 

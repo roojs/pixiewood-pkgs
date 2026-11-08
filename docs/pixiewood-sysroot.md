@@ -18,13 +18,10 @@ the glue is not inside a wrap anymore:
    extracted tree (that directory contains `org/gtk/android`).
 
 Fetch a set first. `latest` follows native GTK (`gnome`), which is upstream
-GNOME with no Android patch. `--gtk Knowles.android-ime` selects that
-owner and branch, where those fixes live. A branch target is named
-`owner.branch`. `pin` keeps a single index file:
+GNOME with no Android patch. `pin` keeps a single index file:
 
 ```bash
 scripts/integrate-sysroot.sh latest --dest "$HOME/pixiewood-sysroot"
-scripts/integrate-sysroot.sh latest --gtk Knowles.android-ime --dest "$HOME/pixiewood-sysroot"
 scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysroot"
 ```
 
@@ -129,9 +126,9 @@ does not delete extra files already in the destdir.
 
 Dependencies listed in `MANIFEST.json` no longer need source wraps. The
 application meson targets stay as they are: `dependency('gtk4')`,
-`dependency('gioopenssl')`, `dependency('webkitgtk-android-1')`, and the
-others resolve through pkg-config. The manifest's `gtk_target` is `gnome`
-for native GTK, or `Knowles.android-ime` for that owner and branch.
+`dependency('gioopenssl')`, and the others in this sysroot resolve through
+pkg-config. The manifest's `gtk_target` is `gnome`. webkitgtk-android is a
+separate distribution.
 
 Stop pointing `glib-mkenums` at `subprojects/glib` once GLib is not a
 subproject. The activated cross file uses the script from the sysroot when
@@ -142,8 +139,8 @@ Keep the pieces this distro does not build: icon themes, shared-mime-info,
 CA certificates, and the application's own Java classes.
 
 `g_set_user_dirs` is already compiled into the GLib package. Native GTK
-(`gnome`) is upstream GNOME and does not get an Android patch. Those fixes
-are the `Knowles.android-ime` target.
+(`gnome`) is upstream GNOME. Android IME fixes are published from that
+project's own distribution.
 
 ## Why the pkg-config wrapper exists
 

@@ -103,8 +103,8 @@ package_wrap_owner() {
 }
 
 # Column in current.pins. gtk and gdk follow the GTK target. A package whose
-# git owner is this distribution (roojs/webkitgtk-android) is pinned as that
-# owner. Everything else stays on the first GTK target.
+# git owner is this distribution is pinned as that owner. Everything else
+# stays on the first GTK target.
 package_pin_label() {
   local name=$1 gtk_variant=$2 repo=${3:-${GITHUB_REPOSITORY:-roojs/pixiewood-pkgs}} owner
   if [ "$name" = gtk ] || [ "$name" = gdk ]; then

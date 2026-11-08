@@ -4,4 +4,3 @@
 # A branch target is named <repo-owner>.<branch>. Another fork is another line.
 # A pinned commit may use a short name. gnome is upstream GNOME with no Android patch.
 gnome https://gitlab.gnome.org/GNOME/gtk.git ae709f962a51f9108a1e6381bcfbd05bbaecc840 -
-Knowles.android-ime https://gitlab.gnome.org/Knowles/gtk.git android-ime -

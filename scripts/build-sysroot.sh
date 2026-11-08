@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # Cross-compile Android GTK packages.
-# Default GTK is native upstream GNOME, with no Android patch.
-# --gtk Knowles.android-ime builds that owner.branch, which has those fixes.
-# Branch targets are named <repo-owner>.<branch> in packages/gtk/targets.
+# GTK is native upstream GNOME, the only target in packages/gtk/targets.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

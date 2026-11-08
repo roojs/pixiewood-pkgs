@@ -9,7 +9,12 @@ trap 'rm -rf "$tmp"' EXIT
 bash -n "$ROOT/scripts/prove-package.sh"
 
 "$ROOT/scripts/prove-package.sh" --dry-run > "$tmp/default.out"
-grep -qx 'pin openssl alone' "$tmp/default.out"
+pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
+if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+  grep -qx 'pin openssl alone' "$tmp/default.out"
+else
+  grep -qx 'build openssl alone' "$tmp/default.out"
+fi
 grep -q '^build glib on ' "$tmp/default.out"
 grep -q '^build pango on ' "$tmp/default.out"
 grep -q '^build gdk on ' "$tmp/default.out"
@@ -31,12 +36,28 @@ awk '
 ' "$tmp/default.out"
 
 "$ROOT/scripts/prove-package.sh" --dry-run --packages sqlite3 > "$tmp/one.out"
-grep -qx 'pin sqlite3 alone' "$tmp/one.out"
+if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/sqlite3" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+  grep -qx 'pin sqlite3 alone' "$tmp/one.out"
+else
+  grep -qx 'build sqlite3 alone' "$tmp/one.out"
+fi
 
 "$ROOT/scripts/prove-package.sh" --dry-run --packages 'sqlite3, nghttp2,libpsl' > "$tmp/stack.out"
-grep -qx 'pin sqlite3 alone' "$tmp/stack.out"
-grep -qx 'pin nghttp2 on sqlite3' "$tmp/stack.out"
-grep -qx 'pin libpsl on sqlite3 nghttp2' "$tmp/stack.out"
+if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/sqlite3" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+  grep -qx 'pin sqlite3 alone' "$tmp/stack.out"
+else
+  grep -qx 'build sqlite3 alone' "$tmp/stack.out"
+fi
+if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/nghttp2" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+  grep -qx 'pin nghttp2 on sqlite3' "$tmp/stack.out"
+else
+  grep -qx 'build nghttp2 on sqlite3' "$tmp/stack.out"
+fi
+if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/libpsl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+  grep -qx 'pin libpsl on sqlite3 nghttp2' "$tmp/stack.out"
+else
+  grep -qx 'build libpsl on sqlite3 nghttp2' "$tmp/stack.out"
+fi
 
 : > "$tmp/empty.pins"
 mkdir -p "$tmp/cache/arm64-v8a"
@@ -47,8 +68,16 @@ grep -qx 'cache libxml2 on openssl' "$tmp/cache.out"
 grep -qx 'build sqlite3 on openssl libxml2' "$tmp/cache.out"
 
 "$ROOT/scripts/prove-package.sh" --dry-run --through libxml2 --cache "$tmp/cache" > "$tmp/pinwins.out"
-grep -qx 'pin openssl alone' "$tmp/pinwins.out"
-grep -qx 'pin libxml2 on openssl' "$tmp/pinwins.out"
+if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+  grep -qx 'pin openssl alone' "$tmp/pinwins.out"
+else
+  grep -qx 'cache openssl alone' "$tmp/pinwins.out"
+fi
+if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/libxml2" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+  grep -qx 'pin libxml2 on openssl' "$tmp/pinwins.out"
+else
+  grep -qx 'cache libxml2 on openssl' "$tmp/pinwins.out"
+fi
 
 if "$ROOT/scripts/prove-package.sh" --dry-run --packages 'nghttp2,sqlite3' > "$tmp/order.out" 2> "$tmp/order.err"; then
   echo "out-of-order packages were accepted" >&2
