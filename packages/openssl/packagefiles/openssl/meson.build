@@ -172,9 +172,10 @@ pkg.generate(
   description: 'OpenSSL',
   requires: ['libssl', 'libcrypto'],
 )
-add_install_script(
-  find_program('sh'),
-  meson.current_source_dir() / 'install-headers.sh',
+# meson.add_install_script is the function this Meson provides. The openssl
+# project declares meson_version >= 0.55, which hides the newer free function.
+meson.add_install_script(
+  'install-headers.sh',
   meson.current_source_dir() / 'generated-config' / 'archs' / arch_subdir / asm / 'include' / 'openssl',
   meson.current_source_dir() / 'include' / 'openssl',
 )
