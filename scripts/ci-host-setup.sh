@@ -20,6 +20,7 @@ fi
   bison \
   gettext \
   git \
+  jq \
   glslc \
   gperf \
   meson \

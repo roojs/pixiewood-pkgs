@@ -9,6 +9,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/upstream-index.sh"
 # shellcheck source=sysroot-common.sh
 source "$ROOT/scripts/sysroot-common.sh"
+# shellcheck source=pins.sh
+source "$ROOT/scripts/pins.sh"
 
 name=""
 tarball=""
@@ -81,25 +83,7 @@ if [ "$upload" -eq 1 ]; then
   rm -rf "$stage"
 fi
 
-tmp="$(mktemp)"
-if [ ! -f "$file" ]; then
-  printf '%s\n' '# abi gtk release name track resolved inputs url' > "$file"
-fi
-awk -F '\t' -v OFS='\t' \
-  -v abi="$abi" -v label="$label" -v name="$name" \
-  -v release="$tag" -v track="$track" -v resolved="$resolved" \
-  -v inputs="$inputs" -v url="$url" '
-  $1 == abi && $2 == label && $4 == name {
-    print abi, label, release, name, track, resolved, inputs, url
-    found = 1
-    next
-  }
-  { print }
-  END {
-    if (!found) print abi, label, release, name, track, resolved, inputs, url
-  }
-' "$file" > "$tmp"
-mv "$tmp" "$file"
+pins_upsert "$file" "$abi" "$label" "$tag" "$name" "$track" "$resolved" "$inputs" "$url"
 
 if [ "$commit" -eq 1 ] && { [ "$file" = "$ROOT/release.pins" ] || [ "$file" = "$ROOT/snapshot.pins" ]; }; then
   git -C "$ROOT" add -- "$file"

@@ -8,20 +8,20 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=gtk-target.sh
 source "$ROOT/scripts/gtk-target.sh"
+# shellcheck source=pins.sh
+source "$ROOT/scripts/pins.sh"
 
 obtain_pin_fields() {
   local file=$1 abi=$2 label=$3 name=$4
   local got_abi got_gtk _release got_name _track resolved inputs url
   [ -f "$file" ] || return 1
   while IFS=$'\t' read -r got_abi got_gtk _release got_name _track resolved inputs url _; do
-    if [ -z "${got_abi:-}" ] || [ "${got_abi#\#}" != "$got_abi" ]; then
-      continue
-    fi
+    [ -n "${got_abi:-}" ] || continue
     if [ "$got_abi" = "$abi" ] && [ "$got_gtk" = "$label" ] && [ "$got_name" = "$name" ] && [ -n "$url" ]; then
       printf '%s\t%s\t%s\n' "$resolved" "$inputs" "$url"
       return 0
     fi
-  done < "$file"
+  done < <(pins_rows "$file")
   return 1
 }
 

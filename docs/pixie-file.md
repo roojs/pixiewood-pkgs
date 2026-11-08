@@ -21,4 +21,4 @@ The URL for a file looks like:
 https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/openssl-arm-v31-3.0.8.pixie
 ```
 
-That URL is the last column of a pin line. [Sharing your library](sharing-your-library.md) is the pin file. [Using pixie libraries](using-pixie-libraries.md) is how a build downloads it.
+That URL is the `url` field of a package object. [Sharing your library](sharing-your-library.md) is the pin file. [Using pixie libraries](using-pixie-libraries.md) is how a build downloads it.

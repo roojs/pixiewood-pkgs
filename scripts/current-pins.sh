@@ -9,6 +9,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/sysroot-common.sh"
 # shellcheck source=upstream-index.sh
 source "$ROOT/scripts/upstream-index.sh"
+# shellcheck source=pins.sh
+source "$ROOT/scripts/pins.sh"
 
 pins_file() {
   local file=${1:-$ROOT/release.pins}
@@ -101,9 +103,7 @@ cmd_write() {
   owner="$(distro_owner "$repo")"
   if [ -f "$file" ]; then
     while IFS=$'\t' read -r got_abi got_gtk release name track resolved inputs url _; do
-      if [ -z "${got_abi:-}" ] || [ "${got_abi#\#}" != "$got_abi" ]; then
-        continue
-      fi
+      [ -n "${got_abi:-}" ] || continue
       [ -n "$url" ] || continue
       if [ "$got_gtk" = "$base" ]; then
         label="$(package_pin_label "$name" "$base" "$repo")"
@@ -114,7 +114,7 @@ cmd_write() {
       fi
       key="${got_abi} ${got_gtk}"
       groups[$key]+="${got_abi}"$'\t'"${got_gtk}"$'\t'"${release}"$'\t'"${name}"$'\t'"${track}"$'\t'"${resolved}"$'\t'"${inputs}"$'\t'"${url}"$'\n'
-    done < "$file"
+    done < <(pins_rows "$file")
   fi
   local plan gtk status kind
   local -a ordered=()
@@ -171,11 +171,10 @@ cmd_write() {
   local tmp
   tmp="$(mktemp)"
   {
-    printf '%s\n' '# abi gtk release name track resolved inputs url'
     while IFS= read -r key; do
       printf '%s' "${groups[$key]}"
     done < <(printf '%s\n' "${!groups[@]}" | LC_ALL=C sort)
-  } > "$tmp"
+  } | pins_store "$tmp"
   mv "$tmp" "$file"
 }
 
@@ -214,14 +213,12 @@ cmd_apply() {
   pins_mark_replaced replaced || return 1
   if [ -f "$file" ]; then
     while IFS=$'\t' read -r got_abi got_gtk release name track resolved inputs url _; do
-      if [ -z "${got_abi:-}" ] || [ "${got_abi#\#}" != "$got_abi" ]; then
-        continue
-      fi
+      [ -n "${got_abi:-}" ] || continue
       if [ "$got_abi" = "$abi" ] && [ -n "$url" ]; then
         reuse_url["${got_gtk} ${name}"]=$url
         reuse_inputs["${got_gtk} ${name}"]=$inputs
       fi
-    done < "$file"
+    done < <(pins_rows "$file")
   fi
   local tmp status kind
   tmp="$(mktemp)"
@@ -291,16 +288,14 @@ cmd_index() {
   declare -A row_track=() row_resolved=() row_inputs=() row_url=() row_release=()
   pins_mark_replaced replaced || return 1
   while IFS=$'\t' read -r got_abi got_gtk release name track resolved inputs url _; do
-    if [ -z "${got_abi:-}" ] || [ "${got_abi#\#}" != "$got_abi" ]; then
-      continue
-    fi
+    [ -n "${got_abi:-}" ] || continue
     [ "$got_abi" = "$abi" ] || continue
     row_track["${got_gtk} ${name}"]=$track
     row_resolved["${got_gtk} ${name}"]=$resolved
     row_inputs["${got_gtk} ${name}"]=$inputs
     row_url["${got_gtk} ${name}"]=$url
     row_release["${got_gtk} ${name}"]=$release
-  done < "$file"
+  done < <(pins_rows "$file")
   if [ "$gtk" != "$base" ] && [ -z "${row_url["$gtk gtk"]:-}" ]; then
     echo "$file has no gtk package for $abi $gtk" >&2
     return 1

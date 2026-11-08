@@ -22,11 +22,10 @@ grep -q 'YYYY-MM-DD' "$tmp/date-only.err"
 
 printf 'bytes\n' > "$tmp/openssl.tar.xz"
 printf 'bytes\n' > "$tmp/gtk.tar.xz"
-{
-  printf '%s\n' '# abi gtk release name track resolved inputs url'
-  printf '%s\n' $'arm64-v8a\tgnome\t1.261108\topenssl\told-track\told-res\told-in\thttps://example.invalid/openssl.tar.xz'
-  printf '%s\n' $'arm64-v8a\tgnome\t1.261108\tglib\tgtrack\tgres\tgin\thttps://example.invalid/glib.tar.xz'
-} > "$tmp/pins"
+jq -n '{packages: [
+  {abi:"arm64-v8a", gtk:"gnome", release:"1.261108", name:"openssl", track:"old-track", resolved:"old-res", inputs:"old-in", url:"https://example.invalid/openssl.tar.xz"},
+  {abi:"arm64-v8a", gtk:"gnome", release:"1.261108", name:"glib", track:"gtrack", resolved:"gres", inputs:"gin", url:"https://example.invalid/glib.tar.xz"}
+]}' > "$tmp/pins"
 
 "$ROOT/scripts/publish-package.sh" \
   --name openssl \
@@ -41,9 +40,8 @@ printf 'bytes\n' > "$tmp/gtk.tar.xz"
   --file "$tmp/pins" \
   --no-upload > "$tmp/openssl.out"
 grep -q 'Published openssl 1.261108' "$tmp/openssl.out"
-grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/openssl-arm-v31-3.0.8.pixie' "$tmp/pins"
-grep -q $'arm64-v8a\tgnome\t1.261108\topenssl\topenssl-3.0.8.tar.gz\thash-o\tinputs-o\t' "$tmp/pins"
-grep -q $'arm64-v8a\tgnome\t1.261108\tglib\tgtrack\tgres\tgin\thttps://example.invalid/glib.tar.xz' "$tmp/pins"
+jq -e '.packages[] | select(.name == "openssl" and .track == "openssl-3.0.8.tar.gz" and .resolved == "hash-o" and .inputs == "inputs-o" and .url == "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/openssl-arm-v31-3.0.8.pixie")' "$tmp/pins" >/dev/null
+jq -e '.packages[] | select(.name == "glib" and .url == "https://example.invalid/glib.tar.xz")' "$tmp/pins" >/dev/null
 if grep -q 'example.invalid/openssl' "$tmp/pins"; then
   echo "the finished package kept its old URL" >&2
   exit 1
@@ -62,8 +60,8 @@ fi
   --file "$tmp/pins" \
   --no-upload > "$tmp/gtk.out"
 grep -q 'Published gtk 1.261108' "$tmp/gtk.out"
-grep -q 'gtk-arm-v31-snapshot.pixie' "$tmp/pins"
-grep -q $'arm64-v8a\tgnome\t1.261108\tglib\t' "$tmp/pins"
+jq -e '.packages[] | select(.name == "gtk" and (.url | endswith("gtk-arm-v31-snapshot.pixie")))' "$tmp/pins" >/dev/null
+jq -e '.packages[] | select(.name == "glib" and .track == "gtrack")' "$tmp/pins" >/dev/null
 
 if "$ROOT/scripts/publish-package.sh" \
   --name openssl \

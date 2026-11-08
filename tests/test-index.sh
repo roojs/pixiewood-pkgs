@@ -282,8 +282,8 @@ grep -q '"version": "1.261107"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
 # release.pins is the package list for the build that is publishing.
-openssl_release="$(awk -F '\t' '$1 == "arm64-v8a" && $2 == "gnome" && $4 == "openssl" { print $3; exit }' "$ROOT/release.pins")"
-openssl_url="$(awk -F '\t' '$1 == "arm64-v8a" && $2 == "gnome" && $4 == "openssl" { print $8; exit }' "$ROOT/release.pins")"
+openssl_release="$(jq -r '.packages[] | select(.abi == "arm64-v8a" and .gtk == "gnome" and .name == "openssl") | .release' "$ROOT/release.pins")"
+openssl_url="$(jq -r '.packages[] | select(.abi == "arm64-v8a" and .gtk == "gnome" and .name == "openssl") | .url' "$ROOT/release.pins")"
 [ -n "$openssl_release" ]
 case "$openssl_url" in
   "https://github.com/roojs/pixiewood-pkgs/releases/download/${openssl_release}/openssl-arm-v31-3.0.8.pixie"|\
@@ -315,11 +315,10 @@ if grep -q 'webkitgtk-android' "$tmp/pins-index.json"; then
   exit 1
 fi
 
-{
-  printf '%s\n' '# abi gtk release name track resolved inputs url'
-  printf '%s\n' $'arm64-v8a\tgnome\t1.261107\tgdk\tgnome-rev\tgdkr\tsame-gdk\thttps://example.invalid/gdk-gnome.tar.xz'
-  printf '%s\n' $'arm64-v8a\tgnome\t1.261107\tgtk\tgnome-rev\tgtkr\tgtk-in\thttps://example.invalid/gtk-gnome.tar.xz'
-} > "$tmp/gdk-pins"
+jq -n '{packages: [
+  {abi:"arm64-v8a", gtk:"gnome", release:"1.261107", name:"gdk", track:"gnome-rev", resolved:"gdkr", inputs:"same-gdk", url:"https://example.invalid/gdk-gnome.tar.xz"},
+  {abi:"arm64-v8a", gtk:"gnome", release:"1.261107", name:"gtk", track:"gnome-rev", resolved:"gtkr", inputs:"gtk-in", url:"https://example.invalid/gtk-gnome.tar.xz"}
+]}' > "$tmp/gdk-pins"
 {
   printf '%s\n' '# publish=1' '# gtk_target=Knowles.android-ime'
   printf '%s\n' $'build\tgdk\tgit\tandroid-ime\time-gdk\tsame-gdk\t-'
@@ -348,7 +347,7 @@ grep -q $'^build\tgdk\t' "$tmp/gdk-diff-built.tsv"
   --repo roojs/pixiewood-pkgs \
   --plan "$tmp/gnome-webkit.tsv" \
   --plan "$tmp/gdk-diff.tsv"
-grep -q $'arm64-v8a\tKnowles.android-ime\t1.261108\tgdk\t' "$tmp/owner-pins"
+jq -e '.packages[] | select(.abi == "arm64-v8a" and .gtk == "Knowles.android-ime" and .release == "1.261108" and .name == "gdk")' "$tmp/owner-pins" >/dev/null
 grep -q 'gdk-arm-v31-snapshot.pixie' "$tmp/owner-pins"
 if grep -q 'webkitgtk-android' "$tmp/owner-pins"; then
   echo "written pins still name webkitgtk-android" >&2
@@ -544,16 +543,17 @@ hash_three="$(gdk_tree_hash "$src" "$three")"
   --created 2026-11-08T00:00:00Z \
   --repo roojs/pixiewood-pkgs \
   --plan "$tmp/keep-plan.tsv"
-printf '%s\n' $'x86_64\tx86_64\t1.261107\tglib\t2.90.0\thashg\tinputsg\thttps://example.invalid/glib.tar.xz' >> "$tmp/pins"
+jq '.packages += [{abi:"x86_64", gtk:"x86_64", release:"1.261107", name:"glib", track:"2.90.0", resolved:"hashg", inputs:"inputsg", url:"https://example.invalid/glib.tar.xz"}]' "$tmp/pins" > "$tmp/pins.x86"
+mv "$tmp/pins.x86" "$tmp/pins"
 "$ROOT/scripts/current-pins.sh" write \
   --file "$tmp/pins" \
   --arch aarch64 \
   --created 2026-11-08T00:00:00Z \
   --repo roojs/pixiewood-pkgs \
   --plan "$tmp/keep-plan.tsv"
-grep -q $'arm64-v8a\tgnome\t1.261108\topenssl\t3.0.8\thasho\tinputso\thttps://example.invalid/old/openssl.tar.xz' "$tmp/pins"
-grep -q $'arm64-v8a\tgnome\t1.261108\tgtk\tandroid-ime\thashi\tinputsi\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gtk-arm-v31-snapshot.pixie' "$tmp/pins"
-grep -q $'x86_64\tx86_64\t1.261107\tglib\t' "$tmp/pins"
+jq -e '.packages[] | select(.abi == "arm64-v8a" and .gtk == "gnome" and .release == "1.261108" and .name == "openssl" and .track == "3.0.8" and .url == "https://example.invalid/old/openssl.tar.xz")' "$tmp/pins" >/dev/null
+jq -e '.packages[] | select(.abi == "arm64-v8a" and .name == "gtk" and .track == "android-ime" and (.url | endswith("gtk-arm-v31-snapshot.pixie")))' "$tmp/pins" >/dev/null
+jq -e '.packages[] | select(.abi == "x86_64" and .gtk == "x86_64" and .name == "glib")' "$tmp/pins" >/dev/null
 
 if grep -q 'tgz' "$ROOT/.gitattributes"; then
   echo "gitattributes names a generated release archive" >&2
@@ -561,11 +561,11 @@ if grep -q 'tgz' "$ROOT/.gitattributes"; then
 fi
 grep -qx '/release.pins !export-ignore' "$ROOT/.gitattributes"
 grep -qx '/snapshot.pins !export-ignore' "$ROOT/.gitattributes"
-if grep -q -- '-snapshot\.pixie' "$ROOT/release.pins"; then
+if jq -e '.packages[] | select(.url | endswith("-snapshot.pixie"))' "$ROOT/release.pins" >/dev/null; then
   echo "release.pins names a snapshot" >&2
   exit 1
 fi
-if grep -v '^#' "$ROOT/snapshot.pins" | grep -v -- '-snapshot\.pixie' | grep -q .; then
+if jq -e '.packages[] | select(.url | endswith("-snapshot.pixie") | not)' "$ROOT/snapshot.pins" >/dev/null; then
   echo "snapshot.pins names a release" >&2
   exit 1
 fi

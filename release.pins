@@ -1,25 +1,234 @@
-# Official releases.
-# abi gtk release name track resolved inputs url
-arm64-v8a	gnome	1.261108	openssl	openssl-3.0.8.tar.gz	6c13d2bf38fdf31eac3ce2a347073673f5d63263398f1f69d0df4a41253e4b3e	17b6871100f99da8a2bc457a822506ff978c54f80a954faad07d46a1f05f5688	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/openssl-arm-v31-3.0.8.pixie
-arm64-v8a	gnome	1.261108	libxml2	libxml2-2.15.3.tar.xz	78262a6e7ac170d6528ebfe2efccdf220191a5af6a6cd61ea4a9a9a5042c7a07	d6f963dc1ee95ac8538643d8644ad5b9a19135999f4ddad8de23e5afea1f1639	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libxml2-arm-v31-2.15.3.pixie
-arm64-v8a	gnome	1.261108	sqlite3	sqlite-amalgamation-3530200.zip	8a310d0a16c7a90cacd4c884e70faa51c902afed2a89f63aaa0126ab83558a32	051e962af401b00150cc161bddc1a8adaea3b053433d61caf4fb8c3fd952755b	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/sqlite3-arm-v31-3530200.pixie
-arm64-v8a	gnome	1.261108	nghttp2	nghttp2-1.62.1.tar.xz	2345d4dc136fda28ce243e0bb21f2e7e8ef6293d62c799abbf6f633a6887af72	5affaeb550e8091df693ae1a60bea78369a5018fbc8287295476f92adfa58062	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/nghttp2-arm-v31-1.62.1.pixie
-arm64-v8a	gnome	1.261108	libpsl	libpsl-0.21.5.tar.gz	1dcc9ceae8b128f3c0b3f654decd0e1e891afc6ff81098f227ef260449dae208	a9efed4a5a87d536b0fa2703c8a6d5ada53833b222dbf1acf0c3015c69264fdf	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libpsl-arm-v31-0.21.5.pixie
-arm64-v8a	gnome	1.261108	glib	2.90.0	436d47a723da97fbe67057f6b51dcf49a244fd4a	8aaa00550427a4ea3f24488c51703bed0cf9676c54f3c1aa8a61c074a2d22c65	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/glib-arm-v31-2.90.0.pixie
-arm64-v8a	gnome	1.261108	gee	libgee-0.20.8.tar.xz	189815ac143d89867193b0c52b7dc31f3aa108a15f04d6b5dca2b6adfad0b0ee	e1d1fe880960dad9cdc73e07afbb2dc7f30c0d7037770930ee378549635cf2d1	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gee-arm-v31-0.20.8.pixie
-arm64-v8a	gnome	1.261108	json-glib	json-glib-1.10.8.tar.xz	55c5c141a564245b8f8fbe7698663c87a45a7333c2a2c56f06f811ab73b212dd	89f88938b24ad5446a169b2e18d9aee21607fae443a841e65bd169e306da4ee9	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/json-glib-arm-v31-1.10.8.pixie
-arm64-v8a	gnome	1.261108	fribidi	v1.0.16	68162babff4f39c4e2dc164a5e825af93bda9983	eeca59248eb125ecccd1be89d021b7574918903abc5d4e490b8aa790a72e0df7	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/fribidi-arm-v31-1.0.16.pixie
-arm64-v8a	gnome	1.261108	pixman	pixman-0.43.4.tar.gz	a0624db90180c7ddb79fc7a9151093dc37c646d8c38d3f232f767cf64b85a226	e14a4dae922537d5bdc37f6028b6522cc10c7f84222342189c0bd7fecb12930e	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/pixman-arm-v31-0.43.4.pixie
-arm64-v8a	gnome	1.261108	cairo	1.18.2	200441e6855854eb4dbf338e44d67b00ababe07f	60142cc62c05e213c3ba5e7a34228fd97d71d875e59705f10f62a5c699bc0d63	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/cairo-arm-v31-1.18.2.pixie
-arm64-v8a	gnome	1.261108	harfbuzz	14.4.0	36cb489cb02ce4b92099669ba9f9bea348eff93f	1577ed7dc91eb88a54025601a9e57332bf4c67a2549b616f0449b3e80c81a53d	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/harfbuzz-arm-v31-14.4.0.pixie
-arm64-v8a	gnome	1.261108	pango	1.58.2	d360f14004e4a4824f2352f6e2722016f9a51dd6	02021cc424aa3728341ee8e1eabc079c2273bef97c0f2fb8ebf5f110497bc970	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/pango-arm-v31-1.58.2.pixie
-arm64-v8a	gnome	1.261108	libjpeg-turbo	libjpeg-turbo-3.1.1.tar.gz	aadc97ea91f6ef078b0ae3a62bba69e008d9a7db19b34e4ac973b19b71b4217c	8ad7dee1c38fabedce27dba313c23d2d3782126b8d636bdf2876acf9fe7180c8	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libjpeg-turbo-arm-v31-3.1.1.pixie
-arm64-v8a	gnome	1.261108	libtiff	tiff-4.7.0.tar.gz	273a0a73b1f0bed640afee4a5df0337357ced5b53d3d5d1c405b936501f71017	64bfe37485fd1b2446a24173ff17e38fe627543a8ef43627f262ef64f6de9ffc	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libtiff-arm-v31-4.7.0.pixie
-arm64-v8a	gnome	1.261108	gdk-pixbuf	2.43.3	7df9a8ba0a04ed3dd46f4e5fda5f888288c25c5b	76af7482af5800811145de23a728f1d7575f970928ed6add54b7e8485f173f54	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gdk-pixbuf-arm-v31-2.43.3.pixie
-arm64-v8a	gnome	1.261108	libepoxy	2df68f811fc1a5f0a6d372ecdb887333ad3f540f	2df68f811fc1a5f0a6d372ecdb887333ad3f540f	8669dd296a55fb852ac610af5cdc7aaacace4c922f308e8e35f836c9f88c0fe2	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libepoxy-arm-v31-1.5.11.pixie
-arm64-v8a	gnome	1.261108	graphene	f89522ca60a76512b8b85c7b8e4d16b94849f22f	f89522ca60a76512b8b85c7b8e4d16b94849f22f	50778aebd856acae39ff30245bc234436d48d0d3dfa828f99d841445adc3cacd	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/graphene-arm-v31-1.11.1.pixie
-arm64-v8a	gnome	1.261108	gtk	ae709f962a51f9108a1e6381bcfbd05bbaecc840	ae709f962a51f9108a1e6381bcfbd05bbaecc840	7c493679a0203c6ad6743152ca1df83ae16bbec4cbecf4be52d056bcec5fa8ca	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gtk-arm-v31-4.24.1.pixie
-arm64-v8a	gnome	1.261108	libadwaita	1.10.0	c9ab118612eee92324143783c4641c98eaded3f0	a09ce4ec5c477a58c93c7b09029727a5a7d287c8bcde78dc217288938c44ea22	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libadwaita-arm-v31-1.10.0.pixie
-arm64-v8a	gnome	1.261108	gtksourceview	gtksourceview-5.16.0.tar.xz	ab35d420102f3e8b055dd3b8642d3a48209f888189e6254d0ffb4b6a7e8c3566	3816ebbd0aba51cdc5ff3a94302b908247e1f2ba8c668ed85506aeeedbae13c6	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gtksourceview-arm-v31-5.16.0.pixie
-arm64-v8a	gnome	1.261108	libsoup	libsoup-3.6.5.tar.xz	6891765aac3e949017945c3eaebd8cc8216df772456dc9f460976fbdb7ada234	dcae5fc483aea984741336fda501451b7d0b5185674ed78a0e64e1630439be69	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libsoup-arm-v31-3.6.5.pixie
-arm64-v8a	gnome	1.261108	glib-networking	glib-networking-2.80.1.tar.xz	b80e2874157cd55071f1b6710fa0b911d5ac5de106a9ee2a4c9c7bee61782f8e	fe83de5614c016f98ba9354f7cf569155ac1f980e3f123c9972703c8eabb3256	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/glib-networking-arm-v31-2.80.1.pixie
+{
+  "packages": [
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "openssl",
+      "track": "openssl-3.0.8.tar.gz",
+      "resolved": "6c13d2bf38fdf31eac3ce2a347073673f5d63263398f1f69d0df4a41253e4b3e",
+      "inputs": "17b6871100f99da8a2bc457a822506ff978c54f80a954faad07d46a1f05f5688",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/openssl-arm-v31-3.0.8.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "libxml2",
+      "track": "libxml2-2.15.3.tar.xz",
+      "resolved": "78262a6e7ac170d6528ebfe2efccdf220191a5af6a6cd61ea4a9a9a5042c7a07",
+      "inputs": "d6f963dc1ee95ac8538643d8644ad5b9a19135999f4ddad8de23e5afea1f1639",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libxml2-arm-v31-2.15.3.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "sqlite3",
+      "track": "sqlite-amalgamation-3530200.zip",
+      "resolved": "8a310d0a16c7a90cacd4c884e70faa51c902afed2a89f63aaa0126ab83558a32",
+      "inputs": "051e962af401b00150cc161bddc1a8adaea3b053433d61caf4fb8c3fd952755b",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/sqlite3-arm-v31-3530200.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "nghttp2",
+      "track": "nghttp2-1.62.1.tar.xz",
+      "resolved": "2345d4dc136fda28ce243e0bb21f2e7e8ef6293d62c799abbf6f633a6887af72",
+      "inputs": "5affaeb550e8091df693ae1a60bea78369a5018fbc8287295476f92adfa58062",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/nghttp2-arm-v31-1.62.1.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "libpsl",
+      "track": "libpsl-0.21.5.tar.gz",
+      "resolved": "1dcc9ceae8b128f3c0b3f654decd0e1e891afc6ff81098f227ef260449dae208",
+      "inputs": "a9efed4a5a87d536b0fa2703c8a6d5ada53833b222dbf1acf0c3015c69264fdf",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libpsl-arm-v31-0.21.5.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "glib",
+      "track": "2.90.0",
+      "resolved": "436d47a723da97fbe67057f6b51dcf49a244fd4a",
+      "inputs": "8aaa00550427a4ea3f24488c51703bed0cf9676c54f3c1aa8a61c074a2d22c65",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/glib-arm-v31-2.90.0.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "gee",
+      "track": "libgee-0.20.8.tar.xz",
+      "resolved": "189815ac143d89867193b0c52b7dc31f3aa108a15f04d6b5dca2b6adfad0b0ee",
+      "inputs": "e1d1fe880960dad9cdc73e07afbb2dc7f30c0d7037770930ee378549635cf2d1",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gee-arm-v31-0.20.8.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "json-glib",
+      "track": "json-glib-1.10.8.tar.xz",
+      "resolved": "55c5c141a564245b8f8fbe7698663c87a45a7333c2a2c56f06f811ab73b212dd",
+      "inputs": "89f88938b24ad5446a169b2e18d9aee21607fae443a841e65bd169e306da4ee9",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/json-glib-arm-v31-1.10.8.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "fribidi",
+      "track": "v1.0.16",
+      "resolved": "68162babff4f39c4e2dc164a5e825af93bda9983",
+      "inputs": "eeca59248eb125ecccd1be89d021b7574918903abc5d4e490b8aa790a72e0df7",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/fribidi-arm-v31-1.0.16.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "pixman",
+      "track": "pixman-0.43.4.tar.gz",
+      "resolved": "a0624db90180c7ddb79fc7a9151093dc37c646d8c38d3f232f767cf64b85a226",
+      "inputs": "e14a4dae922537d5bdc37f6028b6522cc10c7f84222342189c0bd7fecb12930e",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/pixman-arm-v31-0.43.4.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "cairo",
+      "track": "1.18.2",
+      "resolved": "200441e6855854eb4dbf338e44d67b00ababe07f",
+      "inputs": "60142cc62c05e213c3ba5e7a34228fd97d71d875e59705f10f62a5c699bc0d63",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/cairo-arm-v31-1.18.2.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "harfbuzz",
+      "track": "14.4.0",
+      "resolved": "36cb489cb02ce4b92099669ba9f9bea348eff93f",
+      "inputs": "1577ed7dc91eb88a54025601a9e57332bf4c67a2549b616f0449b3e80c81a53d",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/harfbuzz-arm-v31-14.4.0.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "pango",
+      "track": "1.58.2",
+      "resolved": "d360f14004e4a4824f2352f6e2722016f9a51dd6",
+      "inputs": "02021cc424aa3728341ee8e1eabc079c2273bef97c0f2fb8ebf5f110497bc970",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/pango-arm-v31-1.58.2.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "libjpeg-turbo",
+      "track": "libjpeg-turbo-3.1.1.tar.gz",
+      "resolved": "aadc97ea91f6ef078b0ae3a62bba69e008d9a7db19b34e4ac973b19b71b4217c",
+      "inputs": "8ad7dee1c38fabedce27dba313c23d2d3782126b8d636bdf2876acf9fe7180c8",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libjpeg-turbo-arm-v31-3.1.1.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "libtiff",
+      "track": "tiff-4.7.0.tar.gz",
+      "resolved": "273a0a73b1f0bed640afee4a5df0337357ced5b53d3d5d1c405b936501f71017",
+      "inputs": "64bfe37485fd1b2446a24173ff17e38fe627543a8ef43627f262ef64f6de9ffc",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libtiff-arm-v31-4.7.0.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "gdk-pixbuf",
+      "track": "2.43.3",
+      "resolved": "7df9a8ba0a04ed3dd46f4e5fda5f888288c25c5b",
+      "inputs": "76af7482af5800811145de23a728f1d7575f970928ed6add54b7e8485f173f54",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gdk-pixbuf-arm-v31-2.43.3.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "libepoxy",
+      "track": "2df68f811fc1a5f0a6d372ecdb887333ad3f540f",
+      "resolved": "2df68f811fc1a5f0a6d372ecdb887333ad3f540f",
+      "inputs": "8669dd296a55fb852ac610af5cdc7aaacace4c922f308e8e35f836c9f88c0fe2",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libepoxy-arm-v31-1.5.11.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "graphene",
+      "track": "f89522ca60a76512b8b85c7b8e4d16b94849f22f",
+      "resolved": "f89522ca60a76512b8b85c7b8e4d16b94849f22f",
+      "inputs": "50778aebd856acae39ff30245bc234436d48d0d3dfa828f99d841445adc3cacd",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/graphene-arm-v31-1.11.1.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "gtk",
+      "track": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",
+      "resolved": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",
+      "inputs": "7c493679a0203c6ad6743152ca1df83ae16bbec4cbecf4be52d056bcec5fa8ca",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gtk-arm-v31-4.24.1.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "libadwaita",
+      "track": "1.10.0",
+      "resolved": "c9ab118612eee92324143783c4641c98eaded3f0",
+      "inputs": "a09ce4ec5c477a58c93c7b09029727a5a7d287c8bcde78dc217288938c44ea22",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libadwaita-arm-v31-1.10.0.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "gtksourceview",
+      "track": "gtksourceview-5.16.0.tar.xz",
+      "resolved": "ab35d420102f3e8b055dd3b8642d3a48209f888189e6254d0ffb4b6a7e8c3566",
+      "inputs": "3816ebbd0aba51cdc5ff3a94302b908247e1f2ba8c668ed85506aeeedbae13c6",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gtksourceview-arm-v31-5.16.0.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "libsoup",
+      "track": "libsoup-3.6.5.tar.xz",
+      "resolved": "6891765aac3e949017945c3eaebd8cc8216df772456dc9f460976fbdb7ada234",
+      "inputs": "dcae5fc483aea984741336fda501451b7d0b5185674ed78a0e64e1630439be69",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libsoup-arm-v31-3.6.5.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "gtk": "gnome",
+      "release": "1.261108",
+      "name": "glib-networking",
+      "track": "glib-networking-2.80.1.tar.xz",
+      "resolved": "b80e2874157cd55071f1b6710fa0b911d5ac5de106a9ee2a4c9c7bee61782f8e",
+      "inputs": "fe83de5614c016f98ba9354f7cf569155ac1f980e3f123c9972703c8eabb3256",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/glib-networking-arm-v31-2.80.1.pixie"
+    }
+  ]
+}
