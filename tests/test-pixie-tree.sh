@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pack, activate, and stage a fake sysroot without the Android NDK.
+# Pack, activate, and stage pixie libraries without the Android NDK.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -114,4 +114,4 @@ if grep -q "^prefix=$destdir$" "$moved/lib/$abi/pkgconfig/gtk4.pc"; then
   exit 1
 fi
 
-echo "sysroot tree: ok"
+echo "pixie tree: ok"

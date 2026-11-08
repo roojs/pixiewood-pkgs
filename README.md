@@ -27,7 +27,7 @@ scripts/build-sysroot.sh --arch aarch64
 ## Tests
 
 ```bash
-bash tests/test-sysroot-tree.sh
+bash tests/test-pixie-tree.sh
 bash tests/test-pins-and-wrapper.sh
 bash tests/test-index.sh
 ```
