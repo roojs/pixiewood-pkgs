@@ -37,8 +37,8 @@ package_track_label() {
   printf 'snapshot\n'
 }
 
-# openssl-arm64-v8a-android31-3.0.8.pixie, or ...-snapshot.pixie.
-# The SDK is the API level in android-distro.conf.
+# openssl-arm64-v8a-v31-3.0.8.pixie, or ...-snapshot.pixie.
+# arm64-v8a is the ABI. v31 is the API level in android-distro.conf.
 package_asset_name() {
   local name=$1 abi=$2 version=$3 api
   api="$(distro_get api)"
@@ -50,7 +50,7 @@ package_asset_name() {
     echo "package $name has no version" >&2
     return 1
   fi
-  printf '%s-%s-android%s-%s.pixie\n' "$name" "$abi" "$api" "$version"
+  printf '%s-%s-v%s-%s.pixie\n' "$name" "$abi" "$api" "$version"
 }
 
 wrap_field() {

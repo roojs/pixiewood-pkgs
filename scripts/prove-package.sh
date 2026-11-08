@@ -93,6 +93,9 @@ prove_tarball() {
       found="$(grep -E "^(\./)?lib/${abi}/lib${token}\.(so|a)(\.|$)" "$listing" | head -n1 || true)"
     fi
     if [ -z "$found" ]; then
+      found="$(grep -E "^(\./)?lib/${abi}/gio/modules/lib${token}\.(so|a)(\.|$)" "$listing" | head -n1 || true)"
+    fi
+    if [ -z "$found" ]; then
       echo "$name tarball has no pkg-config file or library for ${token}" >&2
       grep -E "^(\./)?lib/${abi}/" "$listing" | sed 's|^\./||' | head -n 40 >&2 || true
       rm -f "$listing"
@@ -122,7 +125,7 @@ prove_tarball() {
     return 1
   fi
   if [ -z "$lib" ]; then
-    lib="$(grep -E "^(\./)?lib/${abi}/lib[^/]+\.(so|a)(\.|$)" "$listing" | head -n1 || true)"
+    lib="$(grep -E "^(\./)?lib/${abi}/(gio/modules/)?lib[^/]+\.(so|a)(\.|$)" "$listing" | head -n1 || true)"
   fi
   rm -f "$listing"
   if [ -z "$lib" ]; then
@@ -276,6 +279,16 @@ for name in "${names[@]}"; do
     if [ "$kind" = cache ]; then
       cp -a "$loc" "$tarball"
     fi
+    if [ "$kind" != build ]; then
+      if ! prove_tarball "$tarball" "$abi" "$name"; then
+        echo "$name from $kind is not a usable package; building it" >&2
+        if [ "$kind" = cache ] && [ -n "$cache" ]; then
+          rm -f "$cache/$abi/$name.tar.xz" "$cache/$abi/$name.inputs"
+        fi
+        rm -f "$tarball"
+        kind=build
+      fi
+    fi
     if [ "$kind" = build ]; then
       args=(--only "$name" --arch "$arch" --gtk "$gtk" --tarball "$tarball")
       if [ -n "$deps" ]; then
@@ -287,8 +300,8 @@ for name in "${names[@]}"; do
         cp -a "$tarball" "$cache/$abi/$name.tar.xz"
         printf '%s\n' "${inputs_of[$name]}" > "$cache/$abi/$name.inputs"
       fi
+      prove_tarball "$tarball" "$abi" "$name"
     fi
-    prove_tarball "$tarball" "$abi" "$name"
     publish_this=0
     if [ "${PROVE_PUBLISH:-}" = 1 ]; then
       publish_this=1

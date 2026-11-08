@@ -124,6 +124,14 @@ tar -C "$ssl" -cJf "$tmp/openssl-${abi}.tar.xz" .
 "$ROOT/scripts/prove-package.sh" --check "$tmp/openssl-${abi}.tar.xz" --package openssl --arch aarch64 > "$tmp/ssl.out"
 grep -q 'proved openssl: OpenSSL 3.0.8 (lib/arm64-v8a/libssl.so)' "$tmp/ssl.out"
 
+net="$tmp/net"
+mkdir -p "$net/lib/$abi/pkgconfig" "$net/lib/$abi/gio/modules"
+printf '%s\n' 'prefix=/' 'Name: gioopenssl' 'Version: 2.80.1' > "$net/lib/$abi/pkgconfig/gioopenssl.pc"
+printf 'module\n' > "$net/lib/$abi/gio/modules/libgioopenssl.a"
+tar -C "$net" -cJf "$tmp/glib-networking-${abi}.tar.xz" .
+"$ROOT/scripts/prove-package.sh" --check "$tmp/glib-networking-${abi}.tar.xz" --package glib-networking --arch aarch64 > "$tmp/net.out"
+grep -q 'proved glib-networking: gioopenssl 2.80.1 (lib/arm64-v8a/gio/modules/libgioopenssl.a)' "$tmp/net.out"
+
 mkdir -p "$pkg/lib/$abi/pkgconfig" "$pkg/bin/$abi"
 printf '%s\n' 'prefix=/' 'Name: pixiewood-gdk' 'Version: 4' > "$pkg/lib/$abi/pkgconfig/pixiewood-gdk.pc"
 printf '%s\n' 'prefix=/' 'Name: glib' 'Version: 2.80.0' > "$pkg/lib/$abi/pkgconfig/glib-2.0.pc"
