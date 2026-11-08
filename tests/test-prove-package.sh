@@ -9,14 +9,22 @@ trap 'rm -rf "$tmp"' EXIT
 bash -n "$ROOT/scripts/prove-package.sh"
 
 "$ROOT/scripts/prove-package.sh" --dry-run > "$tmp/default.out"
-pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
+pins_commit="$(git -C "$ROOT" log -1 --format=%H -- release.pins || true)"
+if [ -z "$pins_commit" ]; then
+  pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
+fi
 if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
   grep -qx 'pin openssl alone' "$tmp/default.out"
 else
   grep -qx 'build openssl alone' "$tmp/default.out"
 fi
 for name in glib pango gdk gtk; do
-  if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/$name" "$ROOT/cross" "$ROOT/android-distro.conf" "$ROOT/scripts/build-sysroot.sh" "$ROOT/scripts/gtk-part.sh"; then
+  paths=("$ROOT/packages/$name" "$ROOT/cross" "$ROOT/android-distro.conf")
+  case "$name" in
+    gdk|gtk) paths+=("$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-sysroot.sh") ;;
+    glib) paths+=("$ROOT/scripts/build-sysroot.sh") ;;
+  esac
+  if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "${paths[@]}"; then
     grep -q "^pin $name on " "$tmp/default.out"
   else
     grep -q "^build $name on " "$tmp/default.out"

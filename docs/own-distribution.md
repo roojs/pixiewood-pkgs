@@ -1,78 +1,67 @@
 # Implement your own distribution
 
-An Android application's build points at one git repository. That repository is the distribution. The pins live in the git checkout. Each pin names the GitHub release that holds the bundle. The bundle file extension is `.pixie`.
+An Android build names three things: the repository, the branch, and release or snapshot.
 
-`gnome` is the reference target for the shared libraries. Another distribution, such as the Android IME branch, reuses those `gnome` bundles and publishes only the packages it replaces.
+That repository is the distribution. It has `release.pins`. It can also have `snapshot.pins`. The build checks out the branch and reads one of those files. Each line is one package and the URL of its `.pixie` file.
 
-The publisher writes each finished package as a `.pixie` asset. The file is an xz-compressed tar. It uploads that asset before the next package starts, and it still uploads a `1.yymmdd.tgz` package list. The layout below is the contract for a distribution that keeps its pins in git. [How releases work](releases.md) describes the publisher as it runs today. [The plan](plans.md) says which projects stay here.
-
-## What the application checks out
-
-The build script takes one git URL. It clones that repository and reads `current.pins` from the checkout. It does not download a tarball to find the pins, and the distribution does not publish a pins-only archive.
+`snapshot.pins` is optional. A project that only publishes numbered releases ships `release.pins`.
 
 ```bash
-git clone --depth 1 https://github.com/roojs/pixiewood-pkgs.git "$distro"
+git clone --depth 1 --branch main https://github.com/roojs/pixiewood-pkgs.git "$distro"
+"$distro/scripts/integrate-sysroot.sh" latest --dest "$HOME/pixiewood-sysroot"
+"$distro/scripts/integrate-sysroot.sh" latest --snapshot --dest "$HOME/pixiewood-sysroot"
 ```
 
-The origin of that checkout is where the bundles are downloaded from, unless a pin line names another repository.
+`latest` reads `release.pins` on that checkout. `latest --snapshot` reads `snapshot.pins`. The pins are not a separate download. [How releases work](releases.md) is what this repository publishes. [The plan](plans.md) says which projects stay here.
 
 ## What a pin line names
 
+`release.pins`:
+
 ```
-# abi gtk channel release name resolved inputs file repo
-arm64-v8a	gnome	release	1.261107	openssl	6c13d2bf...	<inputs>	openssl-arm-v31-3.0.8.pixie	roojs/pixiewood-pkgs
-arm64-v8a	gnome	snapshot	1.261107	fontconfig	cbf1db7f1bd01e641968ca0818e05b0819ce6c74	<inputs>	fontconfig-arm-v31-snapshot.pixie	roojs/pixiewood-pkgs
-arm64-v8a	Knowles.android-ime	snapshot	1.261108	gtk	<ime-commit>	<inputs>	gtk-arm-v31-snapshot.pixie	Knowles/gtk
+# abi gtk release name track resolved inputs url
+arm64-v8a	gnome	1.261108	openssl	openssl-3.0.8.tar.gz	6c13d2bf...	<inputs>	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/openssl-arm-v31-3.0.8.pixie
+```
+
+`snapshot.pins` uses the same columns:
+
+```
+arm64-v8a	gnome	1.261108	fontconfig	main	cbf1db7f...	<inputs>	https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/fontconfig-arm-v31-snapshot.pixie
 ```
 
 | Column | Meaning |
 | --- | --- |
 | `abi` | Android ABI directory, `arm64-v8a` or `x86_64`. The file name says `arm` or `x86` |
-| `gtk` | Target. `gnome` for the shared stack. A later target only on the packages that target replaces |
-| `channel` | `release` or `snapshot` |
-| `release` | GitHub release name. `1.yymmdd` |
-| `name` | Package name from `build-order.txt` |
-| `resolved` | Upstream commit or tarball identity that was built |
+| `gtk` | Target. `gnome` for this stack |
+| `release` | GitHub release name, `1.yymmdd` |
+| `name` | Package name |
+| `track` | Upstream version, tag, branch, or commit that was built |
+| `resolved` | Commit or tarball identity that was built |
 | `inputs` | Hash of the recipe that produced the bundle |
-| `file` | Asset name on that release |
-| `repo` | `owner/name` of the GitHub repository that published the release |
+| `url` | Download URL of the `.pixie` file |
 
-`channel=release` means the package was built from an upstream version. `channel=snapshot` means it was built from a branch tip. A pinned commit keeps the version compiled into the package. The file name uses that version, or the word `snapshot`.
+An official release is named with its version, such as `3.0.8`. Anything else is named `snapshot`.
 
-The file name is `{name}-arm-v{api}-{version}.pixie` or `{name}-x86-v{api}-{version}.pixie`. `v31` is the Android API level the package was built for. `3.0.8` is an upstream release. `snapshot` is a branch or a commit, in place of `main` or `head`. A release can hold one `.pixie` per package. The pin's `file` column is that name, so the checkout and the release asset are the same string.
+The file name is `{name}-arm-v{api}-{version}.pixie` or `{name}-x86-v{api}-{version}.pixie`. `v31` is API 31. The libraries inside the archive stay in `lib/arm64-v8a` and `lib/x86_64`.
 
 ## How the bundle is fetched
 
-For each pin line the app wants (its ABI, and `gnome` unless it asked for another target):
+The `url` column is the file:
 
 ```
-https://github.com/<repo>/releases/download/<release>/<file>
+https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/openssl-arm-v31-3.0.8.pixie
 ```
 
-A dated line becomes:
-
-```
-https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/openssl-arm-v31-3.0.8.pixie
-```
-
-A snapshot line becomes:
-
-```
-https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/fontconfig-arm-v31-snapshot.pixie
-```
-
-The script lists that release's assets and keeps the one whose name equals the `file` column. A `.pixie` file is an xz-compressed tar of one package: headers, libraries, and pkg-config under `prefix=/` and `lib/<abi>`, with `prefix=@PIXIEWOOD_SYSROOT@` in the `.pc` files. Extract every selected bundle into one directory, then run `scripts/activate-sysroot.sh` from this repository, or the same rewrite from the distribution you checked out.
-
-An app that wants upstream releases uses every `channel=release` line for its ABI. An app that wants a tip uses each `channel=snapshot` line and, where a package has no `snapshot` line, the `release` line.
+A `.pixie` file is an xz-compressed tar of one package: headers, libraries, and pkg-config under `prefix=/` and `lib/<abi>`, with `prefix=@PIXIEWOOD_SYSROOT@` in the `.pc` files. Extract the packages into one directory, then run `scripts/activate-sysroot.sh` from the checkout.
 
 ## Publish a distribution
 
-1. Keep `current.pins` in the git repository you want applications to clone.
+1. Put `release.pins` in the git repository applications clone. Add `snapshot.pins` when you publish snapshots.
 2. Create a GitHub release named `1.yymmdd` in UTC.
-3. Upload one `.pixie` asset per package you built, named `{name}-arm-v{api}-{version}.pixie` or `{name}-x86-v{api}-{version}.pixie`, with `snapshot` in place of the version for a branch or a commit.
-4. Commit `current.pins` so each line's `release` and `file` match those assets.
-5. Leave the pins out of the release. The release holds the bundles.
+3. Upload one `.pixie` per package. An official release uses the version. Anything else uses `snapshot`.
+4. Commit the pin file you updated so each line matches the uploaded file.
+5. The release holds the bundles. The pin files stay in git.
 
-Packages you did not build stay on the reference distribution. Their pin lines keep `gtk=gnome`, `repo=roojs/pixiewood-pkgs`, and the release name that published that `.pixie`. The Android IME distribution publishes `gdk` and `gtk` for `Knowles.android-ime` and points every other line at the gnome bundles.
+Another project is its own repository, with its own branch and its own `release.pins`. A line's URL can point at a bundle published here.
 
 The build that produces a `.pixie` is the toolkit in this repository: `cross/`, `android-distro.conf`, `scripts/build-sysroot.sh --only` against a sysroot assembled from the pins, and `scripts/sysroot-tree.sh` for the archive layout. Rename the archive to `.pixie` when you upload it.

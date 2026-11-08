@@ -10,7 +10,7 @@ source "$ROOT/scripts/sysroot-common.sh"
 source "$ROOT/scripts/upstream-index.sh"
 
 usage() {
-  echo "Usage: $0 latest --dest DIR [--gtk TARGET] [--abi ABI] [--arch aarch64|x86_64] [--repo OWNER/NAME] [--index-url URL]" >&2
+  echo "Usage: $0 latest --dest DIR [--gtk TARGET] [--abi ABI] [--arch aarch64|x86_64] [--repo OWNER/NAME] [--index-url URL] [--snapshot]" >&2
   echo "       $0 pin INDEX --dest DIR [--exclude PACKAGE ...]" >&2
   exit 2
 }
@@ -37,6 +37,7 @@ arch=""
 repo="${GITHUB_REPOSITORY:-roojs/pixiewood-pkgs}"
 index_url=""
 index_file=""
+pins_file=""
 declare -A skip=()
 
 while [ "$#" -gt 0 ]; do
@@ -47,6 +48,7 @@ while [ "$#" -gt 0 ]; do
     --arch) arch=$2; shift 2 ;;
     --repo) repo=$2; shift 2 ;;
     --index-url) index_url=$2; shift 2 ;;
+    --snapshot) pins_file="$ROOT/snapshot.pins"; shift ;;
     --exclude) skip[$2]=1; shift 2 ;;
     *)
       if [ "$mode" = pin ] && [ -z "$index_file" ]; then
@@ -80,7 +82,11 @@ case "$mode" in
     if [ -n "$index_url" ]; then
       fetch_url "$index_url" "$index_file"
     else
-      "$ROOT/scripts/current-pins.sh" index --abi "$abi" --gtk "$gtk" --out "$index_file"
+      index_args=(index --abi "$abi" --gtk "$gtk" --out "$index_file")
+      if [ -n "$pins_file" ]; then
+        index_args+=(--file "$pins_file")
+      fi
+      "$ROOT/scripts/current-pins.sh" "${index_args[@]}"
     fi
     ;;
   pin)

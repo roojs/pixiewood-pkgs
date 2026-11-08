@@ -1,27 +1,29 @@
 # pixiewood-pkgs
 
-Prebuilt Android packages for the GTK stack [Pixiewood](https://github.com/sp1ritCS/gtk-android-builder) links. This is a distribution of those libraries, not an application profile. Each upstream project is its own package. A published index lists a URL for every package. Packages that did not change keep the URL of the earlier release. If nothing changed, no release is published.
+Prebuilt Android packages for the GTK stack [Pixiewood](https://github.com/sp1ritCS/gtk-android-builder) links. This is a distribution of those libraries, not an application profile. Each upstream project is its own package. `release.pins` lists the official releases. `snapshot.pins` lists the snapshots. An Android build names this repository, a branch, and release or snapshot.
 
 ## GTK targets
 
 | Target | Source | What it tracks |
 | --- | --- | --- |
-| `gnome` | https://gitlab.gnome.org/GNOME/gtk.git | pinned upstream commit, no Android patch |
+| `gnome` | https://gitlab.gnome.org/GNOME/gtk.git | upstream GTK, no Android patch |
 
 `packages/gtk/targets` lists that one target. The Android IME branch and webkitgtk-android are separate distributions. [docs/plans.md](docs/plans.md) records that split. [docs/own-distribution.md](docs/own-distribution.md) is how an application checks out a distribution and downloads its `.pixie` bundles, and how another project publishes its own.
 
 ## Fetch a sysroot
 
-`latest` reads `current.pins` and downloads the package tarballs named there. `pin` uses one index file and does not look for a newer set. [How releases work](docs/releases.md) explains the source archive, the package list, and the generated release file.
+Clone the repository and branch you want. `latest` reads `release.pins`. `latest --snapshot` reads `snapshot.pins`. `pin` uses one index file and does not look for a newer set. [How releases work](docs/releases.md) explains the pin files and the generated release file.
 
 ```bash
+git clone --depth 1 --branch main https://github.com/roojs/pixiewood-pkgs.git
 scripts/integrate-sysroot.sh latest --dest "$HOME/pixiewood-sysroot"
+scripts/integrate-sysroot.sh latest --snapshot --dest "$HOME/pixiewood-sysroot"
 scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysroot"
 ```
 
 The target is native GTK (`gnome`), with no Android patch. Copy `share/pixiewood/INDEX.json` out of an assembled tree and pass it to `pin` to stay on that set.
 
-A publish is release `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. A later run the same day uploads onto that release. Each finished package is uploaded as a `.pixie` file named with its ABI, Android SDK, and upstream version, such as `openssl-arm-v31-3.0.8.pixie`. A branch or a commit uses `snapshot` instead of a version. Its line in `current.pins` is committed before the next package starts. See [docs/releases.md](docs/releases.md).
+A publish is release `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. A later run the same day uploads onto that release. Each finished package is a `.pixie` file. An official release is named with its version, such as `openssl-arm-v31-3.0.8.pixie`. Anything else is named `snapshot`. That line is committed to `release.pins` or `snapshot.pins` before the next package starts. See [docs/releases.md](docs/releases.md).
 
 ## What a package contains
 
@@ -36,11 +38,11 @@ scripts/install-sdk.sh
 scripts/build-sysroot.sh --arch aarch64
 ```
 
-`scripts/build-sysroot.sh --only gtk` builds one package of native GTK. Pins live in `packages/`. Cross files live in `cross/`. NDK and API levels are in `android-distro.conf`.
+`scripts/build-sysroot.sh --only gtk` builds one package of native GTK. Wrap files live in `packages/`. Cross files live in `cross/`. NDK and API levels are in `android-distro.conf`. The published lists are `release.pins` and `snapshot.pins`.
 
 A push does not publish packages. Once a day, **Monitor upstreams** resolves every package for each name in `packages/gtk/targets`. It uploads tarballs only for packages whose upstream revision or local inputs changed, writes an index that reuses the previous URL for the rest, and skips the release entirely when nothing changed. **Build Android sysroot** can still be started by hand for one combined tree.
 
-**Prove package** walks `build-order.txt` through `glib-networking` and publishes each package as soon as it finishes. A later failure leaves the finished packages on that run's release, and the next run downloads them. Each package is taken from `current.pins` when that package's recipe has not changed, otherwise from the GitHub package cache, and otherwise built from source. A cache hit or a source build is uploaded too, so the pin names a real asset. Pango, Cairo, HarfBuzz, and the other GTK libraries are packages in that list, so a GTK build links those tarballs. A source build reuses a stored checkout when it is already at the wanted revision. Set `through` to an earlier name, such as `libadwaita`, to stop there. **Monitor upstreams** uses the same rule: a package is uploaded when its tarball exists, and a later failure does not drop the packages already uploaded. **Build Android sysroot** uses the same order. Pass `packages=sqlite3` to prove that package alone.
+**Prove package** walks `build-order.txt` through `glib-networking` and publishes each package as soon as it finishes. A later failure leaves the finished packages on that run's release, and the next run downloads them. Each package is taken from `release.pins` when that package's recipe has not changed, otherwise from the GitHub package cache, and otherwise built from source. A cache hit or a source build is uploaded too, so the pin names a real asset. Pango, Cairo, HarfBuzz, and the other GTK libraries are packages in that list, so a GTK build links those tarballs. A source build reuses a stored checkout when it is already at the wanted revision. Set `through` to an earlier name, such as `libadwaita`, to stop there. **Monitor upstreams** uses the same rule: a package is uploaded when its tarball exists, and a later failure does not drop the packages already uploaded. **Build Android sysroot** uses the same order. Pass `packages=sqlite3` to prove that package alone.
 
 ## Use the sysroot from Pixiewood
 
@@ -55,4 +57,4 @@ bash tests/test-pixiewood-patch.sh
 bash tests/test-index.sh
 ```
 
-These cover packing, activation, runtime staging, wrap pins, both GTK targets, and the index. They do not cross-compile GTK.
+These cover packing, activation, runtime staging, wrap pins, the gnome target, and the index. They do not cross-compile GTK.

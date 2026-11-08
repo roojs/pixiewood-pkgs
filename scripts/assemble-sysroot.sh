@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Assemble one Android sysroot.
-# Each package comes from current.pins, then the package cache, then source.
+# Each package comes from release.pins, then the package cache, then source.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -11,7 +11,7 @@ arch="${ARCH:-aarch64}"
 gtk="${GTK_TARGET:-gnome}"
 jobs="${JOBS:-$(nproc)}"
 cache="${PIXIEWOOD_PACKAGE_CACHE:-$ROOT/.cache/packages}"
-pins="$ROOT/current.pins"
+pins="$ROOT/release.pins"
 out=""
 
 usage() {

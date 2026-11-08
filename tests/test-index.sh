@@ -281,9 +281,9 @@ grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-
 grep -q '"version": "1.261107"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
-# current.pins is the package list for the build that is publishing.
-openssl_release="$(awk -F '\t' '$1 == "arm64-v8a" && $2 == "gnome" && $4 == "openssl" { print $3; exit }' "$ROOT/current.pins")"
-openssl_url="$(awk -F '\t' '$1 == "arm64-v8a" && $2 == "gnome" && $4 == "openssl" { print $8; exit }' "$ROOT/current.pins")"
+# release.pins is the package list for the build that is publishing.
+openssl_release="$(awk -F '\t' '$1 == "arm64-v8a" && $2 == "gnome" && $4 == "openssl" { print $3; exit }' "$ROOT/release.pins")"
+openssl_url="$(awk -F '\t' '$1 == "arm64-v8a" && $2 == "gnome" && $4 == "openssl" { print $8; exit }' "$ROOT/release.pins")"
 [ -n "$openssl_release" ]
 case "$openssl_url" in
   "https://github.com/roojs/pixiewood-pkgs/releases/download/${openssl_release}/openssl-arm-v31-3.0.8.pixie"|\
@@ -294,16 +294,16 @@ case "$openssl_url" in
   "https://github.com/roojs/pixiewood-pkgs/releases/download/${openssl_release}/openssl-arm64-v8a-gnome.tar.xz") ;;
   *) echo "openssl pin URL is $openssl_url" >&2; exit 1 ;;
 esac
-if grep -q 'Knowles.android-ime' "$ROOT/current.pins" "$ROOT/packages/gtk/targets" "$ROOT/build-order.txt"; then
+if grep -q 'Knowles.android-ime' "$ROOT/release.pins" "$ROOT/snapshot.pins" "$ROOT/packages/gtk/targets" "$ROOT/build-order.txt"; then
   echo "the IME target is still in this distribution" >&2
   exit 1
 fi
-if grep -q 'webkitgtk-android' "$ROOT/current.pins" "$ROOT/build-order.txt" "$ROOT/packages/probes"; then
+if grep -q 'webkitgtk-android' "$ROOT/release.pins" "$ROOT/snapshot.pins" "$ROOT/build-order.txt" "$ROOT/packages/probes"; then
   echo "webkitgtk-android is still in this distribution" >&2
   exit 1
 fi
-if grep -q 'index-.*\.json' "$ROOT/current.pins"; then
-  echo "current.pins points at an index instead of package tarballs" >&2
+if grep -q 'index-.*\.json' "$ROOT/release.pins" "$ROOT/snapshot.pins"; then
+  echo "a pin file points at an index instead of package tarballs" >&2
   exit 1
 fi
 "$ROOT/scripts/current-pins.sh" index --abi arm64-v8a --gtk gnome --out "$tmp/pins-index.json"
@@ -559,21 +559,32 @@ if grep -q 'tgz' "$ROOT/.gitattributes"; then
   echo "gitattributes names a generated release archive" >&2
   exit 1
 fi
-grep -qx '/current.pins !export-ignore' "$ROOT/.gitattributes"
+grep -qx '/release.pins !export-ignore' "$ROOT/.gitattributes"
+grep -qx '/snapshot.pins !export-ignore' "$ROOT/.gitattributes"
+if grep -q -- '-snapshot\.pixie' "$ROOT/release.pins"; then
+  echo "release.pins names a snapshot" >&2
+  exit 1
+fi
+if grep -v '^#' "$ROOT/snapshot.pins" | grep -v -- '-snapshot\.pixie' | grep -q .; then
+  echo "snapshot.pins names a release" >&2
+  exit 1
+fi
 
 attr_work="$(mktemp -d)"
 attr_index="$(mktemp)"
 cp "$ROOT/.gitattributes" "$attr_work/.gitattributes"
-printf 'list\n' > "$attr_work/current.pins"
+printf 'list\n' > "$attr_work/release.pins"
+printf 'list\n' > "$attr_work/snapshot.pins"
 printf 'no\n' > "$attr_work/README.md"
 GIT_INDEX_FILE="$attr_index" git -C "$ROOT" read-tree --empty
-GIT_INDEX_FILE="$attr_index" git -C "$ROOT" --work-tree="$attr_work" add -- .gitattributes current.pins README.md
+GIT_INDEX_FILE="$attr_index" git -C "$ROOT" --work-tree="$attr_work" add -- .gitattributes release.pins snapshot.pins README.md
 attr_tree="$(GIT_INDEX_FILE="$attr_index" git -C "$ROOT" write-tree)"
 rm -f "$attr_index"
 git -C "$ROOT" archive "$attr_tree" | tar -t > "$tmp/source-archive.txt"
-grep -qx 'current.pins' "$tmp/source-archive.txt"
+grep -qx 'release.pins' "$tmp/source-archive.txt"
+grep -qx 'snapshot.pins' "$tmp/source-archive.txt"
 if grep -q 'README.md\|.gitattributes' "$tmp/source-archive.txt"; then
-  echo "source archive kept more than current.pins" >&2
+  echo "source archive kept more than the pin files" >&2
   cat "$tmp/source-archive.txt" >&2
   exit 1
 fi

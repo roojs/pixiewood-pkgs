@@ -24,7 +24,7 @@ upload=1
 commit=0
 
 usage() {
-  echo "Usage: $0 --name NAME --tarball FILE --arch ARCH --gtk TARGET --track TRACK --resolved REV --inputs HASH [--created STAMP] [--repo OWNER/NAME] [--file PATH] [--no-upload] [--commit]" >&2
+  echo "Usage: $0 --name NAME --tarball FILE --arch ARCH --gtk TARGET --track TRACK --resolved REV --inputs HASH [--created STAMP] [--repo OWNER/NAME] [--file PATH] [--snapshot] [--no-upload] [--commit]" >&2
   exit 2
 }
 
@@ -40,6 +40,7 @@ while [ "$#" -gt 0 ]; do
     --created) created=$2; shift 2 ;;
     --repo) repo=$2; shift 2 ;;
     --file) file=$2; shift 2 ;;
+    --snapshot) file="$ROOT/snapshot.pins"; shift ;;
     --no-upload) upload=0; shift ;;
     --commit) commit=1; shift ;;
     -h|--help) usage ;;
@@ -57,7 +58,7 @@ fi
 if ! abi="$(sysroot_map "$ROOT/cross/abi" "$arch")"; then
   exit 2
 fi
-file="${file:-$ROOT/current.pins}"
+file="${file:-$ROOT/release.pins}"
 created="${created:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 tag="$(release_version "$created")" || exit 1
 label="$(package_pin_label "$name" "$gtk" "$repo")"
@@ -100,9 +101,9 @@ awk -F '\t' -v OFS='\t' \
 ' "$file" > "$tmp"
 mv "$tmp" "$file"
 
-if [ "$commit" -eq 1 ] && [ "$file" = "$ROOT/current.pins" ]; then
-  git -C "$ROOT" add -- current.pins
-  if ! git -C "$ROOT" diff --cached --quiet -- current.pins; then
+if [ "$commit" -eq 1 ] && { [ "$file" = "$ROOT/release.pins" ] || [ "$file" = "$ROOT/snapshot.pins" ]; }; then
+  git -C "$ROOT" add -- "$file"
+  if ! git -C "$ROOT" diff --cached --quiet -- "$file"; then
     git -C "$ROOT" commit -m "Publish ${name} to ${tag}" </dev/null
     ref="${GITHUB_REF_NAME:-}"
     if [ -n "$ref" ]; then

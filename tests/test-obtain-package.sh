@@ -8,7 +8,10 @@ trap 'rm -rf "$tmp"' EXIT
 
 bash -n "$ROOT/scripts/obtain-package.sh"
 
-pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
+pins_commit="$(git -C "$ROOT" log -1 --format=%H -- release.pins || true)"
+if [ -z "$pins_commit" ]; then
+  pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
+fi
 openssl_recipe_current=0
 if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
   openssl_recipe_current=1
@@ -62,7 +65,10 @@ decision="$("$ROOT/scripts/obtain-package.sh" --name demo --abi arm64-v8a --gtk 
 # glib's wrap patch is applied by build-sysroot.sh. The cross files and the
 # distro config are part of every package. A change in any of those since
 # the pin is a source build rather than the published tarball.
-pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
+pins_commit="$(git -C "$ROOT" log -1 --format=%H -- release.pins || true)"
+if [ -z "$pins_commit" ]; then
+  pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
+fi
 glib="$("$ROOT/scripts/obtain-package.sh" --name glib --abi arm64-v8a --gtk gnome)"
 glib="${glib%%$'\t'*}"
 if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- packages/glib cross android-distro.conf scripts/build-sysroot.sh; then

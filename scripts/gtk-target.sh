@@ -102,7 +102,7 @@ package_wrap_owner() {
   gtk_target_owner "$url"
 }
 
-# Column in current.pins. gtk and gdk follow the GTK target. A package whose
+# Column in the pin files. gtk and gdk follow the GTK target. A package whose
 # git owner is this distribution is pinned as that owner. Everything else
 # stays on the first GTK target.
 package_pin_label() {

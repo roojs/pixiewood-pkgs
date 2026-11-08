@@ -17,17 +17,21 @@ the glue is not inside a wrap anymore:
 3. `java-sources` must point at `share/pixiewood/gtk-android-java` in the
    extracted tree (that directory contains `org/gtk/android`).
 
-Fetch a set first. `latest` follows native GTK (`gnome`), which is upstream
-GNOME with no Android patch. `pin` keeps a single index file:
+Fetch a set first. Name the repository, the branch, and release or snapshot.
+`latest` reads `release.pins`. `latest --snapshot` reads `snapshot.pins`.
+The target is native GTK (`gnome`), upstream GNOME with no Android patch.
+`pin` keeps a single index file:
 
 ```bash
+git clone --depth 1 --branch main https://github.com/roojs/pixiewood-pkgs.git
 scripts/integrate-sysroot.sh latest --dest "$HOME/pixiewood-sysroot"
+scripts/integrate-sysroot.sh latest --snapshot --dest "$HOME/pixiewood-sysroot"
 scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysroot"
 ```
 
-`latest` reads `current.pins` and downloads each package tarball named
-there, including earlier release URLs for packages that did not change.
-The fetch then activates the tree. See [releases.md](releases.md).
+The fetch downloads each package named in that pin file, including earlier
+release URLs for packages that did not change, then activates the tree.
+See [releases.md](releases.md).
 `scripts/activate-sysroot.sh` rewrites `prefix=@PIXIEWOOD_SYSROOT@` in the
 `.pc` files and writes `share/pixiewood/sysroot.cross`.
 

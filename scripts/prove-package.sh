@@ -38,6 +38,7 @@ while [ "$#" -gt 0 ]; do
     --through) through=$2; shift 2 ;;
     --cache) cache=$2; shift 2 ;;
     --pins) pins=$2; shift 2 ;;
+    --snapshot) pins="$ROOT/snapshot.pins"; shift ;;
     --out) out=$2; shift 2 ;;
     --dry-run) dry=1; shift ;;
     --check) check=$2; shift 2 ;;
@@ -158,7 +159,7 @@ if [ -z "$out" ]; then
   out="$ROOT/out/prove"
 fi
 if [ -z "$pins" ]; then
-  pins="$ROOT/current.pins"
+  pins="$ROOT/release.pins"
 fi
 
 declare -A order_at=()

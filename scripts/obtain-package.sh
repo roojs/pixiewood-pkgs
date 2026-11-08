@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Decide where a package comes from, for prove and for a real sysroot build.
-# A release pin in current.pins is used when that package's recipe has not
+# A pin in release.pins or snapshot.pins is used when that package's recipe has not
 # changed since the pin was committed. Otherwise a tarball in the package
 # cache is used when it matches this resolve. Otherwise the package is built.
 set -euo pipefail
@@ -44,8 +44,8 @@ obtain_pin_commit() {
   local top
   top="$(cd "$ROOT" && pwd)"
   case "$file" in
-    "$top"/current.pins|"$ROOT"/current.pins)
-      git -C "$ROOT" log -1 --format=%H -- current.pins 2>/dev/null || true
+    "$top"/release.pins|"$ROOT"/release.pins|"$top"/snapshot.pins|"$ROOT"/snapshot.pins)
+      git -C "$ROOT" log -1 --format=%H -- "$file" 2>/dev/null || true
       ;;
   esac
 }
@@ -103,7 +103,7 @@ obtain_decide() {
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
-  name="" abi="" gtk="${GTK_TARGET:-gnome}" cache="" pins="$ROOT/current.pins"
+  name="" abi="" gtk="${GTK_TARGET:-gnome}" cache="" pins="$ROOT/release.pins"
   resolved="" inputs=""
   while [ "$#" -gt 0 ]; do
     case "$1" in

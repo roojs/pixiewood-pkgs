@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# current.pins is the package list: one line per package and its tarball URL.
-# A line is committed when that package's tarball is on a release. The
-# repository source archive contains this file and nothing else.
+# release.pins and snapshot.pins are the package lists.
+# release.pins names official releases. snapshot.pins names snapshots.
+# A line is committed when that package is on a GitHub release.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -11,7 +11,7 @@ source "$ROOT/scripts/sysroot-common.sh"
 source "$ROOT/scripts/upstream-index.sh"
 
 pins_file() {
-  local file=${1:-$ROOT/current.pins}
+  local file=${1:-$ROOT/release.pins}
   printf '%s\n' "$file"
 }
 
@@ -302,7 +302,7 @@ cmd_index() {
     row_release["${got_gtk} ${name}"]=$release
   done < "$file"
   if [ "$gtk" != "$base" ] && [ -z "${row_url["$gtk gtk"]:-}" ]; then
-    echo "current.pins has no gtk package for $abi $gtk" >&2
+    echo "$file has no gtk package for $abi $gtk" >&2
     return 1
   fi
   while IFS= read -r order_name || [ -n "$order_name" ]; do
@@ -336,7 +336,7 @@ cmd_index() {
     set_release="${row_release["$base openssl"]:-${row_release["$gtk gtk"]:-}}"
   fi
   if [ ! -s "$list" ]; then
-    echo "current.pins has no packages for $abi $gtk" >&2
+    echo "$file has no packages for $abi $gtk" >&2
     return 1
   fi
   arch="$(abi_arch "$abi")" || return 1
