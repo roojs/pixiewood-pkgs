@@ -69,8 +69,9 @@ while IFS=$'\t' read -r status name _kind _track _resolved _inputs _url; do
     echo "Skipping $name; its tarball is not built yet" >&2
     continue
   fi
-  printf '%s\thttps://github.com/%s/releases/download/%s/%s-%s-%s.pixie\n' \
-    "$name" "$repo" "$tag" "$name" "$abi" "$label" >> "$built"
+  pkg_asset="$(package_asset_name "$name" "$abi" "$label")"
+  printf '%s\thttps://github.com/%s/releases/download/%s/%s\n' \
+    "$name" "$repo" "$tag" "$pkg_asset" >> "$built"
   changed="${changed} ${name}"
 done < "$plan"
 if [ -n "$changed" ]; then

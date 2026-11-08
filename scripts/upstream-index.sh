@@ -12,6 +12,18 @@ distro_get() {
   sed -n "s/^${key}=//p" "$ROOT/android-distro.conf" | head -n1 | tr -d '[:space:]'
 }
 
+# openssl-arm64-v8a-android31-gnome.pixie. The SDK is the API level in
+# android-distro.conf, the same level the NDK compiler targets.
+package_asset_name() {
+  local name=$1 abi=$2 label=$3 api
+  api="$(distro_get api)"
+  if [ -z "$api" ]; then
+    echo "android-distro.conf has no api" >&2
+    return 1
+  fi
+  printf '%s-%s-android%s-%s.pixie\n' "$name" "$abi" "$api" "$label"
+}
+
 wrap_field() {
   local file=$1 key=$2
   sed -n "s/^${key}[[:space:]]*=[[:space:]]*//p" "$file" | head -n1 | tr -d '[:space:]'

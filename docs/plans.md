@@ -25,7 +25,7 @@ This repository's `current.pins` names the release that holds each `.pixie` bund
 
 | Channel | Release name in the pin | Bundle |
 | --- | --- | --- |
-| `release` | `1.yymmddHHMMSS`, the GitHub release | `{name}-{abi}-gnome.pixie` on that release |
+| `release` | `1.yymmddHHMMSS`, the GitHub release | `{name}-{abi}-android31-gnome.pixie` on that release |
 | `main` | `main`, the moving GitHub release | the same file name on the `main` release |
 
 GNOME GTK in a distro release stays on the proved commit. A package that follows a branch tip uses channel `main`. An app that wants a frozen set reads the `release` lines. An app that wants a tip reads the `main` lines and, for any package that has no `main` line, uses the `release` line.

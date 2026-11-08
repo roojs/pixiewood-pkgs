@@ -61,7 +61,7 @@ file="${file:-$ROOT/current.pins}"
 created="${created:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 tag="$(release_version "$created")" || exit 1
 label="$(package_pin_label "$name" "$gtk" "$repo")"
-asset="${name}-${abi}-${label}.pixie"
+asset="$(package_asset_name "$name" "$abi" "$label")"
 url="https://github.com/${repo}/releases/download/${tag}/${asset}"
 
 if [ "$upload" -eq 1 ]; then

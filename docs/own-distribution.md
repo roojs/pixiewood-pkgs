@@ -20,9 +20,9 @@ The origin of that checkout is where the bundles are downloaded from, unless a p
 
 ```
 # abi gtk channel release name resolved inputs file repo
-arm64-v8a	gnome	release	1.261107000000	gtk	ae709f962a51f9108a1e6381bcfbd05bbaecc840	<inputs>	gtk-arm64-v8a-gnome.pixie	roojs/pixiewood-pkgs
-arm64-v8a	gnome	main	main	fontconfig	cbf1db7f1bd01e641968ca0818e05b0819ce6c74	<inputs>	fontconfig-arm64-v8a-gnome.pixie	roojs/pixiewood-pkgs
-arm64-v8a	Knowles.android-ime	release	1.261108000000	gtk	<ime-commit>	<inputs>	gtk-arm64-v8a-Knowles.android-ime.pixie	Knowles/gtk
+arm64-v8a	gnome	release	1.261107000000	gtk	ae709f962a51f9108a1e6381bcfbd05bbaecc840	<inputs>	gtk-arm64-v8a-android31-gnome.pixie	roojs/pixiewood-pkgs
+arm64-v8a	gnome	main	main	fontconfig	cbf1db7f1bd01e641968ca0818e05b0819ce6c74	<inputs>	fontconfig-arm64-v8a-android31-gnome.pixie	roojs/pixiewood-pkgs
+arm64-v8a	Knowles.android-ime	release	1.261108000000	gtk	<ime-commit>	<inputs>	gtk-arm64-v8a-android31-Knowles.android-ime.pixie	Knowles/gtk
 ```
 
 | Column | Meaning |
@@ -39,7 +39,7 @@ arm64-v8a	Knowles.android-ime	release	1.261108000000	gtk	<ime-commit>	<inputs>	g
 
 `channel=release` means the package was built from a tag or a pinned commit. `channel=main` means it was built from the default branch tip. The IME branch uses `channel=main` and `release=main` when it publishes the `android-ime` tip, and `channel=release` with a `1.yymmddHHMMSS` name when it publishes a dated set.
 
-The file name is `{name}-{abi}-{gtk}.pixie`. A release can hold one `.pixie` per package. The pin's `file` column is that name, so the checkout and the release asset are the same string.
+The file name is `{name}-{abi}-android{api}-{gtk}.pixie`. `android31` is the Android SDK API level the package was built for. A release can hold one `.pixie` per package. The pin's `file` column is that name, so the checkout and the release asset are the same string.
 
 ## How the bundle is fetched
 
@@ -52,13 +52,13 @@ https://github.com/<repo>/releases/download/<release>/<file>
 A dated line becomes:
 
 ```
-https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107000000/gtk-arm64-v8a-gnome.pixie
+https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107000000/gtk-arm64-v8a-android31-gnome.pixie
 ```
 
 A main line becomes:
 
 ```
-https://github.com/roojs/pixiewood-pkgs/releases/download/main/fontconfig-arm64-v8a-gnome.pixie
+https://github.com/roojs/pixiewood-pkgs/releases/download/main/fontconfig-arm64-v8a-android31-gnome.pixie
 ```
 
 The script lists that release's assets and keeps the one whose name equals the `file` column. A `.pixie` file is an xz-compressed tar of one package: headers, libraries, and pkg-config under `prefix=/` and `lib/<abi>`, with `prefix=@PIXIEWOOD_SYSROOT@` in the `.pc` files. Extract every selected bundle into one directory, then run `scripts/activate-sysroot.sh` from this repository, or the same rewrite from the distribution you checked out.
@@ -69,7 +69,7 @@ An app that wants the proved set uses every `channel=release` line for its ABI. 
 
 1. Keep `current.pins` in the git repository you want applications to clone.
 2. Create a GitHub release named `1.yymmddHHMMSS` in UTC for a dated set, or a moving release named `main` for a tip.
-3. Upload one `.pixie` asset per package you built, named `{name}-{abi}-{gtk}.pixie`.
+3. Upload one `.pixie` asset per package you built, named `{name}-{abi}-android{api}-{gtk}.pixie`.
 4. Commit `current.pins` so each line's `release` and `file` match those assets.
 5. Leave the pins out of the release. The release holds the bundles.
 

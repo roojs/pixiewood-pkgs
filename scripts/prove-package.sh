@@ -8,6 +8,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=sysroot-common.sh
 source "$ROOT/scripts/sysroot-common.sh"
+# shellcheck source=upstream-index.sh
+source "$ROOT/scripts/upstream-index.sh"
 
 arch="${ARCH:-aarch64}"
 gtk="${GTK_TARGET:-gnome}"
@@ -290,11 +292,11 @@ for name in "${names[@]}"; do
     publish_this=0
     if [ "${PROVE_PUBLISH:-}" = 1 ]; then
       publish_this=1
-      # A pin that already names a .pixie asset stays where it is.
-      # A .tar.xz pin is published again under the .pixie name.
+      # A pin whose URL is already this SDK's asset stays where it is.
       if [ "$kind" = pin ]; then
+        asset="$(package_asset_name "$name" "$abi" "$(package_pin_label "$name" "$gtk")")"
         case "$loc" in
-          *.pixie) publish_this=0 ;;
+          */"$asset") publish_this=0 ;;
         esac
       fi
     fi
