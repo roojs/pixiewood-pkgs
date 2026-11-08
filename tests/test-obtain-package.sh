@@ -53,7 +53,7 @@ decision="$("$ROOT/scripts/obtain-package.sh" --name openssl --abi arm64-v8a --g
 [ "$decision" = "cache"$'\t'"$tmp/cache/arm64-v8a/openssl.tar.xz" ]
 
 # A fixture pin is used when its inputs match, and skipped when they do not.
-jq -n '{packages: [{abi:"arm64-v8a", repo:"https://gitlab.gnome.org/GNOME/gtk.git", release:"1.261107", name:"demo", track:"track", resolved:"resolved-a", inputs:"inputs-a", url:"https://example.invalid/demo.tar.xz"}]}' > "$tmp/pins"
+jq -n '{packages: [{abi:"arm64-v8a", repo:"https://gitlab.gnome.org/GNOME/gtk.git", name:"demo", track:"track", resolved:"resolved-a", inputs:"inputs-a", url:"https://example.invalid/demo.tar.xz"}]}' > "$tmp/pins"
 decision="$("$ROOT/scripts/obtain-package.sh" --name demo --abi arm64-v8a --gtk gnome --pins "$tmp/pins" --resolved resolved-a --inputs inputs-a)"
 [ "$decision" = "pin"$'\t'"https://example.invalid/demo.tar.xz" ]
 decision="$("$ROOT/scripts/obtain-package.sh" --name demo --abi arm64-v8a --gtk gnome --pins "$tmp/pins" --resolved resolved-b --inputs inputs-a)"

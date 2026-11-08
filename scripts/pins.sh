@@ -47,31 +47,31 @@ pins_label_of() {
 }
 
 pins_rows() {
-  local file=$1 abi repo release name track resolved inputs url label
+  local file=$1 abi repo name track resolved inputs url label
   [ -f "$file" ] || return 0
-  while IFS=$'\t' read -r abi repo release name track resolved inputs url; do
+  while IFS=$'\t' read -r abi repo name track resolved inputs url; do
     [ -n "${abi:-}" ] || continue
     label="$(pins_label_of "$repo")"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-      "$abi" "$label" "$release" "$name" "$track" "$resolved" "$inputs" "$url"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$abi" "$label" "$name" "$track" "$resolved" "$inputs" "$url"
   done < <(jq -r '
     .packages[]
-    | [.abi, (.repo // .gtk // ""), .release, .name, .track, .resolved, .inputs, .url]
+    | [.abi, (.repo // .gtk // ""), .name, .track, .resolved, .inputs, .url]
     | @tsv
   ' "$file")
 }
 
 pins_store() {
-  local file=$1 src line abi label release name track resolved inputs url repo
+  local file=$1 src line abi label name track resolved inputs url repo
   src="$(mktemp)"
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in ''|\#*) continue ;; esac
-    IFS=$'\t' read -r abi label release name track resolved inputs url <<< "$line"
+    IFS=$'\t' read -r abi label name track resolved inputs url <<< "$line"
     [ -n "${abi:-}" ] || continue
     [ -n "${url:-}" ] || continue
     repo="$(pins_repo_of "$label")"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-      "$abi" "$repo" "$release" "$name" "$track" "$resolved" "$inputs" "$url"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$abi" "$repo" "$name" "$track" "$resolved" "$inputs" "$url"
   done > "$src"
   if [ ! -s "$src" ]; then
     jq -n '{packages: []}' > "$file"
@@ -82,17 +82,16 @@ pins_store() {
     split("\n")
     | map(select(length > 0))
     | map(split("\t"))
-    | map(select(length >= 8))
+    | map(select(length >= 7))
     | {
         packages: map({
           abi: .[0],
           repo: .[1],
-          release: .[2],
-          name: .[3],
-          track: .[4],
-          resolved: .[5],
-          inputs: .[6],
-          url: .[7]
+          name: .[2],
+          track: .[3],
+          resolved: .[4],
+          inputs: .[5],
+          url: .[6]
         })
       }
   ' "$src" > "$file"
@@ -101,13 +100,13 @@ pins_store() {
 
 pins_upsert() {
   local file=$1
-  local abi=$2 label=$3 release=$4 name=$5 track=$6 resolved=$7 inputs=$8 url=$9
+  local abi=$2 label=$3 name=$4 track=$5 resolved=$6 inputs=$7 url=$8
   local tmp row repo
   repo="$(pins_repo_of "$label")"
   row="$(jq -n \
-    --arg abi "$abi" --arg repo "$repo" --arg release "$release" --arg name "$name" \
+    --arg abi "$abi" --arg repo "$repo" --arg name "$name" \
     --arg track "$track" --arg resolved "$resolved" --arg inputs "$inputs" --arg url "$url" \
-    '{abi:$abi, repo:$repo, release:$release, name:$name, track:$track, resolved:$resolved, inputs:$inputs, url:$url}')"
+    '{abi:$abi, repo:$repo, name:$name, track:$track, resolved:$resolved, inputs:$inputs, url:$url}')"
   tmp="$(mktemp)"
   if [ ! -f "$file" ]; then
     jq -n --argjson row "$row" '{packages: [$row]}' > "$tmp"

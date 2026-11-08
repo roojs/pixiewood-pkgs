@@ -83,7 +83,7 @@ if [ "$upload" -eq 1 ]; then
   rm -rf "$stage"
 fi
 
-pins_upsert "$file" "$abi" "$label" "$tag" "$name" "$track" "$resolved" "$inputs" "$url"
+pins_upsert "$file" "$abi" "$label" "$name" "$track" "$resolved" "$inputs" "$url"
 
 if [ "$commit" -eq 1 ] && { [ "$file" = "$ROOT/release.pins" ] || [ "$file" = "$ROOT/snapshot.pins" ]; }; then
   git -C "$ROOT" add -- "$file"

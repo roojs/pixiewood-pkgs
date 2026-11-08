@@ -3,7 +3,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "openssl",
       "track": "openssl-3.0.8.tar.gz",
       "resolved": "6c13d2bf38fdf31eac3ce2a347073673f5d63263398f1f69d0df4a41253e4b3e",
@@ -13,7 +12,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "libxml2",
       "track": "libxml2-2.15.3.tar.xz",
       "resolved": "78262a6e7ac170d6528ebfe2efccdf220191a5af6a6cd61ea4a9a9a5042c7a07",
@@ -23,7 +21,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "sqlite3",
       "track": "sqlite-amalgamation-3530200.zip",
       "resolved": "8a310d0a16c7a90cacd4c884e70faa51c902afed2a89f63aaa0126ab83558a32",
@@ -33,7 +30,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "nghttp2",
       "track": "nghttp2-1.62.1.tar.xz",
       "resolved": "2345d4dc136fda28ce243e0bb21f2e7e8ef6293d62c799abbf6f633a6887af72",
@@ -43,7 +39,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "libpsl",
       "track": "libpsl-0.21.5.tar.gz",
       "resolved": "1dcc9ceae8b128f3c0b3f654decd0e1e891afc6ff81098f227ef260449dae208",
@@ -53,7 +48,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "glib",
       "track": "2.90.0",
       "resolved": "436d47a723da97fbe67057f6b51dcf49a244fd4a",
@@ -63,7 +57,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "gee",
       "track": "libgee-0.20.8.tar.xz",
       "resolved": "189815ac143d89867193b0c52b7dc31f3aa108a15f04d6b5dca2b6adfad0b0ee",
@@ -73,7 +66,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "json-glib",
       "track": "json-glib-1.10.8.tar.xz",
       "resolved": "55c5c141a564245b8f8fbe7698663c87a45a7333c2a2c56f06f811ab73b212dd",
@@ -83,7 +75,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "fribidi",
       "track": "v1.0.16",
       "resolved": "68162babff4f39c4e2dc164a5e825af93bda9983",
@@ -93,7 +84,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "pixman",
       "track": "pixman-0.43.4.tar.gz",
       "resolved": "a0624db90180c7ddb79fc7a9151093dc37c646d8c38d3f232f767cf64b85a226",
@@ -103,7 +93,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "cairo",
       "track": "1.18.2",
       "resolved": "200441e6855854eb4dbf338e44d67b00ababe07f",
@@ -113,7 +102,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "harfbuzz",
       "track": "14.4.0",
       "resolved": "36cb489cb02ce4b92099669ba9f9bea348eff93f",
@@ -123,7 +111,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "pango",
       "track": "1.58.2",
       "resolved": "d360f14004e4a4824f2352f6e2722016f9a51dd6",
@@ -133,7 +120,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "libjpeg-turbo",
       "track": "libjpeg-turbo-3.1.1.tar.gz",
       "resolved": "aadc97ea91f6ef078b0ae3a62bba69e008d9a7db19b34e4ac973b19b71b4217c",
@@ -143,7 +129,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "libtiff",
       "track": "tiff-4.7.0.tar.gz",
       "resolved": "273a0a73b1f0bed640afee4a5df0337357ced5b53d3d5d1c405b936501f71017",
@@ -153,7 +138,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "gdk-pixbuf",
       "track": "2.43.3",
       "resolved": "7df9a8ba0a04ed3dd46f4e5fda5f888288c25c5b",
@@ -163,7 +147,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "libepoxy",
       "track": "2df68f811fc1a5f0a6d372ecdb887333ad3f540f",
       "resolved": "2df68f811fc1a5f0a6d372ecdb887333ad3f540f",
@@ -173,7 +156,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "graphene",
       "track": "f89522ca60a76512b8b85c7b8e4d16b94849f22f",
       "resolved": "f89522ca60a76512b8b85c7b8e4d16b94849f22f",
@@ -183,7 +165,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "gtk",
       "track": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",
       "resolved": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",
@@ -193,7 +174,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "libadwaita",
       "track": "1.10.0",
       "resolved": "c9ab118612eee92324143783c4641c98eaded3f0",
@@ -203,7 +183,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "gtksourceview",
       "track": "gtksourceview-5.16.0.tar.xz",
       "resolved": "ab35d420102f3e8b055dd3b8642d3a48209f888189e6254d0ffb4b6a7e8c3566",
@@ -213,7 +192,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "libsoup",
       "track": "libsoup-3.6.5.tar.xz",
       "resolved": "6891765aac3e949017945c3eaebd8cc8216df772456dc9f460976fbdb7ada234",
@@ -223,7 +201,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "glib-networking",
       "track": "glib-networking-2.80.1.tar.xz",
       "resolved": "b80e2874157cd55071f1b6710fa0b911d5ac5de106a9ee2a4c9c7bee61782f8e",

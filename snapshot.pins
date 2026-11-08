@@ -3,7 +3,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "fontconfig",
       "track": "main",
       "resolved": "cbf1db7f1bd01e641968ca0818e05b0819ce6c74",
@@ -13,7 +12,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "release": "1.261108",
       "name": "gdk",
       "track": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",
       "resolved": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",
