@@ -25,7 +25,7 @@ This repository's `current.pins` names the release that holds each `.pixie` bund
 
 | What was built | Bundle |
 | --- | --- |
-| Upstream release `3.0.8` | `{name}-{abi}-v31-3.0.8.pixie` |
-| A branch tip or a commit | `{name}-{abi}-v31-snapshot.pixie` |
+| Upstream release `3.0.8` | `{name}-arm-v31-3.0.8.pixie` |
+| A branch tip or a commit | `{name}-arm-v31-snapshot.pixie` |
 
 The GitHub release that holds the file is still `1.yymmddHHMMSS`. `snapshot` is the file name for a tip, in place of `main` or `head`.

@@ -40,7 +40,7 @@ printf 'bytes\n' > "$tmp/gtk.tar.xz"
   --file "$tmp/pins" \
   --no-upload > "$tmp/openssl.out"
 grep -q 'Published openssl 1.261108010203' "$tmp/openssl.out"
-grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108010203/openssl-arm64-v8a-v31-3.0.8.pixie' "$tmp/pins"
+grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108010203/openssl-arm-v31-3.0.8.pixie' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108010203\topenssl\topenssl-3.0.8.tar.gz\thash-o\tinputs-o\t' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108\tglib\tgtrack\tgres\tgin\thttps://example.invalid/glib.tar.xz' "$tmp/pins"
 if grep -q 'example.invalid/openssl' "$tmp/pins"; then
@@ -61,7 +61,7 @@ fi
   --file "$tmp/pins" \
   --no-upload > "$tmp/gtk.out"
 grep -q 'Published gtk 1.261108010203' "$tmp/gtk.out"
-grep -q 'gtk-arm64-v8a-v31-snapshot.pixie' "$tmp/pins"
+grep -q 'gtk-arm-v31-snapshot.pixie' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108\tglib\t' "$tmp/pins"
 
 if "$ROOT/scripts/publish-package.sh" \
@@ -110,5 +110,9 @@ grep -qx CONF "$hdr/dest/opensslconf.h"
 [ "$(package_track_label HEAD)" = snapshot ]
 [ "$(package_track_label ae709f962a51f9108a1e6381bcfbd05bbaecc840)" = snapshot ]
 [ "$(package_track_label android-ime)" = snapshot ]
+[ "$(package_abi_label arm64-v8a)" = arm ]
+[ "$(package_abi_label x86_64)" = x86 ]
+[ "$(package_asset_name openssl arm64-v8a 3.0.8)" = openssl-arm-v31-3.0.8.pixie ]
+[ "$(package_asset_name openssl x86_64 3.0.8)" = openssl-x86-v31-3.0.8.pixie ]
 
 echo "publish package: ok"

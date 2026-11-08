@@ -37,11 +37,21 @@ package_track_label() {
   printf 'snapshot\n'
 }
 
-# openssl-arm64-v8a-v31-3.0.8.pixie, or ...-snapshot.pixie.
-# arm64-v8a is the ABI. v31 is the API level in android-distro.conf.
+# The file name uses a short arch. Libraries stay in lib/arm64-v8a and lib/x86_64.
+package_abi_label() {
+  case "$1" in
+    arm64-v8a|aarch64) printf 'arm\n' ;;
+    x86_64) printf 'x86\n' ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
+# openssl-arm-v31-3.0.8.pixie, or ...-snapshot.pixie.
+# v31 is the API level in android-distro.conf.
 package_asset_name() {
-  local name=$1 abi=$2 version=$3 api
+  local name=$1 abi=$2 version=$3 api label
   api="$(distro_get api)"
+  label="$(package_abi_label "$abi")"
   if [ -z "$api" ]; then
     echo "android-distro.conf has no api" >&2
     return 1
@@ -50,7 +60,7 @@ package_asset_name() {
     echo "package $name has no version" >&2
     return 1
   fi
-  printf '%s-%s-v%s-%s.pixie\n' "$name" "$abi" "$api" "$version"
+  printf '%s-%s-v%s-%s.pixie\n' "$name" "$label" "$api" "$version"
 }
 
 wrap_field() {
