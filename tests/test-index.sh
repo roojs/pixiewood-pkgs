@@ -171,7 +171,7 @@ printf '%s\n' 'prefix=/' 'Name: gtk4' 'Version: 4.0.0' > "$pkg/lib/$abi/pkgconfi
     "gtk"$'\t'"android-ime"$'\t'"hashi"$'\t'"inputsi"$'\t'"$tmp/gtk.tar.xz") \
   --abi "$abi" --arch aarch64 --gtk gnome --created 2026-11-07T00:00:00Z \
   --out "$tmp/local-index.json"
-grep -q '"version": "1.261107000000"' "$tmp/local-index.json"
+grep -q '"version": "1.261107"' "$tmp/local-index.json"
 
 "$ROOT/scripts/upstream-index.sh" write \
   --list <(printf '%s\n' \
@@ -263,10 +263,10 @@ GH_LOG="$tmp/gh.log" PATH="$tmp/bin:$PATH" \
   --repo roojs/pixiewood-pkgs \
   --created 2026-11-07T00:00:00Z \
   --out "$tmp/published.json"
-grep -q 'release create 1.261107000000' "$tmp/gh.log"
-grep -q '1.261107000000.tgz' "$tmp/gh.log"
+grep -q 'release create 1.261107' "$tmp/gh.log"
+grep -q '1.261107.tgz' "$tmp/gh.log"
 grep -q 'gtk-arm-v31-snapshot.pixie' "$tmp/gh.log"
-tar -tzf "$tmp/1.261107000000.tgz" > "$tmp/release-list.txt"
+tar -tzf "$tmp/1.261107.tgz" > "$tmp/release-list.txt"
 grep -qx 'index-arm64-v8a-gnome.json' "$tmp/release-list.txt"
 if grep -q -e '\.tar\.xz$' -e '\.pixie$' "$tmp/release-list.txt"; then
   echo "release file contains a package" >&2
@@ -277,8 +277,8 @@ if grep -q 'openssl-arm64-v8a.tar.xz' "$tmp/gh.log"; then
   echo "unchanged openssl was uploaded" >&2
   exit 1
 fi
-grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107000000/gtk-arm-v31-snapshot.pixie' "$tmp/published.json"
-grep -q '"version": "1.261107000000"' "$tmp/published.json"
+grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-arm-v31-snapshot.pixie' "$tmp/published.json"
+grep -q '"version": "1.261107"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
 # current.pins is the package list for the build that is publishing.
@@ -307,10 +307,7 @@ if grep -q 'index-.*\.json' "$ROOT/current.pins"; then
   exit 1
 fi
 "$ROOT/scripts/current-pins.sh" index --abi arm64-v8a --gtk gnome --out "$tmp/pins-index.json"
-case "$openssl_release" in
-  1.[0-9][0-9][0-9][0-9][0-9][0-9]) index_release="${openssl_release}000000" ;;
-  *) index_release="$openssl_release" ;;
-esac
+index_release="1.${openssl_release:2:6}"
 grep -q "\"version\": \"$index_release\"" "$tmp/pins-index.json"
 grep -q "$(basename "$openssl_url")" "$tmp/pins-index.json"
 if grep -q 'webkitgtk-android' "$tmp/pins-index.json"; then
@@ -351,7 +348,7 @@ grep -q $'^build\tgdk\t' "$tmp/gdk-diff-built.tsv"
   --repo roojs/pixiewood-pkgs \
   --plan "$tmp/gnome-webkit.tsv" \
   --plan "$tmp/gdk-diff.tsv"
-grep -q $'arm64-v8a\tKnowles.android-ime\t1.261108000000\tgdk\t' "$tmp/owner-pins"
+grep -q $'arm64-v8a\tKnowles.android-ime\t1.261108\tgdk\t' "$tmp/owner-pins"
 grep -q 'gdk-arm-v31-snapshot.pixie' "$tmp/owner-pins"
 if grep -q 'webkitgtk-android' "$tmp/owner-pins"; then
   echo "written pins still name webkitgtk-android" >&2
@@ -554,8 +551,8 @@ printf '%s\n' $'x86_64\tx86_64\t1.261107\tglib\t2.90.0\thashg\tinputsg\thttps://
   --created 2026-11-08T00:00:00Z \
   --repo roojs/pixiewood-pkgs \
   --plan "$tmp/keep-plan.tsv"
-grep -q $'arm64-v8a\tgnome\t1.261108000000\topenssl\t3.0.8\thasho\tinputso\thttps://example.invalid/old/openssl.tar.xz' "$tmp/pins"
-grep -q $'arm64-v8a\tgnome\t1.261108000000\tgtk\tandroid-ime\thashi\tinputsi\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261108000000/gtk-arm-v31-snapshot.pixie' "$tmp/pins"
+grep -q $'arm64-v8a\tgnome\t1.261108\topenssl\t3.0.8\thasho\tinputso\thttps://example.invalid/old/openssl.tar.xz' "$tmp/pins"
+grep -q $'arm64-v8a\tgnome\t1.261108\tgtk\tandroid-ime\thashi\tinputsi\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gtk-arm-v31-snapshot.pixie' "$tmp/pins"
 grep -q $'x86_64\tx86_64\t1.261107\tglib\t' "$tmp/pins"
 
 if grep -q 'tgz' "$ROOT/.gitattributes"; then

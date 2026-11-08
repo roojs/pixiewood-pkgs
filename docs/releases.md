@@ -17,7 +17,7 @@ Every path is dropped except `current.pins`. That file is the package list. Each
 
 ```
 # abi gtk release name track resolved inputs url
-arm64-v8a gnome 1.261107000000 gtk ae709f96... ae709f96... 40415ca3... https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107000000/gtk-arm-v31-snapshot.pixie
+arm64-v8a gnome 1.261107 gtk ae709f96... ae709f96... 40415ca3... https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-arm-v31-snapshot.pixie
 ```
 
 A package that did not change keeps the tarball URL from the earlier release. The line is not a pointer at `index-<abi>-<gtk>.json`.
@@ -37,9 +37,9 @@ A hand-started **Build Android sysroot** run does not publish and does not rewri
 
 ## Release file
 
-The release name is `1.yymmddHHMMSS` in UTC. 7 November 2026 at 00:00:00 UTC is `1.261107000000`. A later run the same day gets its own name.
+The release name is `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. A later run the same day uploads onto that release.
 
-`1.yymmddHHMMSS.tgz` is generated at publish time and uploaded as a release asset. It holds the package lists, one `index-<abi>-<gtk>.json` per list. It does not hold the packages. Each package is a separate `.pixie` asset, an xz-compressed tar named `{name}-arm-v{api}-{version}.pixie` for 64-bit ARM and `{name}-x86-v{api}-{version}.pixie` for 64-bit x86. `v31` is API 31 from `android-distro.conf`. The libraries inside the archive stay in `lib/arm64-v8a` and `lib/x86_64`. `{version}` is the upstream release, such as `3.0.8`. A branch or a commit is `snapshot`. Each index entry is the URL of one of them. A package that did not change keeps the URL of the release that built it. A package that was not built in this run is left out of the upload.
+`1.yymmdd.tgz` is generated at publish time and uploaded as a release asset. It holds the package lists, one `index-<abi>-<gtk>.json` per list. It does not hold the packages. Each package is a separate `.pixie` asset, an xz-compressed tar named `{name}-arm-v{api}-{version}.pixie` for 64-bit ARM and `{name}-x86-v{api}-{version}.pixie` for 64-bit x86. `v31` is API 31 from `android-distro.conf`. The libraries inside the archive stay in `lib/arm64-v8a` and `lib/x86_64`. `{version}` is the upstream release, such as `3.0.8`. A branch or a commit is `snapshot`. Each index entry is the URL of one of them. A package that did not change keeps the URL of the release that built it. A package that was not built in this run is left out of the upload.
 
 That `.tgz` is not a file in the git tree. `.gitattributes` and `.gitignore` do not name it.
 

@@ -11,13 +11,14 @@ bash -n "$ROOT/scripts/publish-package.sh"
 source "$ROOT/scripts/current-pins.sh"
 [ "$(release_stamp "1.261107")" = "2026-11-07T00:00:00Z" ]
 [ "$(release_stamp "1.261108010203")" = "2026-11-08T01:02:03Z" ]
-[ "$(release_version "2026-11-07T00:00:00Z")" = "1.261107000000" ]
-[ "$(release_version "2026-11-08T01:02:03Z")" = "1.261108010203" ]
-if release_version "2026-11-08" >/dev/null 2>"$tmp/date-only.err"; then
-  echo "a date without a clock time was accepted" >&2
+[ "$(release_version "2026-11-07T00:00:00Z")" = "1.261107" ]
+[ "$(release_version "2026-11-08T01:02:03Z")" = "1.261108" ]
+[ "$(release_version "2026-11-08")" = "1.261108" ]
+if release_version "2026-11" >/dev/null 2>"$tmp/date-only.err"; then
+  echo "a year and month without a day was accepted" >&2
   exit 1
 fi
-grep -q 'YYYY-MM-DDTHH:MM:SS' "$tmp/date-only.err"
+grep -q 'YYYY-MM-DD' "$tmp/date-only.err"
 
 printf 'bytes\n' > "$tmp/openssl.tar.xz"
 printf 'bytes\n' > "$tmp/gtk.tar.xz"
@@ -39,9 +40,9 @@ printf 'bytes\n' > "$tmp/gtk.tar.xz"
   --repo roojs/pixiewood-pkgs \
   --file "$tmp/pins" \
   --no-upload > "$tmp/openssl.out"
-grep -q 'Published openssl 1.261108010203' "$tmp/openssl.out"
-grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108010203/openssl-arm-v31-3.0.8.pixie' "$tmp/pins"
-grep -q $'arm64-v8a\tgnome\t1.261108010203\topenssl\topenssl-3.0.8.tar.gz\thash-o\tinputs-o\t' "$tmp/pins"
+grep -q 'Published openssl 1.261108' "$tmp/openssl.out"
+grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/openssl-arm-v31-3.0.8.pixie' "$tmp/pins"
+grep -q $'arm64-v8a\tgnome\t1.261108\topenssl\topenssl-3.0.8.tar.gz\thash-o\tinputs-o\t' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108\tglib\tgtrack\tgres\tgin\thttps://example.invalid/glib.tar.xz' "$tmp/pins"
 if grep -q 'example.invalid/openssl' "$tmp/pins"; then
   echo "the finished package kept its old URL" >&2
@@ -60,7 +61,7 @@ fi
   --repo roojs/pixiewood-pkgs \
   --file "$tmp/pins" \
   --no-upload > "$tmp/gtk.out"
-grep -q 'Published gtk 1.261108010203' "$tmp/gtk.out"
+grep -q 'Published gtk 1.261108' "$tmp/gtk.out"
 grep -q 'gtk-arm-v31-snapshot.pixie' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108\tglib\t' "$tmp/pins"
 

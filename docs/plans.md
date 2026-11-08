@@ -4,7 +4,7 @@ The GNOME Android stack through GTK is proved as packages in this repository. Th
 
 ## What stays in this repository
 
-This repository is the distribution of the shared Android libraries an app links: OpenSSL through GTK in `build-order.txt`, for the `gnome` target. That includes Pango, Cairo, HarfBuzz, GDK, and GTK from upstream GNOME. Those projects do not publish an Android sysroot package. The release `1.yymmddHHMMSS` holds the `.pixie` packages. `current.pins` in git names that release.
+This repository is the distribution of the shared Android libraries an app links: OpenSSL through GTK in `build-order.txt`, for the `gnome` target. That includes Pango, Cairo, HarfBuzz, GDK, and GTK from upstream GNOME. Those projects do not publish an Android sysroot package. The release `1.yymmdd` holds the `.pixie` packages. `current.pins` in git names that release.
 
 **Prove package** for `gnome` and aarch64, through `glib-networking`, publishes each package when it finishes. A later failure leaves the finished packages on the release. The next run downloads those pins and continues from the package that failed.
 
@@ -28,4 +28,4 @@ This repository's `current.pins` names the release that holds each `.pixie` bund
 | Upstream release `3.0.8` | `{name}-arm-v31-3.0.8.pixie` |
 | A branch tip or a commit | `{name}-arm-v31-snapshot.pixie` |
 
-The GitHub release that holds the file is still `1.yymmddHHMMSS`. `snapshot` is the file name for a tip, in place of `main` or `head`.
+The GitHub release that holds the file is still `1.yymmdd`. `snapshot` is the file name for a tip, in place of `main` or `head`.
