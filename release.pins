@@ -78,7 +78,7 @@
       "name": "fribidi",
       "track": "v1.0.16",
       "resolved": "68162babff4f39c4e2dc164a5e825af93bda9983",
-      "inputs": "eeca59248eb125ecccd1be89d021b7574918903abc5d4e490b8aa790a72e0df7",
+      "inputs": "0349b30a035c08980d6c30966c335697a8e87aec1a76f7bbbc9489265ede053c",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/fribidi-arm-v31-1.0.16.pixie"
     },
     {
