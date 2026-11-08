@@ -10,11 +10,6 @@ on:
           - aarch64
           - x86_64
         default: aarch64
-      gtk:
-        description: GTK target from packages/gtk/targets. This distribution lists gnome.
-        type: string
-        default: gnome
-
 jobs:
   sysroot:
     runs-on: ubuntu-24.04
@@ -50,7 +45,7 @@ jobs:
       - name: Build sysroot tarball
         env:
           ARCH: ${{ inputs.arch || 'aarch64' }}
-          GTK_TARGET: ${{ inputs.gtk || 'gnome' }}
+          GTK_TARGET: gnome
         run: scripts/build-sysroot.sh --arch "$ARCH" --gtk "$GTK_TARGET"
 
       - name: Save package cache and checkouts
@@ -66,6 +61,6 @@ jobs:
       - name: Upload tarball
         uses: actions/upload-artifact@v7
         with:
-          name: pixiewood-android-${{ inputs.gtk || 'gnome' }}-${{ inputs.arch || 'aarch64' }}
+          name: pixiewood-android-gnome-${{ inputs.arch || 'aarch64' }}
           path: out/*.tar.xz
           if-no-files-found: error

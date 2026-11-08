@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cross-compile Android GTK packages.
-# GTK is native upstream GNOME, the only target in packages/gtk/targets.
+# GTK comes from the one line in packages/gtk/targets.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -139,7 +139,7 @@ if [ "$build_gtk" -eq 1 ]; then
     gtk_rev="$RESOLVED"
   fi
   gtk_target_apply_wrap "$WORK/subprojects/gtk.wrap" "$GTK_TARGET_URL" "$gtk_rev"
-  echo "GTK target $GTK_TARGET ($GTK_TARGET_URL @ $gtk_rev)"
+  echo "GTK $GTK_TARGET_URL @ $gtk_rev"
   if [ "$GTK_TARGET_PATCH" != "-" ]; then
     mkdir -p "$WORK/subprojects/packagefiles/gtk"
     cp -a "$ROOT/packages/gtk/$GTK_TARGET_PATCH" "$WORK/subprojects/packagefiles/gtk/"
@@ -319,11 +319,11 @@ meson_args=(
   --cross-file "$WORK/extra.cross"
 )
 if [ -n "$DEPS_SYSROOT" ]; then
-  if [ ! -f "$DEPS_SYSROOT/share/pixiewood/sysroot.cross" ]; then
+  if [ ! -f "$DEPS_SYSROOT/share/pixiewood/pixie.cross" ]; then
     echo "Dependency sysroot is not activated: $DEPS_SYSROOT" >&2
     exit 1
   fi
-  meson_args+=(--cross-file "$DEPS_SYSROOT/share/pixiewood/sysroot.cross")
+  meson_args+=(--cross-file "$DEPS_SYSROOT/share/pixiewood/pixie.cross")
 else
   meson_args+=(--cross-file "$WORK/isolate.cross")
 fi

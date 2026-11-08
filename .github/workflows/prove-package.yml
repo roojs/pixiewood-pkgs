@@ -18,11 +18,6 @@ on:
           - aarch64
           - x86_64
         default: aarch64
-      gtk:
-        description: GTK target from packages/gtk/targets. Leaf packages do not use it. gdk and gtk do.
-        type: string
-        default: gnome
-
 jobs:
   prove:
     runs-on: ubuntu-24.04
@@ -64,7 +59,7 @@ jobs:
       - name: Prove the named packages
         env:
           ARCH: ${{ inputs.arch || 'aarch64' }}
-          GTK_TARGET: ${{ inputs.gtk || 'gnome' }}
+          GTK_TARGET: gnome
           THROUGH: ${{ inputs.through || 'gtk' }}
           PACKAGES: ${{ inputs.packages || '' }}
           GH_TOKEN: ${{ github.token }}

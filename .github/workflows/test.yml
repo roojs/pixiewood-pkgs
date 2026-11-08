@@ -21,7 +21,7 @@ jobs:
       - name: Check the Pixiewood patch applies
         run: bash tests/test-pixiewood-patch.sh
 
-      - name: Check the package index and GTK targets
+      - name: Check the package index
         run: bash tests/test-index.sh
 
       - name: Check the one-package proof plan

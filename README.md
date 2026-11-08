@@ -6,7 +6,7 @@ Prebuilt Android libraries for the GTK stack [Pixiewood](https://github.com/sp1r
 - [Sharing your library](docs/sharing-your-library.md) — publish `release.pins` and, when you have snapshots, `snapshot.pins`.
 - [What a pixie file is](docs/pixie-file.md) — the file name and what is inside.
 
-This repository publishes the GNOME stack, OpenSSL through glib-networking, in `build-order.txt`. The target is upstream GTK (`gnome`) with no Android patch. `release.pins` lists the official releases. `snapshot.pins` lists the snapshots.
+This repository publishes the GTK libraries an Android app links, OpenSSL through glib-networking, in `build-order.txt`. `release.pins` lists the official releases. `snapshot.pins` lists the snapshots.
 
 ```bash
 git clone --depth 1 --branch main https://github.com/roojs/pixiewood-pkgs.git
@@ -33,4 +33,4 @@ bash tests/test-pixiewood-patch.sh
 bash tests/test-index.sh
 ```
 
-These cover packing, activation, runtime staging, wrap pins, the gnome target, and the index. They do not cross-compile GTK.
+These cover packing, activation, runtime staging, wrap pins, and the index. They do not cross-compile GTK.

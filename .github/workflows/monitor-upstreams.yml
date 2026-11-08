@@ -12,10 +12,6 @@ on:
           - aarch64
           - x86_64
         default: aarch64
-      gtk:
-        description: GTK target from packages/gtk/targets, or both. This distribution lists gnome.
-        type: string
-        default: both
       force:
         description: Rebuild these packages even when unchanged (all, or comma-separated names).
         type: string
@@ -35,32 +31,14 @@ jobs:
           fetch-depth: 0
 
       - id: list
-        env:
-          WANT: ${{ github.event.inputs.gtk || 'both' }}
         run: |
           set -euo pipefail
           mapfile -t all < <(awk 'NF && $1 !~ /^#/ { print $1 }' packages/gtk/targets)
           if [ "${#all[@]}" -eq 0 ]; then
-            echo "packages/gtk/targets has no GTK targets" >&2
+            echo "packages/gtk/targets is empty" >&2
             exit 1
           fi
-          if [ "$WANT" = both ]; then
-            selected=("${all[@]}")
-          else
-            selected=()
-            for name in "${all[@]}"; do
-              if [ "$name" = "$WANT" ]; then
-                selected+=("$name")
-              fi
-            done
-            if [ "${#selected[@]}" -ne 1 ]; then
-              echo "Unknown GTK target: $WANT" >&2
-              printf 'Known targets:\n' >&2
-              printf '  %s\n' "${all[@]}" >&2
-              exit 1
-            fi
-          fi
-          json="$(printf '%s\n' "${selected[@]}" | jq -R . | jq -sc .)"
+          json="$(printf '%s\n' "${all[@]}" | jq -R . | jq -sc .)"
           echo "names=$json" >> "$GITHUB_OUTPUT"
 
   plan:
@@ -176,7 +154,7 @@ jobs:
           pattern: upstream-plan-*
           path: plans
 
-      - name: Build the GTK targets in packages/gtk/targets
+      - name: Build the libraries in build-order.txt
         env:
           ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
           GH_TOKEN: ${{ github.token }}

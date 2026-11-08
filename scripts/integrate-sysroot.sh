@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Download an index and assemble an activated sysroot.
-# latest follows one GTK target. pin uses exactly that index file.
+# latest reads release.pins. --snapshot reads snapshot.pins. pin uses one index file.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -164,4 +164,4 @@ fi
   --provided "$provided"
 
 "$ROOT/scripts/sysroot-tree.sh" activate "$dest"
-echo "Integrated $count packages into $dest (gtk_target=$index_gtk)"
+echo "Integrated $count packages into $dest"

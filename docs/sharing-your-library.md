@@ -2,7 +2,7 @@
 
 A project that shares Android libraries keeps the pin files in git. Applications clone a branch and choose release or snapshot. See [Using pixie libraries](using-pixie-libraries.md).
 
-`release.pins` is the release list. `snapshot.pins` is optional.
+Release or snapshot is the pin file. `release.pins` is the release list. `snapshot.pins` is optional.
 
 ```
 # abi gtk release name track resolved inputs url
@@ -14,7 +14,7 @@ arm64-v8a	gnome	1.261108	openssl	openssl-3.0.8.tar.gz	6c13d2bf...	<inputs>	https
 | Column | Meaning |
 | --- | --- |
 | `abi` | Android ABI directory, `arm64-v8a` or `x86_64`. The file name says `arm` or `x86` |
-| `gtk` | Target. `gnome` for this stack |
+| `gtk` | `gnome` on every line in this repository |
 | `release` | GitHub release name, `1.yymmdd` |
 | `name` | Package name |
 | `track` | Upstream version, tag, branch, or commit that was built |
