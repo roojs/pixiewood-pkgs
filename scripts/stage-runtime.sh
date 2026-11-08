@@ -2,8 +2,8 @@
 # Copy sysroot libraries and GSettings schemas into a Pixiewood install root.
 #
 # Pixiewood's meson install only packages the application. Shared libraries
-# that came from pkg-config are not copied unless this step (or the
-# --pixie patch) puts them in .pixiewood/root before Gradle runs.
+# that came from pkg-config are not copied unless this step puts them
+# in .pixiewood/root before Gradle runs.
 set -euo pipefail
 
 if [ "$#" -ne 2 ]; then

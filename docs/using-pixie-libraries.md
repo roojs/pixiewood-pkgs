@@ -50,5 +50,3 @@ Copy the libraries and GSettings schemas into the app tree before Gradle, and be
 ```
 
 Libraries named in `share/pixiewood/MANIFEST.json` are already built. Remove `subprojects/<name>.wrap` for those names so Meson keeps the pixie copy. Anything absent from that list is still built from a wrap. Icons, the CA bundle, shared-mime-info, and the application's own Java classes stay with the app.
-
-`integration/0001-pixie-libraries.patch` does those steps inside Pixiewood for gtk-android-builder `00b1862b6434a8778557dc3d3074f43f5fdead1b`. It adds `pixiewood prepare --pixie DIR`. The wrapper and `stage-runtime.sh` cover the same ground on an unpatched checkout.

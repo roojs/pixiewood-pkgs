@@ -18,9 +18,6 @@ jobs:
       - name: Check wrap pins and the Meson wrapper
         run: bash tests/test-pins-and-wrapper.sh
 
-      - name: Check the Pixiewood patch applies
-        run: bash tests/test-pixiewood-patch.sh
-
       - name: Check the package index
         run: bash tests/test-index.sh
 
