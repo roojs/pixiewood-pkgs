@@ -4,7 +4,7 @@ An Android application's build points at one git repository. That repository is 
 
 `gnome` is the reference target for the shared libraries. Another distribution, such as the Android IME branch, reuses those `gnome` bundles and publishes only the packages it replaces.
 
-The publisher in this repository still writes full tarball URLs and `.tar.xz` assets, and still uploads a `1.yymmddHHMMSS.tgz` package list. It uploads each finished package before the next one starts. The layout below is the contract for a distribution that keeps its pins in git. [How releases work](releases.md) describes the publisher as it runs today. [The plan](plans.md) says which projects stay here.
+The publisher writes each finished package as a `.pixie` asset. The file is an xz-compressed tar. It uploads that asset before the next package starts, and it still uploads a `1.yymmddHHMMSS.tgz` package list. The layout below is the contract for a distribution that keeps its pins in git. [How releases work](releases.md) describes the publisher as it runs today. [The plan](plans.md) says which projects stay here.
 
 ## What the application checks out
 

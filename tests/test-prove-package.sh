@@ -15,10 +15,13 @@ if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "
 else
   grep -qx 'build openssl alone' "$tmp/default.out"
 fi
-grep -q '^build glib on ' "$tmp/default.out"
-grep -q '^build pango on ' "$tmp/default.out"
-grep -q '^build gdk on ' "$tmp/default.out"
-grep -q '^build gtk on ' "$tmp/default.out"
+for name in glib pango gdk gtk; do
+  if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/$name" "$ROOT/cross" "$ROOT/android-distro.conf" "$ROOT/scripts/build-sysroot.sh" "$ROOT/scripts/gtk-part.sh"; then
+    grep -q "^pin $name on " "$tmp/default.out"
+  else
+    grep -q "^build $name on " "$tmp/default.out"
+  fi
+done
 if grep -q webkitgtk-android "$tmp/default.out"; then
   echo "default proof continued past gtk" >&2
   exit 1
@@ -111,12 +114,15 @@ fi
 grep -q 'no pkg-config file or library for sqlite3' "$tmp/bare.err"
 
 ssl="$tmp/ssl"
-mkdir -p "$ssl/lib/$abi"
+mkdir -p "$ssl/lib/$abi/pkgconfig"
+printf '%s\n' 'prefix=/' 'Name: OpenSSL' 'Version: 3.0.8' > "$ssl/lib/$abi/pkgconfig/openssl.pc"
+printf '%s\n' 'prefix=/' 'Name: OpenSSL-libssl' 'Version: 3.0.8' > "$ssl/lib/$abi/pkgconfig/libssl.pc"
+printf '%s\n' 'prefix=/' 'Name: OpenSSL-libcrypto' 'Version: 3.0.8' > "$ssl/lib/$abi/pkgconfig/libcrypto.pc"
 printf 'ssl\n' > "$ssl/lib/$abi/libssl.so"
 printf 'crypto\n' > "$ssl/lib/$abi/libcrypto.so"
 tar -C "$ssl" -cJf "$tmp/openssl-${abi}.tar.xz" .
 "$ROOT/scripts/prove-package.sh" --check "$tmp/openssl-${abi}.tar.xz" --package openssl --arch aarch64 > "$tmp/ssl.out"
-grep -q 'proved openssl: (lib/arm64-v8a/libssl.so)' "$tmp/ssl.out"
+grep -q 'proved openssl: OpenSSL 3.0.8 (lib/arm64-v8a/libssl.so)' "$tmp/ssl.out"
 
 mkdir -p "$pkg/lib/$abi/pkgconfig" "$pkg/bin/$abi"
 printf '%s\n' 'prefix=/' 'Name: pixiewood-gdk' 'Version: 4' > "$pkg/lib/$abi/pkgconfig/pixiewood-gdk.pc"

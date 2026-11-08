@@ -40,7 +40,7 @@ printf 'bytes\n' > "$tmp/gtk.tar.xz"
   --file "$tmp/pins" \
   --no-upload > "$tmp/openssl.out"
 grep -q 'Published openssl 1.261108010203' "$tmp/openssl.out"
-grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108010203/openssl-arm64-v8a-gnome.tar.xz' "$tmp/pins"
+grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108010203/openssl-arm64-v8a-gnome.pixie' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108010203\topenssl\topenssl-3.0.8.tar.gz\thash-o\tinputs-o\t' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108\tglib\tgtrack\tgres\tgin\thttps://example.invalid/glib.tar.xz' "$tmp/pins"
 if grep -q 'example.invalid/openssl' "$tmp/pins"; then
@@ -61,7 +61,7 @@ fi
   --file "$tmp/pins" \
   --no-upload > "$tmp/gtk.out"
 grep -q 'Published gtk 1.261108010203' "$tmp/gtk.out"
-grep -q 'gtk-arm64-v8a-gnome.tar.xz' "$tmp/pins"
+grep -q 'gtk-arm64-v8a-gnome.pixie' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108\tglib\t' "$tmp/pins"
 
 if "$ROOT/scripts/publish-package.sh" \
@@ -88,5 +88,17 @@ if grep -q 'Commit the package list before the build' "$ROOT/.github/workflows/m
   echo "monitor still writes pins before a package is uploaded" >&2
   exit 1
 fi
+
+hdr="$tmp/headers"
+mkdir -p "$hdr/generated" "$hdr/upstream" "$hdr/dest"
+printf 'GENERATED\n' > "$hdr/generated/ssl.h"
+printf 'CONFIG\n' > "$hdr/generated/configuration.h"
+printf 'UPSTREAM\n' > "$hdr/upstream/ssl.h"
+printf 'CONF\n' > "$hdr/upstream/opensslconf.h"
+sh "$ROOT/packages/openssl/packagefiles/openssl/install-headers.sh" \
+  "$hdr/generated" "$hdr/upstream" "$hdr/dest"
+grep -qx GENERATED "$hdr/dest/ssl.h"
+grep -qx CONFIG "$hdr/dest/configuration.h"
+grep -qx CONF "$hdr/dest/opensslconf.h"
 
 echo "publish package: ok"

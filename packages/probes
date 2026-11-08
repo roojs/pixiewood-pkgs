@@ -23,5 +23,5 @@ sqlite3 sqlite3
 nghttp2 libnghttp2
 libpsl libpsl
 libsoup libsoup-3.0
-openssl libssl libcrypto
+openssl openssl libssl libcrypto
 glib-networking +subproject gioopenssl

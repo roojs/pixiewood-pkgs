@@ -153,6 +153,32 @@ openssl_dep = declare_dependency(
   dependencies: [libcrypto_dep, libssl_dep],
 )
 
+# A prebuilt package is found with pkg-config. The subproject dependency
+# variables above are only visible inside this Meson build.
+pkg = import('pkgconfig')
+pkg.generate(
+  libcrypto_lib,
+  name: 'libcrypto',
+  description: 'OpenSSL cryptography library',
+)
+pkg.generate(
+  libssl_lib,
+  name: 'libssl',
+  description: 'OpenSSL SSL and TLS library',
+  requires: ['libcrypto'],
+)
+pkg.generate(
+  name: 'openssl',
+  description: 'OpenSSL',
+  requires: ['libssl', 'libcrypto'],
+)
+add_install_script(
+  find_program('sh'),
+  meson.current_source_dir() / 'install-headers.sh',
+  meson.current_source_dir() / 'generated-config' / 'archs' / arch_subdir / asm / 'include' / 'openssl',
+  meson.current_source_dir() / 'include' / 'openssl',
+)
+
 openssl_cli_directories = include_directories + ['apps/include']
 
 cli_opt = get_option('build_cli')

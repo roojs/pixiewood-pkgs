@@ -31,7 +31,7 @@ while IFS= read -r name; do
   fi
 done < "$tmp/order"
 openssl_probe="$(awk '$1 == "openssl" { $1 = ""; sub(/^ /, ""); print }' "$ROOT/packages/probes")"
-[ "$openssl_probe" = "libssl libcrypto" ]
+[ "$openssl_probe" = "openssl libssl libcrypto" ]
 networking_probe="$(awk '$1 == "glib-networking" { $1 = ""; sub(/^ /, ""); print }' "$ROOT/packages/probes")"
 [ "$networking_probe" = "+subproject gioopenssl" ]
 
@@ -265,11 +265,11 @@ GH_LOG="$tmp/gh.log" PATH="$tmp/bin:$PATH" \
   --out "$tmp/published.json"
 grep -q 'release create 1.261107000000' "$tmp/gh.log"
 grep -q '1.261107000000.tgz' "$tmp/gh.log"
-grep -q 'gtk-arm64-v8a-gnome.tar.xz' "$tmp/gh.log"
+grep -q 'gtk-arm64-v8a-gnome.pixie' "$tmp/gh.log"
 tar -tzf "$tmp/1.261107000000.tgz" > "$tmp/release-list.txt"
 grep -qx 'index-arm64-v8a-gnome.json' "$tmp/release-list.txt"
-if grep -q '\.tar\.xz$' "$tmp/release-list.txt"; then
-  echo "release file contains a package tarball" >&2
+if grep -q -e '\.tar\.xz$' -e '\.pixie$' "$tmp/release-list.txt"; then
+  echo "release file contains a package" >&2
   exit 1
 fi
 grep -q 'release create latest' "$tmp/gh.log"
@@ -277,7 +277,7 @@ if grep -q 'openssl-arm64-v8a.tar.xz' "$tmp/gh.log"; then
   echo "unchanged openssl was uploaded" >&2
   exit 1
 fi
-grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107000000/gtk-arm64-v8a-gnome.tar.xz' "$tmp/published.json"
+grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107000000/gtk-arm64-v8a-gnome.pixie' "$tmp/published.json"
 grep -q '"version": "1.261107000000"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
@@ -285,7 +285,11 @@ grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 openssl_release="$(awk -F '\t' '$1 == "arm64-v8a" && $2 == "gnome" && $4 == "openssl" { print $3; exit }' "$ROOT/current.pins")"
 openssl_url="$(awk -F '\t' '$1 == "arm64-v8a" && $2 == "gnome" && $4 == "openssl" { print $8; exit }' "$ROOT/current.pins")"
 [ -n "$openssl_release" ]
-[ "$openssl_url" = "https://github.com/roojs/pixiewood-pkgs/releases/download/${openssl_release}/openssl-arm64-v8a-gnome.tar.xz" ]
+case "$openssl_url" in
+  "https://github.com/roojs/pixiewood-pkgs/releases/download/${openssl_release}/openssl-arm64-v8a-gnome.pixie"|\
+  "https://github.com/roojs/pixiewood-pkgs/releases/download/${openssl_release}/openssl-arm64-v8a-gnome.tar.xz") ;;
+  *) echo "openssl pin URL is $openssl_url" >&2; exit 1 ;;
+esac
 if grep -q 'Knowles.android-ime' "$ROOT/current.pins" "$ROOT/packages/gtk/targets" "$ROOT/build-order.txt"; then
   echo "the IME target is still in this distribution" >&2
   exit 1
@@ -304,7 +308,7 @@ case "$openssl_release" in
   *) index_release="$openssl_release" ;;
 esac
 grep -q "\"version\": \"$index_release\"" "$tmp/pins-index.json"
-grep -q 'openssl-arm64-v8a-gnome.tar.xz' "$tmp/pins-index.json"
+grep -q "$(basename "$openssl_url")" "$tmp/pins-index.json"
 if grep -q 'webkitgtk-android' "$tmp/pins-index.json"; then
   echo "gnome index still lists webkitgtk-android" >&2
   exit 1
@@ -344,7 +348,7 @@ grep -q $'^build\tgdk\t' "$tmp/gdk-diff-built.tsv"
   --plan "$tmp/gnome-webkit.tsv" \
   --plan "$tmp/gdk-diff.tsv"
 grep -q $'arm64-v8a\tKnowles.android-ime\t1.261108000000\tgdk\t' "$tmp/owner-pins"
-grep -q 'gdk-arm64-v8a-Knowles.android-ime.tar.xz' "$tmp/owner-pins"
+grep -q 'gdk-arm64-v8a-Knowles.android-ime.pixie' "$tmp/owner-pins"
 if grep -q 'webkitgtk-android' "$tmp/owner-pins"; then
   echo "written pins still name webkitgtk-android" >&2
   exit 1
@@ -547,7 +551,7 @@ printf '%s\n' $'x86_64\tx86_64\t1.261107\tglib\t2.90.0\thashg\tinputsg\thttps://
   --repo roojs/pixiewood-pkgs \
   --plan "$tmp/keep-plan.tsv"
 grep -q $'arm64-v8a\tgnome\t1.261108000000\topenssl\t3.0.8\thasho\tinputso\thttps://example.invalid/old/openssl.tar.xz' "$tmp/pins"
-grep -q $'arm64-v8a\tgnome\t1.261108000000\tgtk\tandroid-ime\thashi\tinputsi\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261108000000/gtk-arm64-v8a-gnome.tar.xz' "$tmp/pins"
+grep -q $'arm64-v8a\tgnome\t1.261108000000\tgtk\tandroid-ime\thashi\tinputsi\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261108000000/gtk-arm64-v8a-gnome.pixie' "$tmp/pins"
 grep -q $'x86_64\tx86_64\t1.261107\tglib\t' "$tmp/pins"
 
 if grep -q 'tgz' "$ROOT/.gitattributes"; then

@@ -73,8 +73,8 @@ prove_tarball() {
     rm -f "$listing"
     return 1
   fi
-  # A probe name is either a pkg-config file (glib-2.0.pc, pixiewood-gdk.pc)
-  # or the installed library (OpenSSL installs libssl.so and does not ship a .pc).
+  # A probe name is either a pkg-config file (glib-2.0.pc, openssl.pc)
+  # or the installed library (libssl.so).
   pc=""
   lib=""
   while IFS= read -r token; do
@@ -287,7 +287,18 @@ for name in "${names[@]}"; do
       fi
     fi
     prove_tarball "$tarball" "$abi" "$name"
-    if [ "${PROVE_PUBLISH:-}" = 1 ] && [ "$kind" != pin ]; then
+    publish_this=0
+    if [ "${PROVE_PUBLISH:-}" = 1 ]; then
+      publish_this=1
+      # A pin that already names a .pixie asset stays where it is.
+      # A .tar.xz pin is published again under the .pixie name.
+      if [ "$kind" = pin ]; then
+        case "$loc" in
+          *.pixie) publish_this=0 ;;
+        esac
+      fi
+    fi
+    if [ "$publish_this" -eq 1 ]; then
       "$ROOT/scripts/publish-package.sh" \
         --name "$name" \
         --tarball "$tarball" \
