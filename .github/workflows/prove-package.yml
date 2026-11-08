@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       through:
-        description: Last package to prove, from the start of build-order.txt. Cached packages whose inputs have not changed are reused.
+        description: Last package to prove, from the start of build-order.txt. Cached packages whose inputs have not changed are reused. This does not publish. Run Monitor upstreams after this is green through the last package.
         type: string
-        default: gtk
+        default: glib-networking
       packages:
         description: Explicit package list instead of through. Leave empty to use through.
         type: string

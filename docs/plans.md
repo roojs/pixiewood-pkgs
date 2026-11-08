@@ -6,7 +6,7 @@ The GNOME Android stack through GTK is proved as packages in this repository. Th
 
 This repository is the distribution of the shared Android libraries an app links: OpenSSL through GTK in `build-order.txt`, for the `gnome` target. That includes Pango, Cairo, HarfBuzz, GDK, and GTK from upstream GNOME. Those projects do not publish an Android sysroot package. The dated release `1.yymmdd` holds the `.pixie` bundles. `current.pins` in git names that release.
 
-A hand-started **Build Android sysroot** for `gnome` and aarch64 is the next build. It reuses the proved tarballs and compiles the packages that prove did not reach: libadwaita, GtkSourceView, libsoup, and glib-networking.
+The next run is **Prove package** for `gnome` and aarch64, through `glib-networking`. It reuses the package cache and builds what that cache does not already match, including GDK and GTK after the Android header install, then libadwaita, GtkSourceView, libsoup, and glib-networking. **Monitor upstreams** publishes the release after that prove is green.
 
 ## What other projects can release themselves
 
