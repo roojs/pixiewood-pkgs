@@ -135,6 +135,7 @@ jobs:
           set -euo pipefail
           created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           sha="$(git rev-parse HEAD)"
+          scripts/place-upstream-plans.sh plans
           shopt -s nullglob
           args=()
           for plan in plans/upstream-plan-*/plan.tsv; do
@@ -207,6 +208,7 @@ jobs:
           RELEASE_CREATED: ${{ needs.pins.outputs.created }}
         run: |
           set -euo pipefail
+          scripts/place-upstream-plans.sh plans
           shopt -s nullglob
           mkdir -p out/packages
           need_host=0
@@ -220,10 +222,13 @@ jobs:
             hash -r
             meson --version
           fi
+          seen="$(mktemp)"
           while IFS= read -r gtk; do
             plan="plans/upstream-plan-${gtk}/plan.tsv"
             [ -f "$plan" ] || continue
+            printf '%s\n' "$plan" >> "$seen"
             grep -q '^# publish=1$' "$plan" || continue
+            echo "Publishing $gtk"
             built="plans/upstream-plan-${gtk}/build.tsv"
             scripts/current-pins.sh apply --plan "$plan" --arch "$ARCH" --out "$built"
             if grep -q $'^build\t' "$built"; then
@@ -242,6 +247,12 @@ jobs:
               --created "$RELEASE_CREATED" \
               --out "out/index-${gtk}.json"
           done < <(awk 'NF && $1 !~ /^#/ { print $1 }' packages/gtk/targets)
+          for plan in plans/upstream-plan-*/plan.tsv; do
+            if ! grep -qx "$plan" "$seen"; then
+              echo "Downloaded plan was not published: $plan" >&2
+              exit 1
+            fi
+          done
 
       - name: Save package cache and checkouts
         if: always()

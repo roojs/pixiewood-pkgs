@@ -34,3 +34,4 @@ jobs:
           bash tests/test-packaged-deps.sh
           bash tests/test-list-package-cache.sh
           bash tests/test-library-options.sh
+          bash tests/test-place-upstream-plans.sh
