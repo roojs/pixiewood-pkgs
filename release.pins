@@ -168,7 +168,7 @@
       "name": "gtk",
       "track": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",
       "resolved": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",
-      "inputs": "7c493679a0203c6ad6743152ca1df83ae16bbec4cbecf4be52d056bcec5fa8ca",
+      "inputs": "736776cf65437e6630a22a88a12044a241274a581d73d2688ca11abab6bad54b",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gtk-arm-v31-4.24.1.pixie"
     },
     {
