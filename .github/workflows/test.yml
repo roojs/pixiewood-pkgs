@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Pack, activate, and stage a fake sysroot
         run: bash tests/test-sysroot-tree.sh
@@ -31,3 +33,4 @@ jobs:
           bash tests/test-checkout-cache.sh
           bash tests/test-packaged-deps.sh
           bash tests/test-list-package-cache.sh
+          bash tests/test-library-options.sh

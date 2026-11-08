@@ -6,10 +6,22 @@ glib-mkenums = ['python3', '@GLOBAL_SOURCE_ROOT@/subprojects/glib/gobject/glib-m
 [json-glib:project options]
 introspection = 'disabled'
 documentation = 'disabled'
+gtk_doc = 'disabled'
+man = false
+nls = 'disabled'
+tests = false
+conformance = false
+installed_tests = false
 
 [libsoup:project options]
 tests = false
+installed_tests = false
+autobahn = 'disabled'
+pkcs11_tests = 'disabled'
+fuzzing = 'disabled'
+doc_tests = false
 introspection = 'disabled'
+vapi = false
 docs = 'disabled'
 brotli = 'disabled'
 gssapi = 'disabled'

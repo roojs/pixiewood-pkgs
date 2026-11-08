@@ -31,14 +31,44 @@ default_library = 'shared'
 
 [glib:project options]
 tests = false
-# I'd like to explicitly disable dtrace and systemtap, but glib recently moved them from booleans to options and meson can't cope with both 
+installed_tests = false
+introspection = 'disabled'
+man-pages = 'disabled'
+nls = 'disabled'
+dtrace = 'disabled'
+systemtap = 'disabled'
 sysprof = 'disabled'
+
+[libxml2:project options]
+docs = 'disabled'
+python = 'disabled'
+readline = 'disabled'
+
+[libpsl:project options]
+tests = false
+docs = false
+
+[pixman:project options]
+tests = 'disabled'
+demos = 'disabled'
+gtk = 'disabled'
+openmp = 'disabled'
 
 [cairo:project options]
 tests = 'disabled'
+gtk_doc = false
+gtk2-utils = 'disabled'
+quartz = 'disabled'
+xcb = 'disabled'
+xlib = 'disabled'
+xlib-xcb = 'disabled'
+dwrite = 'disabled'
+spectre = 'disabled'
+symbol-lookup = 'disabled'
 
 [fribidi:project options]
 bin = false
+docs = false
 tests = false
 
 [harfbuzz:project options]
@@ -46,21 +76,72 @@ tests = 'disabled'
 introspection = 'disabled'
 docs = 'disabled'
 utilities = 'disabled'
+benchmark = 'disabled'
+gpu_demo = 'disabled'
+chafa = 'disabled'
+doc_tests = false
+
+[pango:project options]
+introspection = 'disabled'
+build-testsuite = false
+build-examples = false
+documentation = false
+gtk_doc = false
+man-pages = false
+xft = 'disabled'
+libthai = 'disabled'
+sysprof = 'disabled'
+
+[libjpeg-turbo:project options]
+tests = 'disabled'
 
 [gdk-pixbuf:project options]
 builtin_loaders = ['all']
 glycin = 'disabled'
 documentation = false
+gtk_doc = false
+introspection = 'disabled'
+man = false
+tests = false
+installed_tests = false
+thumbnailer = 'disabled'
+
+[libepoxy:project options]
+docs = false
+tests = false
+x11 = false
+glx = 'no'
+egl = 'yes'
+
+[graphene:project options]
+gtk_doc = false
+introspection = 'disabled'
+tests = false
+installed_tests = false
 
 [gtk:project options]
 android-backend = true
+x11-backend = false
+wayland-backend = false
+broadway-backend = false
 introspection = 'disabled'
+documentation = false
+man-pages = false
+screenshots = false
 # disabled until we have a mechanism to pass the JNIEnv* & Context to gstreamer
 media-gstreamer = 'disabled'
+print-cups = 'disabled'
 build-demos = false
 build-testsuite = false
 build-examples = false
 build-tests = false
+
+[gtksourceview:project options]
+introspection = 'disabled'
+vapi = false
+documentation = false
+build-testsuite = false
+install-tests = false
 
 [libadwaita:built-in options]
 default_library = 'shared'
@@ -68,6 +149,7 @@ default_library = 'shared'
 [libadwaita:project options]
 introspection = 'disabled'
 vapi = false
+documentation = false
 gtk_doc = false
 tests = false
 examples = false
