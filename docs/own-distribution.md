@@ -37,7 +37,7 @@ arm64-v8a	Knowles.android-ime	snapshot	1.261108	gtk	<ime-commit>	<inputs>	gtk-ar
 | `file` | Asset name on that release |
 | `repo` | `owner/name` of the GitHub repository that published the release |
 
-`channel=release` means the package was built from an upstream version. `channel=snapshot` means it was built from a branch tip or a commit. The file name uses that version, or the word `snapshot`.
+`channel=release` means the package was built from an upstream version. `channel=snapshot` means it was built from a branch tip. A pinned commit keeps the version compiled into the package. The file name uses that version, or the word `snapshot`.
 
 The file name is `{name}-arm-v{api}-{version}.pixie` or `{name}-x86-v{api}-{version}.pixie`. `v31` is the Android API level the package was built for. `3.0.8` is an upstream release. `snapshot` is a branch or a commit, in place of `main` or `head`. A release can hold one `.pixie` per package. The pin's `file` column is that name, so the checkout and the release asset are the same string.
 

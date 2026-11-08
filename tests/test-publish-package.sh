@@ -115,5 +115,13 @@ grep -qx CONF "$hdr/dest/opensslconf.h"
 [ "$(package_abi_label x86_64)" = x86 ]
 [ "$(package_asset_name openssl arm64-v8a 3.0.8)" = openssl-arm-v31-3.0.8.pixie ]
 [ "$(package_asset_name openssl x86_64 3.0.8)" = openssl-x86-v31-3.0.8.pixie ]
+[ "$(package_release_label main)" = snapshot ]
+[ "$(package_release_label 14.4.0)" = 14.4.0 ]
+ver="$tmp/gtkver"
+mkdir -p "$ver/lib/arm64-v8a/pkgconfig"
+printf '%s\n' 'prefix=/' 'Name: GTK' 'Version: 4.24.1' > "$ver/lib/arm64-v8a/pkgconfig/gtk4.pc"
+tar -C "$ver" -cJf "$tmp/gtkver.tar.xz" .
+[ "$(package_release_label ae709f962a51f9108a1e6381bcfbd05bbaecc840 "$tmp/gtkver.tar.xz" arm64-v8a gtk)" = 4.24.1 ]
+[ "$(package_release_label main "$tmp/gtkver.tar.xz" arm64-v8a gtk)" = snapshot ]
 
 echo "publish package: ok"

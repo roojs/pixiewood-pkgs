@@ -21,11 +21,11 @@ This repository's `current.pins` names the release that holds each `.pixie` bund
 
 ## Release or snapshot
 
-`gnome` is the reference target for the shared libraries. The package file names the upstream release version. A branch or a commit is `snapshot`.
+`gnome` is the reference target for the shared libraries. The package file names the upstream release version. A branch tip is `snapshot`. A pinned commit uses the version compiled into that package.
 
 | What was built | Bundle |
 | --- | --- |
 | Upstream release `3.0.8` | `{name}-arm-v31-3.0.8.pixie` |
-| A branch tip or a commit | `{name}-arm-v31-snapshot.pixie` |
+| A branch tip | `{name}-arm-v31-snapshot.pixie` |
 
 The GitHub release that holds the file is still `1.yymmdd`. `snapshot` is the file name for a tip, in place of `main` or `head`.

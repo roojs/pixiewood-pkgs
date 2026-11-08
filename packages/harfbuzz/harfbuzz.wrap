@@ -1,7 +1,7 @@
 [wrap-git]
 directory = harfbuzz
 url = https://github.com/harfbuzz/harfbuzz.git
-revision = 36cb489cb02ce4b92099669ba9f9bea348eff93f
+revision = 14.4.0
 depth = 1
 
 [provide]

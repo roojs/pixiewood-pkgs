@@ -312,7 +312,7 @@ EOF
 
 pack_archives() {
   local builddir=$1 destdir=$2 abi=$3
-  local libdir="$destdir/lib/$abi" gdk_build libgdk archive base name flags header rel listed
+  local libdir="$destdir/lib/$abi" gdk_build libgdk archive base name flags header rel listed version info got
   if [ ! -d "$builddir" ] || [ ! -d "$destdir" ]; then
     echo "GDK pack needs a build directory and a destdir" >&2
     return 1
@@ -363,6 +363,14 @@ pack_archives() {
       cp -a "$header" "$destdir/include/gtk-4.0/gdk/$rel"
     done < <(find "$gdk_build" -type f -name '*.h' ! -path '*.p/*' | LC_ALL=C sort)
   fi
+  version=4
+  info="$builddir/meson-info/intro-projectinfo.json"
+  if [ -f "$info" ]; then
+    got="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$info" | head -n1)"
+    if [ -n "$got" ]; then
+      version="$got"
+    fi
+  fi
   cat > "$libdir/pkgconfig/pixiewood-gdk.pc" << EOF
 prefix=/
 libdir=\${prefix}/lib/${abi}
@@ -370,7 +378,7 @@ includedir=\${prefix}/include
 
 Name: pixiewood-gdk
 Description: GDK from the GTK build
-Version: 4
+Version: ${version}
 Libs: -L\${libdir} -Wl,--whole-archive${flags} -Wl,--no-whole-archive -landroid -ljnigraphics -lnativewindow -llog
 Cflags: -I\${includedir}/gtk-4.0
 EOF

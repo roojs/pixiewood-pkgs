@@ -5,7 +5,7 @@ push-url = ssh://git@ssh.gitlab.gnome.org:GNOME/pango.git
 # GTK's wrap tracks main (nightly docs). Pin 1.58.2. The package itself is
 # packages/pango/pango.wrap. This file stays *.wrap.pin so it is not a second
 # top-level wrap next to that package.
-revision = d360f14004e4a4824f2352f6e2722016f9a51dd6
+revision = 1.58.2
 depth = 1
 
 [provide]
