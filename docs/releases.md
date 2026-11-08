@@ -2,6 +2,8 @@
 
 This repository publishes prebuilt Android libraries. Two archives show up on a release, and they are not the same file.
 
+A distribution that keeps its pins in git uses a different layout: the pin names a release, and the bundle on that release is a `.pixie` file. That contract is [Implement your own distribution](own-distribution.md). The steps below are what this repository's publisher does today.
+
 ## Repository source archive
 
 GitHub builds a source archive from the git tag with `git archive`. `.gitattributes` at the repository root controls that archive:

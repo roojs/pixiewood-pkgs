@@ -9,7 +9,7 @@ Prebuilt Android packages for the GTK stack [Pixiewood](https://github.com/sp1ri
 | `gnome` (default) | https://gitlab.gnome.org/GNOME/gtk.git | pinned upstream commit, no Android patch |
 | `Knowles.android-ime` | https://gitlab.gnome.org/Knowles/gtk.git | branch `android-ime` |
 
-`packages/gtk/targets` is the list. A branch target is named `owner.branch`, so another fork is another line. Native GTK stays the default and is built as upstream publishes it. Android fixes come from `Knowles.android-ime`. [docs/plans.md](docs/plans.md) is the plan for which projects this repository keeps building, which ones release their own tarballs, and how an app chooses a dated release or main.
+`packages/gtk/targets` is the list. A branch target is named `owner.branch`, so another fork is another line. Native GTK stays the default and is built as upstream publishes it. Android fixes come from `Knowles.android-ime`. [docs/plans.md](docs/plans.md) is the plan for which projects this repository keeps building. [docs/own-distribution.md](docs/own-distribution.md) is how an application checks out a distribution and downloads its `.pixie` bundles, and how another project publishes its own.
 
 ## Fetch a sysroot
 
