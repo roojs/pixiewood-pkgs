@@ -21,7 +21,7 @@ pkcs11_tests = 'disabled'
 fuzzing = 'disabled'
 doc_tests = false
 introspection = 'disabled'
-vapi = false
+vapi = 'disabled'
 docs = 'disabled'
 brotli = 'disabled'
 gssapi = 'disabled'
@@ -34,8 +34,10 @@ sysprof = 'disabled'
 # rejects a duplicate typedef under -Werror.
 c_std = 'gnu11'
 
-[glib-networking:project options]
+[glib-networking:built-in options]
 default_library = 'static'
+
+[glib-networking:project options]
 gnutls = 'disabled'
 openssl = 'enabled'
 libproxy = 'disabled'

@@ -17,6 +17,7 @@ require() {
 require "$extra" "tests = false"
 require "$extra" "conformance = false"
 require "$extra" "installed_tests = false"
+require "$extra" "vapi = 'disabled'"
 require "$android" "docs = false"
 require "$android" "build-examples = false"
 require "$android" "build-testsuite = false"

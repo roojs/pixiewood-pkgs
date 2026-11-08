@@ -282,8 +282,10 @@ grep -q '"version": "1.261107"' "$tmp/published.json"
 grep -q 'https://example.invalid/old/openssl.tar.xz' "$tmp/published.json"
 
 # current.pins is the package list for the build that is publishing.
-grep -q $'arm64-v8a\tgnome\t1.261107\topenssl\t' "$ROOT/current.pins"
-grep -q $'\thttps://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/openssl-arm64-v8a-gnome.tar.xz$' "$ROOT/current.pins"
+openssl_release="$(awk -F '\t' '$1 == "arm64-v8a" && $2 == "gnome" && $4 == "openssl" { print $3; exit }' "$ROOT/current.pins")"
+openssl_url="$(awk -F '\t' '$1 == "arm64-v8a" && $2 == "gnome" && $4 == "openssl" { print $8; exit }' "$ROOT/current.pins")"
+[ -n "$openssl_release" ]
+[ "$openssl_url" = "https://github.com/roojs/pixiewood-pkgs/releases/download/${openssl_release}/openssl-arm64-v8a-gnome.tar.xz" ]
 if grep -q 'Knowles.android-ime' "$ROOT/current.pins" "$ROOT/packages/gtk/targets" "$ROOT/build-order.txt"; then
   echo "the IME target is still in this distribution" >&2
   exit 1
@@ -297,7 +299,7 @@ if grep -q 'index-.*\.json' "$ROOT/current.pins"; then
   exit 1
 fi
 "$ROOT/scripts/current-pins.sh" index --abi arm64-v8a --gtk gnome --out "$tmp/pins-index.json"
-grep -q '"version": "1.261107"' "$tmp/pins-index.json"
+grep -q "\"version\": \"$openssl_release\"" "$tmp/pins-index.json"
 grep -q 'openssl-arm64-v8a-gnome.tar.xz' "$tmp/pins-index.json"
 if grep -q 'webkitgtk-android' "$tmp/pins-index.json"; then
   echo "gnome index still lists webkitgtk-android" >&2
