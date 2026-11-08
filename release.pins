@@ -24,7 +24,7 @@
       "name": "sqlite3",
       "track": "sqlite-amalgamation-3530200.zip",
       "resolved": "8a310d0a16c7a90cacd4c884e70faa51c902afed2a89f63aaa0126ab83558a32",
-      "inputs": "051e962af401b00150cc161bddc1a8adaea3b053433d61caf4fb8c3fd952755b",
+      "inputs": "84b2dada22b78d4127892dd23408434a0d656b4021a9130086d77090dcd1073c",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/sqlite3-arm-v31-3530200.pixie"
     },
     {
