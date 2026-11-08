@@ -447,6 +447,30 @@ printf 'config\n' > "$pack_build/subprojects/gtk/gdk/gdkconfig.h"
 [ ! -e "$pack_dest/lib/arm64-v8a/libgtk_css.a" ]
 [ -f "$pack_dest/include/gtk-4.0/gdk/gdkconfig.h" ]
 grep -q ' -lgdk -lgdk-android ' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
+
+hdr="$tmp/android-headers"
+mkdir -p "$hdr/gdk/android"
+printf '%s\n' "pixiewood_part = get_option('pixiewood-part')" > "$hdr/meson.build"
+printf '%s\n' "option('x', type: 'boolean', value: false)" > "$hdr/meson.options"
+cat > "$hdr/gdk/android/meson.build" << 'EOF'
+gdk_android_public_headers = files([
+  'gdkandroiddevice.h'
+])
+install_headers(gdk_android_public_headers, 'gdkandroid.h', subdir: 'gtk-4.0/gdk/android/')
+EOF
+printf '%s\n' \
+  '#include <gdk/android/gdkandroiddevice.h>' \
+  '#include <gdk/android/gdkandroidcontentfile.h>' \
+  > "$hdr/gdk/android/gdkandroid.h"
+printf '%s\n' 'header' > "$hdr/gdk/android/gdkandroidcontentfile.h"
+"$ROOT/scripts/gtk-part.sh" patch "$hdr"
+grep -q "'gdkandroiddevice.h'," "$hdr/gdk/android/meson.build"
+grep -q "'gdkandroidcontentfile.h'" "$hdr/gdk/android/meson.build"
+"$ROOT/scripts/gtk-part.sh" patch "$hdr"
+if [ "$(grep -c gdkandroidcontentfile.h "$hdr/gdk/android/meson.build")" -ne 1 ]; then
+  echo "android content file header was installed twice" >&2
+  exit 1
+fi
 grep -q -- '-landroid -ljnigraphics -lnativewindow -llog' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
 grep -q -- '-I${includedir}/gtk-4.0' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
 if grep -q -- '--start-group' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"; then
