@@ -21,7 +21,7 @@ scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysr
 
 The target is native GTK (`gnome`), with no Android patch. Copy `share/pixiewood/INDEX.json` out of an assembled tree and pass it to `pin` to stay on that set.
 
-A publish is release `1.yymmddHHMMSS` in UTC, so several releases can land on the same day. 7 November 2026 at 00:00:00 UTC is `1.261107000000`. Each finished package is uploaded as a `.pixie` file named with its ABI and Android SDK, such as `openssl-arm64-v8a-android31-gnome.pixie`. Its line in `current.pins` is committed before the next package starts. See [docs/releases.md](docs/releases.md).
+A publish is release `1.yymmddHHMMSS` in UTC, so several releases can land on the same day. 7 November 2026 at 00:00:00 UTC is `1.261107000000`. Each finished package is uploaded as a `.pixie` file named with its ABI, Android SDK, and upstream version, such as `openssl-arm64-v8a-android31-3.0.8.pixie`. A branch or a commit uses `snapshot` instead of a version. Its line in `current.pins` is committed before the next package starts. See [docs/releases.md](docs/releases.md).
 
 ## What a package contains
 

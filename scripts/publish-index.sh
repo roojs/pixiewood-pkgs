@@ -59,17 +59,16 @@ built="$(mktemp)"
 : > "$built"
 notes="Release file ${tag}.tgz is the package list for ${gtk}. Package tarballs are separate assets named in that list."
 changed=""
-while IFS=$'\t' read -r status name _kind _track _resolved _inputs _url; do
+while IFS=$'\t' read -r status name _kind track _resolved _inputs _url; do
   [ -n "${status:-}" ] || continue
   case "$status" in \#*) continue ;; esac
   [ "$status" = build ] || continue
-  label="$(package_pin_label "$name" "$gtk" "$repo")"
   tarball="$tarball_dir/${name}-${abi}.tar.xz"
   if [ ! -f "$tarball" ]; then
     echo "Skipping $name; its tarball is not built yet" >&2
     continue
   fi
-  pkg_asset="$(package_asset_name "$name" "$abi" "$label")"
+  pkg_asset="$(package_asset_name "$name" "$abi" "$(package_track_label "$track")")"
   printf '%s\thttps://github.com/%s/releases/download/%s/%s\n' \
     "$name" "$repo" "$tag" "$pkg_asset" >> "$built"
   changed="${changed} ${name}"

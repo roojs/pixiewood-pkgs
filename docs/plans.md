@@ -19,13 +19,13 @@ This repository's `current.pins` names the release that holds each `.pixie` bund
 
 `packages/gtk/targets` lists `gnome` only. `build-order.txt` ends at glib-networking.
 
-## Release or main
+## Release or snapshot
 
-`gnome` is the reference target for the shared libraries. A pin line records the channel in one column: `release` or `main`.
+`gnome` is the reference target for the shared libraries. The package file names the upstream release version. A branch or a commit is `snapshot`.
 
-| Channel | Release name in the pin | Bundle |
-| --- | --- | --- |
-| `release` | `1.yymmddHHMMSS`, the GitHub release | `{name}-{abi}-android31-gnome.pixie` on that release |
-| `main` | `main`, the moving GitHub release | the same file name on the `main` release |
+| What was built | Bundle |
+| --- | --- |
+| Upstream release `3.0.8` | `{name}-{abi}-android31-3.0.8.pixie` |
+| A branch tip or a commit | `{name}-{abi}-android31-snapshot.pixie` |
 
-GNOME GTK in a distro release stays on the proved commit. A package that follows a branch tip uses channel `main`. An app that wants a frozen set reads the `release` lines. An app that wants a tip reads the `main` lines and, for any package that has no `main` line, uses the `release` line.
+The GitHub release that holds the file is still `1.yymmddHHMMSS`. `snapshot` is the file name for a tip, in place of `main` or `head`.

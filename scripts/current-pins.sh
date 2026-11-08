@@ -153,7 +153,7 @@ cmd_write() {
       fi
       label="$(package_pin_label "$name" "$gtk" "$repo")"
       if [ "$status" = build ] || [ -z "$url" ] || [ "$url" = "-" ]; then
-        url="https://github.com/${repo}/releases/download/${version}/$(package_asset_name "$name" "$abi" "$label")"
+        url="https://github.com/${repo}/releases/download/${version}/$(package_asset_name "$name" "$abi" "$(package_track_label "$track")")"
       elif [ "$status" != keep ]; then
         echo "Bad plan status: $status" >&2
         return 1

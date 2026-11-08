@@ -40,7 +40,7 @@ printf 'bytes\n' > "$tmp/gtk.tar.xz"
   --file "$tmp/pins" \
   --no-upload > "$tmp/openssl.out"
 grep -q 'Published openssl 1.261108010203' "$tmp/openssl.out"
-grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108010203/openssl-arm64-v8a-android31-gnome.pixie' "$tmp/pins"
+grep -q 'https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108010203/openssl-arm64-v8a-android31-3.0.8.pixie' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108010203\topenssl\topenssl-3.0.8.tar.gz\thash-o\tinputs-o\t' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108\tglib\tgtrack\tgres\tgin\thttps://example.invalid/glib.tar.xz' "$tmp/pins"
 if grep -q 'example.invalid/openssl' "$tmp/pins"; then
@@ -61,7 +61,7 @@ fi
   --file "$tmp/pins" \
   --no-upload > "$tmp/gtk.out"
 grep -q 'Published gtk 1.261108010203' "$tmp/gtk.out"
-grep -q 'gtk-arm64-v8a-android31-gnome.pixie' "$tmp/pins"
+grep -q 'gtk-arm64-v8a-android31-snapshot.pixie' "$tmp/pins"
 grep -q $'arm64-v8a\tgnome\t1.261108\tglib\t' "$tmp/pins"
 
 if "$ROOT/scripts/publish-package.sh" \
@@ -100,5 +100,15 @@ sh "$ROOT/packages/openssl/packagefiles/openssl/install-headers.sh" \
 grep -qx GENERATED "$hdr/dest/ssl.h"
 grep -qx CONFIG "$hdr/dest/configuration.h"
 grep -qx CONF "$hdr/dest/opensslconf.h"
+
+[ "$(package_track_label openssl-3.0.8.tar.gz)" = 3.0.8 ]
+[ "$(package_track_label libjpeg-turbo-3.1.1.tar.gz)" = 3.1.1 ]
+[ "$(package_track_label sqlite-amalgamation-3530200.zip)" = 3530200 ]
+[ "$(package_track_label 2.90.0)" = 2.90.0 ]
+[ "$(package_track_label v1.0.16)" = 1.0.16 ]
+[ "$(package_track_label main)" = snapshot ]
+[ "$(package_track_label HEAD)" = snapshot ]
+[ "$(package_track_label ae709f962a51f9108a1e6381bcfbd05bbaecc840)" = snapshot ]
+[ "$(package_track_label android-ime)" = snapshot ]
 
 echo "publish package: ok"

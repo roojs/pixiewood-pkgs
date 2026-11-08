@@ -294,7 +294,7 @@ for name in "${names[@]}"; do
       publish_this=1
       # A pin whose URL is already this SDK's asset stays where it is.
       if [ "$kind" = pin ]; then
-        asset="$(package_asset_name "$name" "$abi" "$(package_pin_label "$name" "$gtk")")"
+        asset="$(package_asset_name "$name" "$abi" "$(package_track_label "${track_of[$name]:-}")")"
         case "$loc" in
           */"$asset") publish_this=0 ;;
         esac

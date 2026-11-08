@@ -12,16 +12,45 @@ distro_get() {
   sed -n "s/^${key}=//p" "$ROOT/android-distro.conf" | head -n1 | tr -d '[:space:]'
 }
 
-# openssl-arm64-v8a-android31-gnome.pixie. The SDK is the API level in
-# android-distro.conf, the same level the NDK compiler targets.
+# openssl-3.0.8.tar.gz -> 3.0.8. A branch or a commit is snapshot.
+package_track_label() {
+  local track=$1 base version
+  case "$track" in
+    main|master|HEAD|head|trunk|snapshot)
+      printf 'snapshot\n'
+      return 0
+      ;;
+  esac
+  base="${track%.tar.gz}"
+  base="${base%.tar.xz}"
+  base="${base%.tar.bz2}"
+  base="${base%.tgz}"
+  base="${base%.zip}"
+  base="${base%.crate}"
+  if [[ "$base" =~ (^|[-_])([vV]?[0-9]+([.][0-9]+)*)$ ]]; then
+    version="${BASH_REMATCH[2]}"
+    version="${version#v}"
+    version="${version#V}"
+    printf '%s\n' "$version"
+    return 0
+  fi
+  printf 'snapshot\n'
+}
+
+# openssl-arm64-v8a-android31-3.0.8.pixie, or ...-snapshot.pixie.
+# The SDK is the API level in android-distro.conf.
 package_asset_name() {
-  local name=$1 abi=$2 label=$3 api
+  local name=$1 abi=$2 version=$3 api
   api="$(distro_get api)"
   if [ -z "$api" ]; then
     echo "android-distro.conf has no api" >&2
     return 1
   fi
-  printf '%s-%s-android%s-%s.pixie\n' "$name" "$abi" "$api" "$label"
+  if [ -z "$version" ]; then
+    echo "package $name has no version" >&2
+    return 1
+  fi
+  printf '%s-%s-android%s-%s.pixie\n' "$name" "$abi" "$api" "$version"
 }
 
 wrap_field() {
