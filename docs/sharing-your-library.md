@@ -35,9 +35,8 @@ Release or snapshot is the pin file. `release.pins` is the release list. `snapsh
 ## Publish
 
 1. Put `release.pins` in the repository applications clone. Add `snapshot.pins` when you publish snapshots.
-2. Create a GitHub release named `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. A later run the same day uploads onto that release.
-3. Upload one `.pixie` per library. An official release uses its version, such as `3.0.8`. Anything else uses `snapshot`. The file name is `{name}-arm-v{api}-{version}.pixie` or `{name}-x86-v{api}-{version}.pixie`.
-4. Commit the pin file so the package object matches the uploaded file.
-5. The GitHub release holds the `.pixie` files. The pin files stay in git.
+2. Upload one `.pixie` per library. An official release uses its version, such as `3.0.8`. Anything else uses `snapshot`. The file name is `{name}-arm-v{api}-{version}.pixie` or `{name}-x86-v{api}-{version}.pixie`.
+3. Commit the pin file so the package object matches the uploaded file.
+4. The GitHub release holds the `.pixie` files. The pin files stay in git.
 
 A line's URL can point at a `.pixie` file published by another repository. The Android IME branch and webkitgtk-android are separate projects, with their own branches and their own pin files.

@@ -9,8 +9,6 @@ The file name is `{name}-arm-v{api}-{version}.pixie` or `{name}-x86-v{api}-{vers
 - An official release uses its version, such as `openssl-arm-v31-3.0.8.pixie`.
 - Anything else uses `snapshot`, such as `fontconfig-arm-v31-snapshot.pixie`.
 
-The GitHub release that holds the file is named `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. A later upload the same day goes onto that same release.
-
 Inside the archive: headers, libraries, and pkg-config files for one upstream project, with `prefix=/` and `libdir=lib/<abi>`. The `gtk` package also carries the Android Java glue under `share/pixiewood/gtk-android-java`. `glib-networking` carries the static `gioopenssl` module.
 
 The `.pc` files contain `prefix=@PIXIEWOOD_SYSROOT@`. `scripts/activate-pixie.sh` rewrites that to the directory the files were unpacked into, and writes `share/pixiewood/pixie.cross`.
