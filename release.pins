@@ -177,7 +177,7 @@
       "name": "libadwaita",
       "track": "1.10.0",
       "resolved": "c9ab118612eee92324143783c4641c98eaded3f0",
-      "inputs": "a09ce4ec5c477a58c93c7b09029727a5a7d287c8bcde78dc217288938c44ea22",
+      "inputs": "26b69c3ba294010fd40fe274d83f3ded39788c0123f78e5058ed8203f45b2649",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libadwaita-arm-v31-1.10.0.pixie"
     },
     {
