@@ -129,7 +129,7 @@ while IFS= read -r name || [ -n "$name" ]; do
     --gtk "$gtk" \
     --created "assemble-$name" \
     --out "$work/deps-$name.json"
-  "$ROOT/scripts/integrate-sysroot.sh" pin "$work/deps-$name.json" --dest "$next"
+  "$ROOT/scripts/pixie.sh" pin "$work/deps-$name.json" --dest "$next"
   deps="$next"
 done < "$ROOT/build-order.txt"
 
@@ -142,7 +142,7 @@ rm -rf "$final"
   --gtk "$gtk" \
   --created "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --out "$work/final.json"
-"$ROOT/scripts/integrate-sysroot.sh" pin "$work/final.json" --dest "$final"
+"$ROOT/scripts/pixie.sh" pin "$work/final.json" --dest "$final"
 "$ROOT/scripts/verify-sysroot.sh" "$final"
 archive="$ROOT/out/pixiewood-android-${gtk}-${abi}.tar.xz"
 mkdir -p "$ROOT/out"

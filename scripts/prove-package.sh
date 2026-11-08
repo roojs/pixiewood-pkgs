@@ -341,6 +341,6 @@ for name in "${names[@]}"; do
     --gtk "$gtk" \
     --created "prove-$name" \
     --out "$work/deps-$name.json"
-  "$ROOT/scripts/integrate-sysroot.sh" pin "$work/deps-$name.json" --dest "$next"
+  "$ROOT/scripts/pixie.sh" pin "$work/deps-$name.json" --dest "$next"
   deps="$next"
 done

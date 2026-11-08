@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Download an index and assemble an activated sysroot.
+# Download pixie libraries and unpack them into one directory.
 # latest reads release.pins. --snapshot reads snapshot.pins. pin uses one index file.
 set -euo pipefail
 
@@ -164,4 +164,4 @@ fi
   --provided "$provided"
 
 "$ROOT/scripts/sysroot-tree.sh" activate "$dest"
-echo "Integrated $count packages into $dest"
+echo "Unpacked $count packages into $dest"

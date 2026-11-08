@@ -3,8 +3,8 @@
 set -euo pipefail
 
 if [ "$#" -ne 1 ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
-  echo "Usage: $0 SYSROOT" >&2
-  echo "SYSROOT is the directory the release tarball was extracted into." >&2
+  echo "Usage: $0 DIR" >&2
+  echo "DIR is the directory the pixie libraries were unpacked into." >&2
   exit 2
 fi
 

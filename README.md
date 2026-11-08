@@ -10,7 +10,7 @@ This repository publishes the GTK libraries an Android app links, OpenSSL throug
 
 ```bash
 git clone --depth 1 --branch main https://github.com/roojs/pixiewood-pkgs.git
-scripts/integrate-sysroot.sh latest --dest "$HOME/pixiewood"
+scripts/pixie.sh latest --dest "$HOME/pixiewood"
 ```
 
 ## This repository

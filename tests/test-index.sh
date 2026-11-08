@@ -181,14 +181,14 @@ grep -q '"version": "1.261107"' "$tmp/local-index.json"
 grep -q '"version": "deps-libxml2"' "$tmp/deps-index.json"
 grep -q '"created": "deps-libxml2"' "$tmp/deps-index.json"
 
-"$ROOT/scripts/integrate-sysroot.sh" pin "$tmp/local-index.json" --dest "$tmp/sysroot"
+"$ROOT/scripts/pixie.sh" pin "$tmp/local-index.json" --dest "$tmp/sysroot"
 grep -q "^prefix=$tmp/sysroot$" "$tmp/sysroot/lib/$abi/pkgconfig/glib-2.0.pc"
 grep -q "^prefix=$tmp/sysroot$" "$tmp/sysroot/lib/$abi/pkgconfig/gtk4.pc"
 grep -q '"gtk_target": "gnome"' "$tmp/sysroot/share/pixiewood/MANIFEST.json"
 test -f "$tmp/sysroot/share/pixiewood/INDEX.json"
 test -f "$tmp/sysroot/share/pixiewood/gtk-android-java/org/gtk/android/ToplevelActivity.java"
 
-"$ROOT/scripts/integrate-sysroot.sh" pin "$tmp/local-index.json" --dest "$tmp/sysroot-glib" --exclude gtk
+"$ROOT/scripts/pixie.sh" pin "$tmp/local-index.json" --dest "$tmp/sysroot-glib" --exclude gtk
 test -f "$tmp/sysroot-glib/lib/$abi/pkgconfig/glib-2.0.pc"
 if [ -f "$tmp/sysroot-glib/lib/$abi/pkgconfig/gtk4.pc" ]; then
   echo "exclude gtk still extracted gtk" >&2

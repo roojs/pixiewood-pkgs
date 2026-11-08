@@ -13,7 +13,7 @@ The GitHub release that holds the file is named `1.yymmdd` in UTC. 7 November 20
 
 Inside the archive: headers, libraries, and pkg-config files for one upstream project, with `prefix=/` and `libdir=lib/<abi>`. The `gtk` package also carries the Android Java glue under `share/pixiewood/gtk-android-java`. `glib-networking` carries the static `gioopenssl` module.
 
-The `.pc` files contain `prefix=@PIXIEWOOD_SYSROOT@`. `scripts/activate-sysroot.sh` rewrites that to the directory the files were unpacked into, and writes `share/pixiewood/pixie.cross`.
+The `.pc` files contain `prefix=@PIXIEWOOD_SYSROOT@`. `scripts/activate-pixie.sh` rewrites that to the directory the files were unpacked into, and writes `share/pixiewood/pixie.cross`.
 
 The URL for a file looks like:
 

@@ -6,8 +6,8 @@ An Android build names three things: the repository, the branch, and release or 
 
 ```bash
 git clone --depth 1 --branch main https://github.com/roojs/pixiewood-pkgs.git "$distro"
-"$distro/scripts/integrate-sysroot.sh" latest --dest "$HOME/pixiewood"
-"$distro/scripts/integrate-sysroot.sh" latest --snapshot --dest "$HOME/pixiewood"
+"$distro/scripts/pixie.sh" latest --dest "$HOME/pixiewood"
+"$distro/scripts/pixie.sh" latest --snapshot --dest "$HOME/pixiewood"
 ```
 
 `latest` reads `release.pins`. `latest --snapshot` reads `snapshot.pins`. Each package object names one `.pixie` file. The download unpacks those files into the directory you named. See [What a pixie file is](pixie-file.md).
@@ -15,7 +15,7 @@ git clone --depth 1 --branch main https://github.com/roojs/pixiewood-pkgs.git "$
 To stay on one set, keep `share/pixiewood/INDEX.json` from that directory and pass it to `pin`:
 
 ```bash
-"$distro/scripts/integrate-sysroot.sh" pin path/to/index.json --dest "$HOME/pixiewood"
+"$distro/scripts/pixie.sh" pin path/to/index.json --dest "$HOME/pixiewood"
 ```
 
 ## From Pixiewood

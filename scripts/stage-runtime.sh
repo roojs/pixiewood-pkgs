@@ -22,7 +22,7 @@ manifest="$sysroot/share/pixiewood/MANIFEST.json"
 
 if [ ! -f "$manifest" ]; then
   echo "Pixie manifest missing: $manifest" >&2
-  echo "Unpack the pixie libraries and run scripts/activate-sysroot.sh." >&2
+  echo "Unpack the pixie libraries and run scripts/activate-pixie.sh." >&2
   exit 1
 fi
 

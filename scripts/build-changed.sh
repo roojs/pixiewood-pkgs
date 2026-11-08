@@ -132,7 +132,7 @@ for name in "${order[@]}"; do
       --gtk "$gtk" \
       --created "deps-$name" \
       --out "$index"
-    "$ROOT/scripts/integrate-sysroot.sh" pin "$index" --dest "$deps"
+    "$ROOT/scripts/pixie.sh" pin "$index" --dest "$deps"
     args+=(--deps-sysroot "$deps")
   fi
   "$ROOT/scripts/build-sysroot.sh" "${args[@]}"
