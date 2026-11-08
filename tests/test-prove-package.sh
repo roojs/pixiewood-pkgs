@@ -24,7 +24,9 @@ for name in glib pango gdk gtk; do
     gdk|gtk) paths+=("$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-sysroot.sh") ;;
     glib) paths+=("$ROOT/scripts/build-sysroot.sh") ;;
   esac
-  if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "${paths[@]}"; then
+  if ! jq -e --arg name "$name" '.packages[] | select(.name == $name)' "$ROOT/release.pins" >/dev/null; then
+    grep -q "^build $name on " "$tmp/default.out"
+  elif git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "${paths[@]}"; then
     grep -q "^pin $name on " "$tmp/default.out"
   else
     grep -q "^build $name on " "$tmp/default.out"

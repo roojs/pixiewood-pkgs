@@ -1,5 +1,5 @@
 # GTK source this repository builds.
 # name url revision patch
 # patch is a file under packages/gtk, or - when the tree is unpatched.
-# The name is the second column of the pin files. Release or snapshot is the pin file.
+# The pin file stores this url in repo. Release or snapshot is the pin file.
 gnome https://gitlab.gnome.org/GNOME/gtk.git ae709f962a51f9108a1e6381bcfbd05bbaecc840 -

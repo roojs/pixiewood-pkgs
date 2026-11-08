@@ -2,7 +2,7 @@
   "packages": [
     {
       "abi": "arm64-v8a",
-      "gtk": "gnome",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "release": "1.261108",
       "name": "fontconfig",
       "track": "main",
@@ -12,7 +12,7 @@
     },
     {
       "abi": "arm64-v8a",
-      "gtk": "gnome",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "release": "1.261108",
       "name": "gdk",
       "track": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",

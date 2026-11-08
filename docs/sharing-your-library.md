@@ -9,7 +9,7 @@ Release or snapshot is the pin file. `release.pins` is the release list. `snapsh
   "packages": [
     {
       "abi": "arm64-v8a",
-      "gtk": "gnome",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "release": "1.261108",
       "name": "openssl",
       "track": "openssl-3.0.8.tar.gz",
@@ -26,8 +26,8 @@ Release or snapshot is the pin file. `release.pins` is the release list. `snapsh
 | Field | Meaning |
 | --- | --- |
 | `abi` | Android ABI directory, `arm64-v8a` or `x86_64`. The file name says `arm` or `x86` |
-| `gtk` | `gnome` on every package in this repository |
-| `release` | GitHub release name, `1.yymmdd` |
+| `repo` | Full git URL of the GTK checkout, `https://gitlab.gnome.org/GNOME/gtk.git` |
+| `release` | Published release, `1.yymmdd` |
 | `name` | Package name |
 | `track` | Upstream version, tag, branch, or commit that was built |
 | `resolved` | Commit or tarball identity that was built |

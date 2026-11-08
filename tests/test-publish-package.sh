@@ -23,8 +23,8 @@ grep -q 'YYYY-MM-DD' "$tmp/date-only.err"
 printf 'bytes\n' > "$tmp/openssl.tar.xz"
 printf 'bytes\n' > "$tmp/gtk.tar.xz"
 jq -n '{packages: [
-  {abi:"arm64-v8a", gtk:"gnome", release:"1.261108", name:"openssl", track:"old-track", resolved:"old-res", inputs:"old-in", url:"https://example.invalid/openssl.tar.xz"},
-  {abi:"arm64-v8a", gtk:"gnome", release:"1.261108", name:"glib", track:"gtrack", resolved:"gres", inputs:"gin", url:"https://example.invalid/glib.tar.xz"}
+  {abi:"arm64-v8a", repo:"https://gitlab.gnome.org/GNOME/gtk.git", release:"1.261108", name:"openssl", track:"old-track", resolved:"old-res", inputs:"old-in", url:"https://example.invalid/openssl.tar.xz"},
+  {abi:"arm64-v8a", repo:"https://gitlab.gnome.org/GNOME/gtk.git", release:"1.261108", name:"glib", track:"gtrack", resolved:"gres", inputs:"gin", url:"https://example.invalid/glib.tar.xz"}
 ]}' > "$tmp/pins"
 
 "$ROOT/scripts/publish-package.sh" \
