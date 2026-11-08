@@ -99,7 +99,7 @@ EOF
 chmod +x "$tmp/bin/fake-meson"
 
 output="$(
-  PIXIEWOOD_SYSROOT="$tmp/sysroot" \
+  PIXIEWOOD_PIXIE="$tmp/sysroot" \
   PIXIEWOOD_REAL_MESON="$tmp/bin/fake-meson" \
     "$ROOT/scripts/meson-wrapper.sh" setup --cross-file toolchain.cross builddir sourcedir
 )"

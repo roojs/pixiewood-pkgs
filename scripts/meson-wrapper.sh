@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 # Meson executable to pass to `pixiewood prepare --meson`.
 #
-# When PIXIEWOOD_SYSROOT is set, `meson setup` also receives the activated
+# When PIXIEWOOD_PIXIE is set, `meson setup` also receives the activated
 # pixie cross file. Other Meson invocations are forwarded unchanged.
 set -euo pipefail
 
 real_meson="${PIXIEWOOD_REAL_MESON:-meson}"
 
-if [ -z "${PIXIEWOOD_SYSROOT:-}" ]; then
+if [ -z "${PIXIEWOOD_PIXIE:-}" ]; then
   exec "$real_meson" "$@"
 fi
 
-sysroot="$(cd "$PIXIEWOOD_SYSROOT" && pwd)"
+sysroot="$(cd "$PIXIEWOOD_PIXIE" && pwd)"
 cross="$sysroot/share/pixiewood/pixie.cross"
 if [ ! -f "$cross" ]; then
   echo "Pixie cross file missing: $cross" >&2
-  echo "Run scripts/activate-sysroot.sh on the extracted tarball first." >&2
+  echo "Run scripts/activate-sysroot.sh on the unpacked libraries first." >&2
   exit 1
 fi
 

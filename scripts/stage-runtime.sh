@@ -21,15 +21,15 @@ root="$(cd "$2" && pwd)"
 manifest="$sysroot/share/pixiewood/MANIFEST.json"
 
 if [ ! -f "$manifest" ]; then
-  echo "Sysroot manifest missing: $manifest" >&2
-  echo "Extract a pixiewood-pkgs tarball and run scripts/activate-sysroot.sh." >&2
+  echo "Pixie manifest missing: $manifest" >&2
+  echo "Unpack the pixie libraries and run scripts/activate-sysroot.sh." >&2
   exit 1
 fi
 
 abi="$(sysroot_json_get abi "$manifest")"
 src_lib="$sysroot/lib/$abi"
 if [ ! -d "$src_lib" ]; then
-  echo "Sysroot library directory missing: $src_lib" >&2
+  echo "Pixie library directory missing: $src_lib" >&2
   exit 1
 fi
 
