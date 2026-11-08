@@ -3,7 +3,7 @@
 #
 # Pixiewood's meson install only packages the application. Shared libraries
 # that came from pkg-config are not copied unless this step (or the
-# --sysroot patch) puts them in .pixiewood/root before Gradle runs.
+# --pixie patch) puts them in .pixiewood/root before Gradle runs.
 set -euo pipefail
 
 if [ "$#" -ne 2 ]; then

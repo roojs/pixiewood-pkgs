@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bind an extracted sysroot to its path and write share/pixiewood/sysroot.cross.
+# Bind unpacked pixie libraries to their path and write share/pixiewood/pixie.cross.
 set -euo pipefail
 
 if [ "$#" -ne 1 ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then

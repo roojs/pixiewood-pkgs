@@ -228,7 +228,7 @@ cmd_pack_fragment() {
   fi
   rm -f "$destdir/share/pixiewood/MANIFEST.json" \
     "$destdir/share/pixiewood/INDEX.json" \
-    "$destdir/share/pixiewood/sysroot.cross" \
+    "$destdir/share/pixiewood/pixie.cross" \
     "$destdir/share/pixiewood/pkg-config-wrapper"
   sysroot_rewrite_prefix '/' "$TOKEN" "$destdir"
   mkdir -p "$(dirname "$tarball")"
@@ -287,7 +287,7 @@ EOF
 write_cross() {
   local sysroot=$1 abi=$2 wrapper=$3
   local pkgconfig="$sysroot/lib/$abi/pkgconfig"
-  local dest="$sysroot/share/pixiewood/sysroot.cross"
+  local dest="$sysroot/share/pixiewood/pixie.cross"
   local tool script launch quoted_wrapper
   quoted_wrapper="$(meson_quote "$wrapper")"
   {
@@ -341,7 +341,7 @@ cmd_activate() {
   write_cross "$sysroot" "$abi" "$wrapper"
   sysroot_set_activated_prefix "$manifest" "$target"
   echo "Activated $sysroot"
-  echo "Meson cross file: $sysroot/share/pixiewood/sysroot.cross"
+  echo "Meson cross file: $sysroot/share/pixiewood/pixie.cross"
 }
 
 command=${1:-}

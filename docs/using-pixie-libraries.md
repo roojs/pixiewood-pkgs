@@ -20,16 +20,16 @@ To stay on one set, keep `share/pixiewood/INDEX.json` from that directory and pa
 
 ## From Pixiewood
 
-`integration/0001-sysroot-prebuilt-dependencies.patch` applies to gtk-android-builder `00b1862b6434a8778557dc3d3074f43f5fdead1b`. From a checkout of that revision:
+`integration/0001-pixie-libraries.patch` applies to gtk-android-builder `00b1862b6434a8778557dc3d3074f43f5fdead1b`. From a checkout of that revision:
 
 ```bash
-patch -p1 < /path/to/pixiewood-pkgs/integration/0001-sysroot-prebuilt-dependencies.patch
+patch -p1 < /path/to/pixiewood-pkgs/integration/0001-pixie-libraries.patch
 pixiewood prepare \
   --sdk "$ANDROID_SDK_ROOT" \
-  --sysroot "$HOME/pixiewood" \
+  --pixie "$HOME/pixiewood" \
   android/app.xml
 pixiewood generate
 pixiewood build
 ```
 
-`--sysroot` is the directory from `latest`. Libraries listed in `share/pixiewood/MANIFEST.json` are used as they are. Anything absent from that list is still built from a wrap. Icons, the CA bundle, shared-mime-info, and the application's own Java classes stay with the app.
+`--pixie` is the directory from `latest`. Libraries listed in `share/pixiewood/MANIFEST.json` are used as they are. Anything absent from that list is still built from a wrap. Icons, the CA bundle, shared-mime-info, and the application's own Java classes stay with the app.

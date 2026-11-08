@@ -85,15 +85,15 @@ test -f "$destdir/share/pixiewood/gtk-android-java/org/gtk/android/ToplevelActiv
 
 "$ROOT/scripts/sysroot-tree.sh" activate "$destdir"
 grep -q "^prefix=$destdir$" "$destdir/lib/$abi/pkgconfig/gtk4.pc"
-cross_tool="$(sed -n "s/^gdbus-codegen = \['\(.*\)'\]/\\1/p" "$destdir/share/pixiewood/sysroot.cross")"
+cross_tool="$(sed -n "s/^gdbus-codegen = \['\(.*\)'\]/\\1/p" "$destdir/share/pixiewood/pixie.cross")"
 test -n "$cross_tool"
 test -x "$cross_tool"
 test "$cross_tool" != "$destdir/bin/$abi/gdbus-codegen"
 [ "$("$cross_tool")" = codegen-ok ]
-cross="$(cat "$destdir/share/pixiewood/sysroot.cross")"
+cross="$(cat "$destdir/share/pixiewood/pixie.cross")"
 printf '%s\n' "$cross" | grep -q 'pkg-config'
 if printf '%s\n' "$cross" | grep -q 'sys_root'; then
-  echo "sysroot.cross must not set sys_root" >&2
+  echo "pixie.cross must not set sys_root" >&2
   exit 1
 fi
 test -x "$destdir/share/pixiewood/pkg-config-wrapper"
@@ -107,7 +107,7 @@ moved="$tmp/moved"
 mv "$destdir" "$moved"
 "$ROOT/scripts/sysroot-tree.sh" activate "$moved"
 grep -q "^prefix=$moved$" "$moved/lib/$abi/pkgconfig/gtk4.pc"
-cross_tool="$(sed -n "s/^gdbus-codegen = \['\(.*\)'\]/\\1/p" "$moved/share/pixiewood/sysroot.cross")"
+cross_tool="$(sed -n "s/^gdbus-codegen = \['\(.*\)'\]/\\1/p" "$moved/share/pixiewood/pixie.cross")"
 [ "$("$cross_tool")" = codegen-ok ]
 if grep -q "^prefix=$destdir$" "$moved/lib/$abi/pkgconfig/gtk4.pc"; then
   echo "activate left the old prefix in gtk4.pc" >&2

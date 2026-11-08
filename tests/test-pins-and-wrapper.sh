@@ -108,7 +108,7 @@ second="$(printf '%s\n' "$output" | sed -n '2p')"
 third="$(printf '%s\n' "$output" | sed -n '3p')"
 [ "$first" = "setup" ]
 [ "$second" = "--cross-file" ]
-[ "$third" = "$tmp/sysroot/share/pixiewood/sysroot.cross" ]
+[ "$third" = "$tmp/sysroot/share/pixiewood/pixie.cross" ]
 printf '%s\n' "$output" | grep -q '^toolchain.cross$'
 printf '%s\n' "$output" | grep -qx 'builddir'
 printf '%s\n' "$output" | grep -qx 'sourcedir'
