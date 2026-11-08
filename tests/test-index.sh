@@ -390,9 +390,24 @@ configure_file(output: 'config.h',
 pkg_config.generate(libgtk,
 )
 EOF
-printf '%s\n' 'link_with: [libgtk_css, libgtk_svg, libgdk, libgsk ],' > "$part/gtk/meson.build"
-printf '%s\n' 'link_whole: [libgtk_static, libgtk_css, libgtk_svg, libgdk, libgsk ],' >> "$part/gtk/meson.build"
-printf '%s\n' 'link_with: [libgtk_static, libgtk_css, libgdk, libgsk ],' >> "$part/gtk/meson.build"
+cat > "$part/gtk/meson.build" << 'EOF'
+libgtk_static = static_library('gtk',
+  dependencies: gtk_deps + [libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep, media_deps, print_backend_deps],
+  link_with: [libgtk_css, libgtk_svg, libgdk, libgsk ],
+)
+libgtk = shared_library('gtk-4',
+  dependencies: gtk_deps + [libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep],
+  link_whole: [libgtk_static, libgtk_css, libgtk_svg, libgdk, libgsk ],
+)
+libgtk_dep = declare_dependency(
+  dependencies: gtk_deps + [libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep],
+  link_with: libgtk,
+)
+libgtk_static_dep = declare_dependency(
+  dependencies: gtk_deps + [libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep],
+  link_with: [libgtk_static, libgtk_css, libgdk, libgsk ],
+)
+EOF
 printf '%s\n' 'link_with: [ libgdk, libgsk_f16c],' > "$part/gsk/meson.build"
 "$ROOT/scripts/gtk-part.sh" patch "$part"
 grep -q "pixiewood-part" "$part/meson.options"
@@ -400,6 +415,20 @@ grep -q "subdir('gdk')" "$part/meson.build"
 grep -q "pixiewood_part == 'gtk'" "$part/meson.build"
 grep -q "pixiewood_part != 'gtk'" "$part/gdk/meson.build"
 grep -q "dependency('pixiewood-gdk')" "$part/gdk/meson.build"
+if grep -q "pixiewood-gdk" <<< "$(awk '/^  libgdk_dep = declare_dependency/,/^  \\)/' "$part/gdk/meson.build")"; then
+  echo "public GDK dependency still links the GDK archive" >&2
+  exit 1
+fi
+grep -q 'dependencies: gtk_deps + \[libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep\] + pixiewood_gdk_link,' "$part/gtk/meson.build"
+public_deps="$(awk '
+  /^libgtk_dep = declare_dependency/ { on = 1 }
+  on { print }
+  on && /^\)/ { exit }
+' "$part/gtk/meson.build")"
+if printf '%s\n' "$public_deps" | grep -q 'pixiewood_gdk_link'; then
+  echo "public GTK dependency links GDK a second time" >&2
+  exit 1
+fi
 if grep -q "libgdk_dep = dependency('pixiewood-gdk')" "$part/meson.build"; then
   echo "top-level meson still replaces subdir gdk" >&2
   exit 1

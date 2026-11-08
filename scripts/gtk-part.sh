@@ -103,6 +103,9 @@ EOF
       return 1
     fi
   done
+  if [ -f "$src/gtk/meson.build" ]; then
+    patch_gtk_gdk_link "$src/gtk/meson.build"
+  fi
   # GTK's typefuncs target needs gdkenum_h and gdkinc from this file.
   # A GTK build that reuses a GDK package still configures those headers,
   # and links the package instead of compiling libgdk again.
@@ -125,6 +128,7 @@ patch_gdk_library() {
     BEGIN { state = 0 }
     state == 0 && $0 == "gdk_backends = []" {
       print "if pixiewood_part != '\''gtk'\''"
+      print "  pixiewood_gdk_link = []"
       print
       state = 1
       next
@@ -137,10 +141,14 @@ patch_gdk_library() {
     state == 2 && $0 == ")" {
       print
       print "else"
+      print "  # Link the packaged GDK into libgtk only. Tools already link"
+      print "  # libgtk-4.so, and a second copy of libgdk.a cannot see the"
+      print "  # CSS and GSK symbols hidden inside that shared library."
+      print "  pixiewood_gdk_link = [dependency('\''pixiewood-gdk'\'')]"
       print "  libgdk_dep = declare_dependency("
       print "    sources: ['\''gdk.h'\'', gdk_gen_headers],"
       print "    include_directories: [confinc, gdkx11_inc, wlinc],"
-      print "    dependencies: gdk_deps + [libgtk_css_dep, dependency('\''pixiewood-gdk'\'')],"
+      print "    dependencies: gdk_deps + [libgtk_css_dep],"
       print "  )"
       print "endif"
       state = 3
@@ -155,6 +163,51 @@ patch_gdk_library() {
     }
   ' "$meson" > "$tmp" || {
     echo "Could not split the GDK library out of $meson" >&2
+    rm -f "$tmp"
+    return 1
+  }
+  mv "$tmp" "$meson"
+}
+
+# The shared GTK library links the packaged GDK once. The public gtk
+# dependency must not repeat that link: executables already link libgtk-4.so.
+patch_gtk_gdk_link() {
+  local meson=$1 tmp
+  if ! grep -q "shared_library('gtk-4'" "$meson"; then
+    return 0
+  fi
+  tmp="$(mktemp)"
+  awk '
+    BEGIN { target = "" }
+    $0 ~ /static_library\('"'"'gtk'"'"'/ { target = "static" }
+    $0 ~ /shared_library\('"'"'gtk-4'"'"'/ { target = "shared" }
+    $0 ~ /^libgtk_dep = declare_dependency/ { target = "public" }
+    $0 ~ /^libgtk_static_dep = declare_dependency/ { target = "static_dep" }
+    target == "shared" && $0 ~ /^  dependencies: gtk_deps \+ \[libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep\],$/ {
+      sub(/,$/, "")
+      print $0 " + pixiewood_gdk_link,"
+      linked = 1
+      next
+    }
+    target == "static" && $0 ~ /^  dependencies: gtk_deps \+ \[libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep, media_deps, print_backend_deps\],$/ {
+      sub(/,$/, "")
+      print $0 " + pixiewood_gdk_link,"
+      next
+    }
+    target == "static_dep" && $0 ~ /^  dependencies: gtk_deps \+ \[libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep\],$/ {
+      sub(/,$/, "")
+      print $0 " + pixiewood_gdk_link,"
+      next
+    }
+    { print }
+    END {
+      if (!linked) {
+        print "GTK shared library did not gain the packaged GDK link" > "/dev/stderr"
+        exit 2
+      }
+    }
+  ' "$meson" > "$tmp" || {
+    echo "Could not attach the packaged GDK to libgtk in $meson" >&2
     rm -f "$tmp"
     return 1
   }
