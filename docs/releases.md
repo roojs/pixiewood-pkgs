@@ -17,7 +17,7 @@ Every path is dropped except `current.pins`. That file is the package list. Each
 
 ```
 # abi gtk release name track resolved inputs url
-arm64-v8a gnome 1.261107 gtk ae709f96... ae709f96... 40415ca3... https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107/gtk-arm64-v8a-gnome.tar.xz
+arm64-v8a gnome 1.261107000000 gtk ae709f96... ae709f96... 40415ca3... https://github.com/roojs/pixiewood-pkgs/releases/download/1.261107000000/gtk-arm64-v8a-gnome.tar.xz
 ```
 
 A package that did not change keeps the tarball URL from the earlier release. The line is not a pointer at `index-<abi>-<gtk>.json`.
@@ -29,18 +29,17 @@ A package that did not change keeps the tarball URL from the earlier release. Th
 On a day when something upstream changed, **Monitor upstreams** does this in order:
 
 1. Resolve every package for each name in `packages/gtk/targets`.
-2. Write `current.pins` for the packages that will be published and commit it.
-3. Build the first GTK target in `packages/gtk/targets`. That is `gnome`, and it builds the shared libraries.
-4. `packages/gtk/targets` lists `gnome` only. A distribution that publishes a later GTK target uses `packages/gtk/replaces`: `gtk` is that target's own build, and `gdk` is built only when `gdk/` or `gtk/css` differs from gnome.
-5. Upload the release. The release tag points at the pins commit, so the source archive of the tag is that list.
+2. Build the first GTK target in `packages/gtk/targets`. That is `gnome`, and it builds the shared libraries. When that build stops, every tarball it finished is uploaded and that package's line in `current.pins` is committed. A later package can fail. The packages already built stay on the release, so the next run downloads them.
+3. `packages/gtk/targets` lists `gnome` only. A distribution that publishes a later GTK target uses `packages/gtk/replaces`: `gtk` is that target's own build, and `gdk` is built only when `gdk/` or `gtk/css` differs from gnome.
+4. The release tag points at the commit that was current when the run started. `current.pins` on the branch names the tarballs that were actually uploaded.
 
 A hand-started **Build Android sysroot** run does not publish and does not rewrite `current.pins`.
 
 ## Release file
 
-The release name is `1.yymmdd` in UTC. 7 November 2026 is `1.261107`.
+The release name is `1.yymmddHHMMSS` in UTC. 7 November 2026 at 00:00:00 UTC is `1.261107000000`. A later run the same day gets its own name.
 
-`1.yymmdd.tgz` is generated at publish time and uploaded as a release asset. It holds the package lists, one `index-<abi>-<gtk>.json` per list. It does not hold the package tarballs. Those are separate assets, and each index entry is the URL of one of them. A package that did not change keeps the URL of the release that built it.
+`1.yymmddHHMMSS.tgz` is generated at publish time and uploaded as a release asset. It holds the package lists, one `index-<abi>-<gtk>.json` per list. It does not hold the package tarballs. Those are separate assets, and each index entry is the URL of one of them. A package that did not change keeps the URL of the release that built it. A package that was not built in this run is left out of the upload.
 
 That `.tgz` is not a file in the git tree. `.gitattributes` and `.gitignore` do not name it.
 

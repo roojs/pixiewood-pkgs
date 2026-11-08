@@ -21,7 +21,7 @@ scripts/integrate-sysroot.sh pin path/to/index.json --dest "$HOME/pixiewood-sysr
 
 The target is native GTK (`gnome`), with no Android patch. Copy `share/pixiewood/INDEX.json` out of an assembled tree and pass it to `pin` to stay on that set.
 
-A day that publishes packages is release `1.yymmdd` in UTC. 7 November 2026 is `1.261107`. `current.pins` is committed before that build and lists every package tarball. See [docs/releases.md](docs/releases.md).
+A publish is release `1.yymmddHHMMSS` in UTC, so several releases can land on the same day. 7 November 2026 at 00:00:00 UTC is `1.261107000000`. Each finished package is uploaded and its line in `current.pins` is committed before the next package starts. See [docs/releases.md](docs/releases.md).
 
 ## What a package contains
 
@@ -40,7 +40,7 @@ scripts/build-sysroot.sh --arch aarch64
 
 A push does not publish packages. Once a day, **Monitor upstreams** resolves every package for each name in `packages/gtk/targets`. It uploads tarballs only for packages whose upstream revision or local inputs changed, writes an index that reuses the previous URL for the rest, and skips the release entirely when nothing changed. **Build Android sysroot** can still be started by hand for one combined tree.
 
-**Prove package** does not publish. It walks `build-order.txt` through `glib-networking`. Each package is taken from `current.pins` when that package's recipe has not changed, otherwise from the GitHub package cache, and otherwise built from source. Pango, Cairo, HarfBuzz, and the other GTK libraries are packages in that list, so a GTK build links those tarballs. A source build reuses a stored checkout when it is already at the wanted revision. Set `through` to an earlier name, such as `libadwaita`, to stop there. **Monitor upstreams** publishes a release after that prove is green. **Build Android sysroot** uses the same order. Pass `packages=sqlite3` to prove that package alone.
+**Prove package** walks `build-order.txt` through `glib-networking` and publishes each package as soon as it finishes. A later failure leaves the finished packages on that run's release, and the next run downloads them. Each package is taken from `current.pins` when that package's recipe has not changed, otherwise from the GitHub package cache, and otherwise built from source. A cache hit or a source build is uploaded too, so the pin names a real asset. Pango, Cairo, HarfBuzz, and the other GTK libraries are packages in that list, so a GTK build links those tarballs. A source build reuses a stored checkout when it is already at the wanted revision. Set `through` to an earlier name, such as `libadwaita`, to stop there. **Monitor upstreams** uses the same rule: a package is uploaded when its tarball exists, and a later failure does not drop the packages already uploaded. **Build Android sysroot** uses the same order. Pass `packages=sqlite3` to prove that package alone.
 
 ## Use the sysroot from Pixiewood
 

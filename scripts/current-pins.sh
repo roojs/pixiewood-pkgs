@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # current.pins is the package list: one line per package and its tarball URL.
-# It is committed before a publishing build. The repository source archive
-# contains this file and nothing else.
+# A line is committed when that package's tarball is on a release. The
+# repository source archive contains this file and nothing else.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -47,15 +47,28 @@ pins_mark_replaced() {
 }
 
 release_stamp() {
-  local version=$1 year month day
-  if [ "${#version}" -ne 8 ] || [ "${version#1.}" = "$version" ]; then
+  local version=$1 rest year month day hour minute second
+  rest="${version#1.}"
+  if [ "$rest" = "$version" ]; then
     echo "Bad release version: $version" >&2
     return 1
   fi
-  year="${version:2:2}"
-  month="${version:4:2}"
-  day="${version:6:2}"
-  printf '20%s-%s-%sT00:00:00Z\n' "$year" "$month" "$day"
+  if [ "${#rest}" -eq 6 ]; then
+    hour=00
+    minute=00
+    second=00
+  elif [ "${#rest}" -eq 12 ]; then
+    hour="${rest:6:2}"
+    minute="${rest:8:2}"
+    second="${rest:10:2}"
+  else
+    echo "Bad release version: $version" >&2
+    return 1
+  fi
+  year="${rest:0:2}"
+  month="${rest:2:2}"
+  day="${rest:4:2}"
+  printf '20%s-%s-%sT%s:%s:%sZ\n' "$year" "$month" "$day" "$hour" "$minute" "$second"
 }
 
 cmd_write() {

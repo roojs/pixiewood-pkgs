@@ -66,8 +66,8 @@ while IFS=$'\t' read -r status name _kind _track _resolved _inputs _url; do
   label="$(package_pin_label "$name" "$gtk" "$repo")"
   tarball="$tarball_dir/${name}-${abi}.tar.xz"
   if [ ! -f "$tarball" ]; then
-    echo "Missing tarball: $tarball" >&2
-    exit 1
+    echo "Skipping $name; its tarball is not built yet" >&2
+    continue
   fi
   printf '%s\thttps://github.com/%s/releases/download/%s/%s-%s-%s.tar.xz\n' \
     "$name" "$repo" "$tag" "$name" "$abi" "$label" >> "$built"

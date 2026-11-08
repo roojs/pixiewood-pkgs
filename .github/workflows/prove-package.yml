@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       through:
-        description: Last package to prove, from the start of build-order.txt. Cached packages whose inputs have not changed are reused. This does not publish. Run Monitor upstreams after this is green through the last package.
+        description: Last package to prove, from the start of build-order.txt. Each finished package is published before the next one starts. A later failure leaves those packages on the release.
         type: string
         default: glib-networking
       packages:
@@ -27,6 +27,8 @@ jobs:
   prove:
     runs-on: ubuntu-24.04
     timeout-minutes: 240
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -55,16 +57,25 @@ jobs:
       - name: Install host packages
         run: scripts/ci-host-setup.sh
 
+      - name: Release stamp
+        id: stamp
+        run: echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
       - name: Prove the named packages
         env:
           ARCH: ${{ inputs.arch || 'aarch64' }}
           GTK_TARGET: ${{ inputs.gtk || 'gnome' }}
           THROUGH: ${{ inputs.through || 'gtk' }}
           PACKAGES: ${{ inputs.packages || '' }}
+          GH_TOKEN: ${{ github.token }}
+          PROVE_PUBLISH: "1"
+          PROVE_CREATED: ${{ steps.stamp.outputs.created }}
         run: |
           set -euo pipefail
           hash -r
           meson --version
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           args=(--arch "$ARCH" --gtk "$GTK_TARGET" --cache "$PWD/.cache/packages")
           if [ -n "$PACKAGES" ]; then
             args+=(--packages "$PACKAGES")
@@ -72,6 +83,25 @@ jobs:
             args+=(--through "$THROUGH")
           fi
           scripts/prove-package.sh "${args[@]}"
+
+      - name: Record pins for packages already published
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add current.pins
+          if ! git diff --cached --quiet; then
+            git commit -m "Record published package pins"
+          fi
+          git fetch origin "${GITHUB_REF_NAME}"
+          if git merge-base --is-ancestor HEAD "origin/${GITHUB_REF_NAME}"; then
+            exit 0
+          fi
+          git push origin "HEAD:${GITHUB_REF_NAME}" || {
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          }
 
       - name: Save package cache and checkouts
         if: always()
@@ -84,9 +114,9 @@ jobs:
           key: packages-${{ inputs.arch || 'aarch64' }}-${{ github.run_id }}
 
       - name: Upload proved tarballs
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: prove-${{ inputs.arch || 'aarch64' }}
           path: out/prove/*.tar.xz
-          if-no-files-found: error
+          if-no-files-found: ignore

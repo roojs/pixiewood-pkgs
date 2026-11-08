@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Prove packages in build order. This does not publish.
+# Prove packages in build order.
 # Each package is the release pin when that recipe is unchanged, otherwise
 # a tarball in the package cache, and otherwise a source build.
+# PROVE_PUBLISH=1 uploads each finished package before the next one starts.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -209,11 +210,12 @@ mkdir -p "$out"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-declare -A inputs_of=() resolved_of=()
+declare -A inputs_of=() resolved_of=() track_of=()
 if [ "$dry" -eq 0 ]; then
   "$ROOT/scripts/upstream-index.sh" resolve --gtk "$gtk" --out "$work/resolved.tsv"
-  while IFS=$'\t' read -r name _kind _track resolved inputs; do
+  while IFS=$'\t' read -r name _kind track resolved inputs; do
     [ -n "$name" ] || continue
+    track_of[$name]=$track
     resolved_of[$name]=$resolved
     inputs_of[$name]=$inputs
   done < "$work/resolved.tsv"
@@ -223,6 +225,9 @@ list="$work/proved.tsv"
 : > "$list"
 deps=""
 proved=()
+if [ "${PROVE_PUBLISH:-}" = 1 ] && [ -z "${PROVE_CREATED:-}" ]; then
+  PROVE_CREATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+fi
 
 for name in "${names[@]}"; do
   tarball="$out/${name}-${abi}.tar.xz"
@@ -282,6 +287,18 @@ for name in "${names[@]}"; do
       fi
     fi
     prove_tarball "$tarball" "$abi" "$name"
+    if [ "${PROVE_PUBLISH:-}" = 1 ] && [ "$kind" != pin ]; then
+      "$ROOT/scripts/publish-package.sh" \
+        --name "$name" \
+        --tarball "$tarball" \
+        --arch "$arch" \
+        --gtk "$gtk" \
+        --track "${track_of[$name]:-}" \
+        --resolved "${resolved_of[$name]:-}" \
+        --inputs "${inputs_of[$name]:-}" \
+        --created "${PROVE_CREATED:-}" \
+        --commit
+    fi
   fi
   proved+=("$name")
   if [ "$dry" -eq 1 ]; then

@@ -106,17 +106,21 @@ index_packages() {
   sed -n 's/^    {"name": "\([^"]*\)", "track": "\([^"]*\)", "resolved": "\([^"]*\)", "inputs": "\([^"]*\)", "url": "\([^"]*\)".*/\1\t\2\t\3\t\4\t\5/p' "$file"
 }
 
-# 1.yymmdd from a UTC stamp such as 2026-11-07T00:00:00Z.
+# 1.yymmddHHMMSS from a UTC stamp such as 2026-11-07T01:02:03Z.
+# The clock time is part of the name so a later publish the same day is a new release.
 release_version() {
-  local stamp=$1 year month day
-  year="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\).*/\1/p')"
-  month="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\).*/\2/p')"
-  day="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\).*/\3/p')"
-  if [ -z "$year" ] || [ -z "$month" ] || [ -z "$day" ]; then
-    echo "Release stamp must start with YYYY-MM-DD: $stamp" >&2
+  local stamp=$1 year month day hour minute second
+  year="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\)T\([0-9]\{2\}\):\([0-9]\{2\}\):\([0-9]\{2\}\).*/\1/p')"
+  month="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\)T\([0-9]\{2\}\):\([0-9]\{2\}\):\([0-9]\{2\}\).*/\2/p')"
+  day="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\)T\([0-9]\{2\}\):\([0-9]\{2\}\):\([0-9]\{2\}\).*/\3/p')"
+  hour="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\)T\([0-9]\{2\}\):\([0-9]\{2\}\):\([0-9]\{2\}\).*/\4/p')"
+  minute="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\)T\([0-9]\{2\}\):\([0-9]\{2\}\):\([0-9]\{2\}\).*/\5/p')"
+  second="$(printf '%s' "$stamp" | sed -n 's/^\([0-9]\{4\}\)-\([0-9]\{2\}\)-\([0-9]\{2\}\)T\([0-9]\{2\}\):\([0-9]\{2\}\):\([0-9]\{2\}\).*/\6/p')"
+  if [ -z "$year" ] || [ -z "$month" ] || [ -z "$day" ] || [ -z "$hour" ] || [ -z "$minute" ] || [ -z "$second" ]; then
+    echo "Release stamp must be YYYY-MM-DDTHH:MM:SS: $stamp" >&2
     return 1
   fi
-  printf '1.%s%s%s\n' "${year:2:2}" "$month" "$day"
+  printf '1.%s%s%s%s%s%s\n' "${year:2:2}" "$month" "$day" "$hour" "$minute" "$second"
 }
 
 index_write() {
@@ -126,7 +130,7 @@ index_write() {
   api="$(distro_get api)"
   ndk="$(distro_get ndk)"
   pixiewood="$(distro_get pixiewood)"
-  # A published index is stamped YYYY-MM-DD and versioned 1.yymmdd.
+  # A published index is stamped YYYY-MM-DDTHH:MM:SS and versioned 1.yymmddHHMMSS.
   # A dependency index built for the next package uses its own stamp.
   if printf '%s' "$created" | grep -q '^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}'; then
     version="$(release_version "$created")" || return 1

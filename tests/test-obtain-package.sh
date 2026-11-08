@@ -59,12 +59,13 @@ decision="$("$ROOT/scripts/obtain-package.sh" --name demo --abi arm64-v8a --gtk 
 decision="$("$ROOT/scripts/obtain-package.sh" --name demo --abi arm64-v8a --gtk gnome --pins "$tmp/pins" --resolved resolved-b --inputs inputs-a)"
 [ "$decision" = build ]
 
-# glib's wrap patch is applied by build-sysroot.sh, so a script change
-# since the pin is a source build rather than the published tarball.
+# glib's wrap patch is applied by build-sysroot.sh. The cross files and the
+# distro config are part of every package. A change in any of those since
+# the pin is a source build rather than the published tarball.
 pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
 glib="$("$ROOT/scripts/obtain-package.sh" --name glib --abi arm64-v8a --gtk gnome)"
 glib="${glib%%$'\t'*}"
-if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- scripts/build-sysroot.sh; then
+if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- packages/glib cross android-distro.conf scripts/build-sysroot.sh; then
   [ "$glib" = pin ]
 else
   [ "$glib" = build ]

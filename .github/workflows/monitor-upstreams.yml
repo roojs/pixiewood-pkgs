@@ -127,37 +127,13 @@ jobs:
           pattern: upstream-plan-*
           path: plans
 
-      - name: Commit the package list before the build
+      - name: Record the release stamp
         id: record
-        env:
-          ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
         run: |
           set -euo pipefail
           created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           sha="$(git rev-parse HEAD)"
           scripts/place-upstream-plans.sh plans
-          shopt -s nullglob
-          args=()
-          for plan in plans/upstream-plan-*/plan.tsv; do
-            if grep -q '^# publish=1$' "$plan"; then
-              args+=(--plan "$plan")
-            fi
-          done
-          if [ "${#args[@]}" -gt 0 ]; then
-            scripts/current-pins.sh write \
-              --arch "$ARCH" \
-              --created "$created" \
-              --repo "${GITHUB_REPOSITORY}" \
-              "${args[@]}"
-            git add current.pins
-            if ! git diff --cached --quiet; then
-              git config user.name "github-actions[bot]"
-              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git commit -m "Record the current package list"
-              git push origin "HEAD:${GITHUB_REF_NAME}"
-              sha="$(git rev-parse HEAD)"
-            fi
-          fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "created=$created" >> "$GITHUB_OUTPUT"
 
@@ -252,6 +228,41 @@ jobs:
               echo "Downloaded plan was not published: $plan" >&2
               exit 1
             fi
+          done
+
+      - name: Publish packages that finished
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.pins.outputs.sha }}
+          RELEASE_CREATED: ${{ needs.pins.outputs.created }}
+          ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          abi="$(awk -v arch="$ARCH" '$1 == arch { print $2; exit }' cross/abi)"
+          shopt -s nullglob
+          for built in plans/upstream-plan-*/build.tsv; do
+            gtk="$(sed -n 's/^# gtk_target=//p' "$built" | head -n1)"
+            [ -n "$gtk" ] || continue
+            while IFS=$'\t' read -r status name _kind track resolved inputs _url; do
+              [ -n "${status:-}" ] || continue
+              case "$status" in \#*) continue ;; esac
+              [ "$status" = build ] || continue
+              tarball="out/packages/${name}-${abi}.tar.xz"
+              [ -f "$tarball" ] || continue
+              scripts/publish-package.sh \
+                --name "$name" \
+                --tarball "$tarball" \
+                --arch "$ARCH" \
+                --gtk "$gtk" \
+                --track "$track" \
+                --resolved "$resolved" \
+                --inputs "$inputs" \
+                --created "$RELEASE_CREATED" \
+                --commit
+            done < "$built"
           done
 
       - name: Save package cache and checkouts
