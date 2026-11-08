@@ -69,7 +69,7 @@
       "name": "json-glib",
       "track": "json-glib-1.10.8.tar.xz",
       "resolved": "55c5c141a564245b8f8fbe7698663c87a45a7333c2a2c56f06f811ab73b212dd",
-      "inputs": "89f88938b24ad5446a169b2e18d9aee21607fae443a841e65bd169e306da4ee9",
+      "inputs": "f4c5b2951c4b6a369667d235440d74c71ee9340405d21b919cd0f222a6597144",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/json-glib-arm-v31-1.10.8.pixie"
     },
     {
