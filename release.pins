@@ -60,7 +60,7 @@
       "name": "gee",
       "track": "libgee-0.20.8.tar.xz",
       "resolved": "189815ac143d89867193b0c52b7dc31f3aa108a15f04d6b5dca2b6adfad0b0ee",
-      "inputs": "e1d1fe880960dad9cdc73e07afbb2dc7f30c0d7037770930ee378549635cf2d1",
+      "inputs": "57e3bc5a81d7851b4ff27619322eb2f226b574dd07a4447b359e9a3a2cbc051d",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gee-arm-v31-0.20.8.pixie"
     },
     {
