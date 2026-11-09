@@ -150,7 +150,7 @@
       "name": "libepoxy",
       "track": "2df68f811fc1a5f0a6d372ecdb887333ad3f540f",
       "resolved": "2df68f811fc1a5f0a6d372ecdb887333ad3f540f",
-      "inputs": "4ccc5fba993af67fc9852a403192a6a30c2bb6162615aef89c869f49d2590011",
+      "inputs": "be6a19c776ab56b0ec13f3aeebf86ca6f83aa7f6612ae6d5727ef7989ac5e1bf",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/libepoxy-arm-v31-1.5.11.pixie"
     },
     {
