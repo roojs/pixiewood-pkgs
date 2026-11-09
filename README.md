@@ -33,3 +33,11 @@ bash tests/test-index.sh
 ```
 
 These cover packing, activation, runtime staging, wrap pins, and the index. They do not cross-compile GTK.
+
+## Artificial intelligence usage
+
+This project was developed with the assistance of artificial intelligence.
+
+- Design overview is by the author
+- Almost all of the code was written by AI
+- Review of that code was light
