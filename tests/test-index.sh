@@ -244,6 +244,41 @@ if grep -qx 'build openssl' "$tmp/dry"; then
   exit 1
 fi
 grep -qx 'dep gtk openssl https://example.invalid/old/openssl.tar.xz' "$tmp/dry"
+if grep -q 'dep gtk libadwaita ' "$tmp/dry"; then
+  echo "gtk fetched a package that is built later" >&2
+  exit 1
+fi
+
+# A kept file that does not download is built. One that is still there stays.
+printf 'present\n' > "$tmp/present.pixie"
+{
+  printf '%s\n' '# publish=0' '# build=0' '# gtk_target=gnome'
+  while IFS= read -r name || [ -n "$name" ]; do
+    name=${name%%#*}
+    name=${name#"${name%%[![:space:]]*}"}
+    name=${name%"${name##*[![:space:]]}"}
+    [ -n "$name" ] || continue
+    if [ "$name" = openssl ]; then
+      printf 'keep\topenssl\tfile\topenssl-3.0.8.tar.gz\thasho\tinputso\tfile://%s/missing.pixie\n' "$tmp"
+    else
+      printf 'keep\t%s\tfile\t%s\thash\tinputs\tfile://%s/present.pixie\n' "$name" "$name" "$tmp"
+    fi
+  done < "$ROOT/build-order.txt"
+} > "$tmp/missing-plan.tsv"
+"$ROOT/scripts/build-changed.sh" \
+  --missing-only \
+  --plan "$tmp/missing-plan.tsv" \
+  --arch aarch64 \
+  --gtk gnome \
+  --tarball-dir "$tmp/out" >"$tmp/missing.out" 2>"$tmp/missing.err"
+awk -F '\t' '$1 == "build" && $2 == "openssl"' "$tmp/missing-plan.tsv" | grep -q .
+awk -F '\t' '$1 == "keep" && $2 == "libxml2"' "$tmp/missing-plan.tsv" | grep -q .
+grep -q '^# build=1$' "$tmp/missing-plan.tsv"
+grep -q 'Published file for openssl is gone' "$tmp/missing.err"
+if grep -q 'Published file for libxml2 is gone' "$tmp/missing.err"; then
+  echo "a file that is present was marked missing" >&2
+  exit 1
+fi
 if awk '$1 == "dep" && $2 == "gtk" && $3 == "gtk" { found = 1 } END { exit !found }' "$tmp/dry"; then
   echo "gtk listed itself as a dependency" >&2
   exit 1

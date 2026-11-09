@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Build only the packages a plan marks as changed, against the kept tarballs.
+# A kept file is reused only while it still downloads. A deleted release means
+# that file is gone, so the package is built.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -16,9 +18,11 @@ gtk="${GTK_TARGET:-gnome}"
 tarball_dir=""
 cache=""
 dry=0
+missing_only=0
+skip_missing=0
 
 usage() {
-  echo "Usage: $0 --plan FILE [--arch aarch64|x86_64] [--gtk TARGET] --tarball-dir DIR [--cache DIR] [--dry-run]" >&2
+  echo "Usage: $0 --plan FILE [--arch aarch64|x86_64] [--gtk TARGET] --tarball-dir DIR [--cache DIR] [--dry-run] [--missing-only] [--skip-missing-check]" >&2
   exit 2
 }
 
@@ -30,6 +34,8 @@ while [ "$#" -gt 0 ]; do
     --tarball-dir) tarball_dir=$2; shift 2 ;;
     --cache) cache=$2; shift 2 ;;
     --dry-run) dry=1; shift ;;
+    --missing-only) missing_only=1; shift ;;
+    --skip-missing-check) skip_missing=1; shift ;;
     -h|--help) usage ;;
     *) echo "Unknown argument: $1" >&2; usage ;;
   esac
@@ -72,6 +78,61 @@ for name in "${order[@]}"; do
   fi
 done
 
+# A published URL is not proof the file is still there.
+published_present() {
+  local got=$1
+  case "$got" in
+    http://*|https://*)
+      curl -fsSL --retry 2 --retry-delay 1 -o /dev/null -r 0-0 "$got"
+      ;;
+    file://*)
+      [ -s "${got#file://}" ]
+      ;;
+    /*)
+      [ -s "$got" ]
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+if [ "$dry" -eq 0 ] && [ "$skip_missing" -eq 0 ]; then
+  declare -A gone=()
+  flipped=0
+  for name in "${order[@]}"; do
+    [ "${status[$name]}" = keep ] || continue
+    if ! published_present "${url[$name]:-}"; then
+      echo "Published file for $name is gone; building it" >&2
+      gone[$name]=1
+      flipped=1
+    fi
+  done
+  if [ "$flipped" -eq 1 ]; then
+    tmp="$(mktemp)"
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in
+        '# build='*) printf '# build=1\n' >> "$tmp"; continue ;;
+        '# publish='*) printf '# publish=1\n' >> "$tmp"; continue ;;
+        '#'*) printf '%s\n' "$line" >> "$tmp"; continue ;;
+        '') continue ;;
+      esac
+      IFS=$'\t' read -r st nm kd tr rs inn u <<< "$line"
+      if [ -n "${gone[$nm]:-}" ]; then
+        status[$nm]=build
+        url[$nm]='-'
+        printf 'build\t%s\t%s\t%s\t%s\t%s\t-\n' "$nm" "$kd" "$tr" "$rs" "$inn" >> "$tmp"
+      else
+        printf '%s\n' "$line" >> "$tmp"
+      fi
+    done < "$plan"
+    mv "$tmp" "$plan"
+  fi
+fi
+if [ "$missing_only" -eq 1 ]; then
+  exit 0
+fi
+
 mkdir -p "$tarball_dir"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
@@ -82,7 +143,7 @@ for name in "${order[@]}"; do
   : > "$list"
   dep_count=0
   for other in "${order[@]}"; do
-    [ "$other" = "$name" ] && continue
+    [ "$other" = "$name" ] && break
     dep_url=""
     if [ -n "${built[$other]:-}" ]; then
       dep_url="${built[$other]}"

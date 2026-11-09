@@ -202,28 +202,37 @@ jobs:
           scripts/place-upstream-plans.sh plans
           shopt -s nullglob
           mkdir -p out/packages
-          need_host=0
-          for plan in plans/upstream-plan-*/plan.tsv; do
-            if grep -q '^# build=1$' "$plan"; then
-              need_host=1
-            fi
-          done
-          if [ "$need_host" -eq 1 ]; then
-            scripts/ci-host-setup.sh
-            hash -r
-            meson --version
-          fi
           seen="$(mktemp)"
+          host_ready=0
           while IFS= read -r gtk; do
             plan="plans/upstream-plan-${gtk}/plan.tsv"
             [ -f "$plan" ] || continue
             printf '%s\n' "$plan" >> "$seen"
-            grep -q '^# publish=1$' "$plan" || continue
-            echo "Publishing $gtk"
+            publish_plan=0
+            if grep -q '^# publish=1$' "$plan"; then
+              publish_plan=1
+            fi
             built="plans/upstream-plan-${gtk}/build.tsv"
             scripts/current-pins.sh apply --plan "$plan" --arch "$ARCH" --out "$built"
+            scripts/build-changed.sh \
+              --missing-only \
+              --plan "$built" \
+              --arch "$ARCH" \
+              --gtk "$gtk" \
+              --tarball-dir "$PWD/out/packages"
+            if ! grep -q $'^build\t' "$built" && [ "$publish_plan" -eq 0 ]; then
+              continue
+            fi
+            echo "Publishing $gtk"
             if grep -q $'^build\t' "$built"; then
+              if [ "$host_ready" -eq 0 ]; then
+                scripts/ci-host-setup.sh
+                hash -r
+                meson --version
+                host_ready=1
+              fi
               scripts/build-changed.sh \
+                --skip-missing-check \
                 --plan "$built" \
                 --arch "$ARCH" \
                 --gtk "$gtk" \
