@@ -130,10 +130,10 @@
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "name": "libtiff",
-      "track": "tiff-4.7.0.tar.gz",
-      "resolved": "273a0a73b1f0bed640afee4a5df0337357ced5b53d3d5d1c405b936501f71017",
-      "inputs": "0398bca54e20684729422a5b4bf723e4ca0bb00b1bfe83e71ee80c74111f60dd",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/libtiff-arm-v31-4.7.0.pixie"
+      "track": "tiff-4.7.2.tar.gz",
+      "resolved": "4996f0c4f93094719b1ca5c6279b20e588773ba8a247533e486416fb662ddb88",
+      "inputs": "46a9ad2207ded0765167588942ead148a58bc8b65d14a63673b39c5c2ca83f27",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/libtiff-arm-v31-4.7.2.pixie"
     },
     {
       "abi": "arm64-v8a",
