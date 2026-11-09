@@ -132,7 +132,7 @@
       "name": "libtiff",
       "track": "tiff-4.7.0.tar.gz",
       "resolved": "273a0a73b1f0bed640afee4a5df0337357ced5b53d3d5d1c405b936501f71017",
-      "inputs": "2c003550a00b3942e4602be54b9f22f040f07507fd10865d5016c8a2a74dc424",
+      "inputs": "0398bca54e20684729422a5b4bf723e4ca0bb00b1bfe83e71ee80c74111f60dd",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/libtiff-arm-v31-4.7.0.pixie"
     },
     {
