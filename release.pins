@@ -204,7 +204,7 @@
       "name": "glib-networking",
       "track": "glib-networking-2.80.1.tar.xz",
       "resolved": "b80e2874157cd55071f1b6710fa0b911d5ac5de106a9ee2a4c9c7bee61782f8e",
-      "inputs": "0a1cd8011011fd2d81711300fab5e788aefe01d58c0ee1d738cbcc5cd6e49a04",
+      "inputs": "53bb5fb5b03941e0388b0c26ed03e371a2b8f158d743df0b7c7e2772995d051e",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/glib-networking-arm-v31-2.80.1.pixie"
     }
   ]
