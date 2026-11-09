@@ -399,12 +399,10 @@ jq -e '.packages[] | select(.abi == "arm64-v8a" and .repo == "https://gitlab.gno
 jq -e '.packages[] | select(.abi == "arm64-v8a" and .name == "gtk" and .track == "android-ime" and (.url | endswith("gtk-arm-v31-snapshot.pixie")))' "$tmp/pins" >/dev/null
 jq -e '.packages[] | select(.abi == "x86_64" and .repo == "x86_64" and .name == "glib")' "$tmp/pins" >/dev/null
 
-if grep -q 'tgz' "$ROOT/.gitattributes"; then
-  echo "gitattributes names a generated release archive" >&2
+if [ -f "$ROOT/.gitattributes" ]; then
+  echo "export attributes are still stripping the source archive" >&2
   exit 1
 fi
-grep -qx '/release.pins !export-ignore' "$ROOT/.gitattributes"
-grep -qx '/snapshot.pins !export-ignore' "$ROOT/.gitattributes"
 if jq -e 'any(.packages[]; has("release"))' "$ROOT/release.pins" >/dev/null \
   || jq -e 'any(.packages[]; has("release"))' "$ROOT/snapshot.pins" >/dev/null; then
   echo "a pin still stores release" >&2
@@ -421,21 +419,19 @@ fi
 
 attr_work="$(mktemp -d)"
 attr_index="$(mktemp)"
-cp "$ROOT/.gitattributes" "$attr_work/.gitattributes"
+mkdir -p "$attr_work/packages/newlib"
 printf 'list\n' > "$attr_work/release.pins"
 printf 'list\n' > "$attr_work/snapshot.pins"
-printf 'no\n' > "$attr_work/README.md"
+printf 'readme\n' > "$attr_work/README.md"
+printf 'package\n' > "$attr_work/packages/newlib/newlib.wrap"
 GIT_INDEX_FILE="$attr_index" git -C "$ROOT" read-tree --empty
-GIT_INDEX_FILE="$attr_index" git -C "$ROOT" --work-tree="$attr_work" add -- .gitattributes release.pins snapshot.pins README.md
+GIT_INDEX_FILE="$attr_index" git -C "$ROOT" --work-tree="$attr_work" add -- release.pins snapshot.pins README.md packages/newlib/newlib.wrap
 attr_tree="$(GIT_INDEX_FILE="$attr_index" git -C "$ROOT" write-tree)"
 rm -f "$attr_index"
 git -C "$ROOT" archive "$attr_tree" | tar -t > "$tmp/source-archive.txt"
 grep -qx 'release.pins' "$tmp/source-archive.txt"
 grep -qx 'snapshot.pins' "$tmp/source-archive.txt"
-if grep -q 'README.md\|.gitattributes' "$tmp/source-archive.txt"; then
-  echo "source archive kept more than the pin files" >&2
-  cat "$tmp/source-archive.txt" >&2
-  exit 1
-fi
+grep -qx 'README.md' "$tmp/source-archive.txt"
+grep -qx 'packages/newlib/newlib.wrap' "$tmp/source-archive.txt"
 
 echo "index: ok"

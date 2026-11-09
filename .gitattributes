@@ -1,4 +1,0 @@
-# The repository source archive contains the two pin files and nothing else.
-* export-ignore
-/release.pins !export-ignore
-/snapshot.pins !export-ignore
