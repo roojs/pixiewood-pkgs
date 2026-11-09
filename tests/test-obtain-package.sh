@@ -68,4 +68,13 @@ jq -n '{packages: [{abi:"arm64-v8a", repo:"https://gitlab.gnome.org/GNOME/gtk.gi
 decision="$("$ROOT/scripts/obtain-package.sh" --name openssl --abi arm64-v8a --gtk gnome --pins "$tmp/old-openssl.pins" --inputs other)"
 [ "$decision" = "pin"$'\t'"https://example.invalid/openssl-3.0.8.pixie" ]
 
+# A newer version that already failed this recipe uses the published file.
+pango_track="$(sed -n 's/^revision[[:space:]]*=[[:space:]]*//p' "$ROOT/packages/pango/pango.wrap" | head -n1 | tr -d '[:space:]')"
+printf '%s\n' "arm64-v8a"$'\t'"pango"$'\t'"${pango_track}"$'\t'"inputs-failed" > "$tmp/failures.tsv"
+jq -n '{packages: [{abi:"arm64-v8a", repo:"https://gitlab.gnome.org/GNOME/gtk.git", name:"pango", track:"1.58.2", resolved:"hash-p", inputs:"inputs-old", url:"https://example.invalid/pango-1.58.2.pixie"}]}' > "$tmp/pango.pins"
+decision="$(FAILURES_FILE="$tmp/failures.tsv" "$ROOT/scripts/obtain-package.sh" --name pango --abi arm64-v8a --gtk gnome --pins "$tmp/pango.pins" --inputs inputs-failed)"
+[ "$decision" = "pin"$'\t'"https://example.invalid/pango-1.58.2.pixie" ]
+decision="$("$ROOT/scripts/obtain-package.sh" --name pango --abi arm64-v8a --gtk gnome --pins "$tmp/pango.pins" --inputs inputs-failed)"
+[ "$decision" = build ]
+
 echo "obtain package: ok"

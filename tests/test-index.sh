@@ -141,6 +141,36 @@ awk -F '\t' '$2 == "glib" && $1 == "keep" && $7 == "https://example.invalid/old/
   --gtk gnome \
   --out "$tmp/new-release.tsv"
 awk -F '\t' '$2 == "glib" && $1 == "build"' "$tmp/new-release.tsv" | grep -q .
+# The old file stays on the row so a failed build can fall back to it.
+awk -F '\t' '$2 == "glib" && $1 == "build" && $7 == "https://example.invalid/old/glib.tar.xz"' "$tmp/new-release.tsv" | grep -q .
+
+# A version that already failed with this recipe keeps the published file.
+printf '%s\n' $'arm64-v8a\tglib\t2.90.1\tinputs-new' > "$tmp/failures.tsv"
+FAILURES_FILE="$tmp/failures.tsv" "$ROOT/scripts/upstream-index.sh" plan \
+  --resolved <(printf '%s\n' $'glib\tgit\t2.90.1\thash-new\tinputs-new') \
+  --previous "$prev" \
+  --build-order <(printf '%s\n' glib) \
+  --gtk gnome \
+  --abi arm64-v8a \
+  --out "$tmp/failed-once.tsv"
+awk -F '\t' '$2 == "glib" && $1 == "keep" && $7 == "https://example.invalid/old/glib.tar.xz"' "$tmp/failed-once.tsv" | grep -q .
+FAILURES_FILE="$tmp/failures.tsv" "$ROOT/scripts/upstream-index.sh" plan \
+  --resolved <(printf '%s\n' $'glib\tgit\t2.90.2\thash-new\tinputs-new') \
+  --previous "$prev" \
+  --build-order <(printf '%s\n' glib) \
+  --gtk gnome \
+  --abi arm64-v8a \
+  --out "$tmp/failed-newer.tsv"
+awk -F '\t' '$2 == "glib" && $1 == "build"' "$tmp/failed-newer.tsv" | grep -q .
+FAILURES_FILE="$tmp/failures.tsv" "$ROOT/scripts/upstream-index.sh" plan \
+  --resolved <(printf '%s\n' $'glib\tgit\t2.90.1\thash-new\tinputs-new') \
+  --previous "$prev" \
+  --build-order <(printf '%s\n' glib) \
+  --gtk gnome \
+  --abi arm64-v8a \
+  --force glib \
+  --out "$tmp/failed-force.tsv"
+awk -F '\t' '$2 == "glib" && $1 == "build"' "$tmp/failed-force.tsv" | grep -q .
 
 "$ROOT/scripts/upstream-index.sh" assemble \
   --plan "$tmp/plan.tsv" \
@@ -343,6 +373,61 @@ awk -F '\t' '$1 == "build" && $2 == "openssl"' "$tmp/http-plan.tsv" | grep -q .
 awk -F '\t' '$1 == "keep" && $2 == "libxml2"' "$tmp/http-plan.tsv" | grep -q .
 awk -F '\t' '$1 == "keep" && $2 == "sqlite3"' "$tmp/http-plan.tsv" | grep -q .
 grep -q 'Could not check' "$tmp/http.err"
+
+# A failed build of a new version falls back to the published file and is remembered.
+cat > "$tmp/fail-build.sh" << 'EOF'
+#!/bin/bash
+exit 1
+EOF
+chmod +x "$tmp/fail-build.sh"
+{
+  printf '%s\n' '# publish=1' '# build=1' '# gtk_target=gnome'
+  while IFS= read -r name || [ -n "$name" ]; do
+    name=${name%%#*}
+    name=${name#"${name%%[![:space:]]*}"}
+    name=${name%"${name##*[![:space:]]}"}
+    [ -n "$name" ] || continue
+    if [ "$name" = openssl ]; then
+      printf 'build\topenssl\tfile\topenssl-3.0.9.tar.gz\thasho\tinputs-new\tfile://%s/present.pixie\n' "$tmp"
+    else
+      printf 'keep\t%s\tfile\t%s\thash\tinputs\tfile://%s/present.pixie\n' "$name" "$name" "$tmp"
+    fi
+  done < "$ROOT/build-order.txt"
+} > "$tmp/fallback-plan.tsv"
+FAILURES_FILE="$tmp/fallback-failures.tsv" BUILD_PIXIE="$tmp/fail-build.sh" \
+  "$ROOT/scripts/build-changed.sh" \
+  --skip-missing-check \
+  --plan "$tmp/fallback-plan.tsv" \
+  --arch aarch64 \
+  --gtk gnome \
+  --tarball-dir "$tmp/out" >"$tmp/fallback.out" 2>"$tmp/fallback.err"
+awk -F '\t' '$1 == "keep" && $2 == "openssl" && $4 == "openssl-3.0.9.tar.gz"' "$tmp/fallback-plan.tsv" | grep -q .
+grep -q 'openssl-3.0.9.tar.gz did not build' "$tmp/fallback.err"
+awk -F '\t' '$2 == "openssl" && $3 == "openssl-3.0.9.tar.gz" && $4 == "inputs-new"' "$tmp/fallback-failures.tsv" | grep -q .
+{
+  printf '%s\n' '# publish=1' '# build=1' '# gtk_target=gnome'
+  while IFS= read -r name || [ -n "$name" ]; do
+    name=${name%%#*}
+    name=${name#"${name%%[![:space:]]*}"}
+    name=${name%"${name##*[![:space:]]}"}
+    [ -n "$name" ] || continue
+    if [ "$name" = openssl ]; then
+      printf 'build\topenssl\tfile\topenssl-3.0.9.tar.gz\thasho\tinputs-new\t-\n'
+    else
+      printf 'keep\t%s\tfile\t%s\thash\tinputs\tfile://%s/present.pixie\n' "$name" "$name" "$tmp"
+    fi
+  done < "$ROOT/build-order.txt"
+} > "$tmp/nofallback-plan.tsv"
+if FAILURES_FILE="$tmp/nofallback-failures.tsv" BUILD_PIXIE="$tmp/fail-build.sh" \
+  "$ROOT/scripts/build-changed.sh" \
+  --skip-missing-check \
+  --plan "$tmp/nofallback-plan.tsv" \
+  --arch aarch64 \
+  --gtk gnome \
+  --tarball-dir "$tmp/out" >"$tmp/nofallback.out" 2>"$tmp/nofallback.err"; then
+  echo "a failed build with no published file was kept" >&2
+  exit 1
+fi
 if awk '$1 == "dep" && $2 == "gtk" && $3 == "gtk" { found = 1 } END { exit !found }' "$tmp/dry"; then
   echo "gtk listed itself as a dependency" >&2
   exit 1

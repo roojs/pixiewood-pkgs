@@ -103,7 +103,7 @@ jobs:
           if ! scripts/current-pins.sh previous --abi "$abi" --gtk "$gtk" --out previous.json; then
             rm -f previous.json
           fi
-          args=(plan --resolved resolved.tsv --gtk "$gtk" --out plan.tsv)
+          args=(plan --resolved resolved.tsv --gtk "$gtk" --abi "$abi" --out plan.tsv)
           if [ -n "$FORCE" ]; then
             args+=(--force "$FORCE")
           fi
@@ -267,6 +267,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           abi="$(awk -v arch="$ARCH" '$1 == arch { print $2; exit }' cross/abi)"
           shopt -s nullglob
+          if [ -n "$(git status --porcelain -- failures.tsv)" ]; then
+            git add failures.tsv
+            git commit -m "Remember a library version that did not build."
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
           for built in plans/upstream-plan-*/build.tsv; do
             gtk="$(sed -n 's/^# gtk_target=//p' "$built" | head -n1)"
             [ -n "$gtk" ] || continue

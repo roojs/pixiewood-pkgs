@@ -112,6 +112,11 @@ obtain_decide() {
       printf 'pin\t%s\n' "$pin_url"
       return 0
     fi
+    if [ "$cur_label" != snapshot ] \
+      && failure_seen "$abi" "$name" "$cur_track" "$current_inputs"; then
+      printf 'pin\t%s\n' "$pin_url"
+      return 0
+    fi
     if [ "$cur_label" = snapshot ] || [ -z "$cur_track" ]; then
       if obtain_pin_current "$name" "$pin_resolved" "$pin_inputs" "$current_resolved" "$current_inputs" "$pins"; then
         printf 'pin\t%s\n' "$pin_url"

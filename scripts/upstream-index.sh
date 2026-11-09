@@ -342,8 +342,43 @@ cmd_resolve() {
   } | if [ -n "$out" ]; then cat > "$out"; else cat; fi
 }
 
+# A failed build is remembered by abi, package, version, and recipe hash.
+# The same attempt is not repeated. A new version or a new recipe tries again.
+failure_file() {
+  printf '%s\n' "${FAILURES_FILE:-$ROOT/failures.tsv}"
+}
+
+failure_seen() {
+  local abi=$1 name=$2 track=$3 inputs=$4 file
+  file="$(failure_file)"
+  [ -n "$abi" ] && [ -f "$file" ] || return 1
+  awk -F '\t' -v abi="$abi" -v name="$name" -v track="$track" -v inputs="$inputs" '
+    $0 ~ /^#/ || NF < 4 { next }
+    $1 == abi && $2 == name && $3 == track && $4 == inputs { found = 1 }
+    END { exit !found }
+  ' "$file"
+}
+
+failure_record() {
+  local abi=$1 name=$2 track=$3 inputs=$4 file tmp
+  file="$(failure_file)"
+  tmp="$(mktemp)"
+  if [ -f "$file" ]; then
+    awk -F '\t' -v abi="$abi" -v name="$name" '
+      $0 ~ /^#/ { print; next }
+      NF < 4 { next }
+      !($1 == abi && $2 == name) { print }
+    ' "$file" > "$tmp"
+  else
+    : > "$tmp"
+  fi
+  printf '%s\t%s\t%s\t%s\n' "$abi" "$name" "$track" "$inputs" >> "$tmp"
+  mv "$tmp" "$file"
+}
+
 cmd_plan() {
   local resolved="" previous="" out="" force="" gtk="${GTK_TARGET:-gnome}" order="$ROOT/build-order.txt"
+  local abi=""
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --resolved) resolved=$2; shift 2 ;;
@@ -351,6 +386,7 @@ cmd_plan() {
       --out) out=$2; shift 2 ;;
       --force) force=$2; shift 2 ;;
       --gtk) gtk=$2; shift 2 ;;
+      --abi) abi=$2; shift 2 ;;
       --build-order) order=$2; shift 2 ;;
       *) echo "Unknown argument: $1" >&2; return 2 ;;
     esac
@@ -362,7 +398,7 @@ cmd_plan() {
   declare -A have_kind=() have_track=() have_resolved=() have_inputs=()
   declare -A prev_track=() prev_resolved=() prev_inputs=() prev_url=() prev_seen=()
   local name kind track rev inputs url status publish=0 build=0
-  local cur_label prev_label release_done item
+  local cur_label prev_label release_done item named_force
   while IFS=$'\t' read -r name kind track rev inputs; do
     [ -n "$name" ] || continue
     case "$name" in \#*) continue ;; esac
@@ -401,6 +437,7 @@ cmd_plan() {
     cur_label="$(package_track_label "${have_track[$name]}")"
     prev_label="$(package_track_label "${prev_track[$name]:-}")"
     release_done=0
+    named_force=0
     if [ -n "${prev_seen[$name]:-}" ] && [ -n "$url" ] && [ "$url" != "-" ] \
       && [ "$cur_label" != snapshot ] && [ "$cur_label" = "$prev_label" ]; then
       release_done=1
@@ -410,20 +447,34 @@ cmd_plan() {
         || [ "${prev_resolved[$name]}" != "${have_resolved[$name]}" ] \
         || [ "${prev_inputs[$name]}" != "${have_inputs[$name]}" ]; then
         status=build
-        url='-'
+        if [ -z "$url" ]; then
+          url='-'
+        fi
       fi
       if [ "$force" = all ]; then
         status=build
-        url='-'
+        if [ -z "$url" ]; then
+          url='-'
+        fi
       fi
       for item in "${forced[@]}"; do
         item=${item#"${item%%[![:space:]]*}"}
         item=${item%"${item##*[![:space:]]}"}
         if [ "$item" = "$name" ]; then
           status=build
-          url='-'
+          named_force=1
+          if [ -z "$url" ]; then
+            url='-'
+          fi
         fi
       done
+    fi
+    # This version was already built with this recipe and did not succeed.
+    # The published file remains the working one.
+    if [ "$status" = build ] && [ "$force" != all ] && [ "$named_force" -eq 0 ] \
+      && [ "$cur_label" != snapshot ] && [ -n "$url" ] && [ "$url" != "-" ] \
+      && failure_seen "$abi" "$name" "${have_track[$name]}" "${have_inputs[$name]}"; then
+      status=keep
     fi
     if [ "$status" = build ]; then
       build=1

@@ -213,7 +213,35 @@ for name in "${order[@]}"; do
     pixie-pkg fetch --dest "$deps" --pins "$index" --abi "$abi"
     args+=(--deps-sysroot "$deps")
   fi
-  "$ROOT/scripts/build-pixie.sh" "${args[@]}"
+  builder="${BUILD_PIXIE:-$ROOT/scripts/build-pixie.sh}"
+  if ! "$builder" "${args[@]}"; then
+    fallback="${url[$name]:-}"
+    if [ -n "$fallback" ] && [ "$fallback" != "-" ] \
+      && [ "$(package_track_label "${track[$name]}")" != snapshot ]; then
+      echo "$name ${track[$name]} did not build; using the published file" >&2
+      failure_record "$abi" "$name" "${track[$name]}" "${inputs[$name]}"
+      status[$name]=keep
+      url[$name]=$fallback
+      tmp="$(mktemp)"
+      while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+          '#'*) printf '%s\n' "$line" >> "$tmp"; continue ;;
+          '') continue ;;
+        esac
+        IFS=$'\t' read -r st nm kd tr rs inn u <<< "$line"
+        if [ "$nm" = "$name" ]; then
+          printf 'keep\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$nm" "$kd" "$tr" "$rs" "$inn" "$fallback" >> "$tmp"
+        else
+          printf '%s\n' "$line" >> "$tmp"
+        fi
+      done < "$plan"
+      mv "$tmp" "$plan"
+      rm -f "$tarball_dir/${name}-${abi}.tar.xz"
+      continue
+    fi
+    exit 1
+  fi
   built[$name]="$tarball_dir/${name}-${abi}.tar.xz"
   if [ -n "$cache" ]; then
     mkdir -p "$cache/$abi"

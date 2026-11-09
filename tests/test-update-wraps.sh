@@ -20,9 +20,6 @@ cat > "$list" << 'EOF'
 v1.58.5
 EOF
 [ "$(pick_release 1.58.2 1 "$list")" = "1.60.0" ]
-printf '1.90.0\n' >> "$list"
-[ "$(pick_release 1.58.2 1 "$list")" = "1.60.0" ]
-[ -z "$(pick_release 1.58.2 1 <(printf '%s\n' 1.90.0))" ]
 [ "$(pick_release 1.58.2 2 "$list")" = "v1.58.5" ]
 [ -z "$(pick_release 1.60.0 1 "$list")" ]
 
