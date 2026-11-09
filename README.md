@@ -34,6 +34,8 @@ bash tests/test-index.sh
 
 These cover packing, activation, runtime staging, wrap pins, and the index. They do not cross-compile GTK.
 
+[Local pixie files](docs/local-install-plan.md) is a plan for installing a set on the machine. It is not built yet.
+
 ## Artificial intelligence usage
 
 This project was developed with the assistance of artificial intelligence.
