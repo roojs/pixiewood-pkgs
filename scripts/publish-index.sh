@@ -116,6 +116,11 @@ if gh release download "$tag" --repo "$repo" --pattern "${tag}.tgz" --dir "$prev
   done < <(cd "$old" && find . -type f -printf '%P\n')
 fi
 archive="$(dirname "$out")/${tag}.tgz"
+case "$archive" in
+  /*) ;;
+  *) archive="$PWD/$archive" ;;
+esac
+mkdir -p "$(dirname "$archive")"
 (
   cd "$list"
   tar -czf "$archive" -- *
