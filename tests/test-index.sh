@@ -507,7 +507,10 @@ if grep -q '1.261107.tgz' "$tmp/gh.log"; then
   exit 1
 fi
 grep -q 'gtk-arm-v31-snapshot.pixie' "$tmp/gh.log"
-grep -q 'out/published.json' "$tmp/gh.log"
+if grep -q 'published.json' "$tmp/gh.log" || grep -q 'index-.*\.json' "$tmp/gh.log"; then
+  echo "publish uploaded an index" >&2
+  exit 1
+fi
 if grep -q 'release create latest' "$tmp/gh.log" || grep -q 'sysroot' "$tmp/gh.log"; then
   echo "publish created a latest release" >&2
   exit 1

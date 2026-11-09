@@ -244,8 +244,7 @@ jobs:
               --tarball-dir out/packages \
               --arch "$ARCH" \
               --gtk "$gtk" \
-              --created "$RELEASE_CREATED" \
-              --out "out/index-${gtk}.json"
+              --created "$RELEASE_CREATED"
           done < <(awk 'NF && $1 !~ /^#/ { print $1 }' packages/gtk/targets)
           for plan in plans/upstream-plan-*/plan.tsv; do
             if ! grep -qx "$plan" "$seen"; then

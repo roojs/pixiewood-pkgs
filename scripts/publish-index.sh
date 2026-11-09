@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Publish changed package tarballs and an index.
+# Publish changed package tarballs.
 # If the plan says nothing changed, this exits without creating a release.
+# The pin files in git are the package lists. This does not upload an index.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -89,17 +90,17 @@ fi
   --out "$out"
 
 pkgs="$(mktemp -d)"
+args=()
 while IFS=$'\t' read -r name built_url; do
   [ -n "$name" ] || continue
   asset_name="$(basename "$built_url")"
   cp "$tarball_dir/${name}-${abi}.tar.xz" "$pkgs/$asset_name"
+  args+=("$pkgs/$asset_name")
 done < "$built"
-
-args=("$out")
-while IFS=$'\t' read -r name built_url; do
-  [ -n "$name" ] || continue
-  args+=("$pkgs/$(basename "$built_url")")
-done < "$built"
+if [ "${#args[@]}" -eq 0 ]; then
+  echo "No packages to upload."
+  exit 0
+fi
 if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
   gh release upload "$tag" "${args[@]}" --repo "$repo" --clobber
 else
