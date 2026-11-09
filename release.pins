@@ -22,10 +22,10 @@
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "name": "sqlite3",
-      "track": "sqlite-amalgamation-3530200.zip",
-      "resolved": "8a310d0a16c7a90cacd4c884e70faa51c902afed2a89f63aaa0126ab83558a32",
-      "inputs": "75cccf636ffe75bb5b5a8fc11c0fb3c44433bb4f943753367fb2bc910fb99bed",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/sqlite3-arm-v31-3530200.pixie"
+      "track": "sqlite-amalgamation-3540100.zip",
+      "resolved": "0a9c8e34352dad46006aa82836d5383bff9dc6bc9ce5a60553c05aa30e6ad1f9",
+      "inputs": "844bb02fd2f848dc63632a7858895b3e5328a7684c808f555d6d8efc8af91de3",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/sqlite3-arm-v31-3540100.pixie"
     },
     {
       "abi": "arm64-v8a",
