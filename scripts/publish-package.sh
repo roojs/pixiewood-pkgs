@@ -60,11 +60,16 @@ fi
 if ! abi="$(sysroot_map "$ROOT/cross/abi" "$arch")"; then
   exit 2
 fi
-file="${file:-$ROOT/release.pins}"
 created="${created:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 tag="$(release_version "$created")" || exit 1
 label="$(package_pin_label "$name" "$gtk" "$repo")"
 asset="$(package_asset_name "$name" "$abi" "$(package_release_label "$track" "$tarball" "$abi" "$name")")"
+if [ -z "$file" ]; then
+  case "$asset" in
+    *-snapshot.pixie) file="$ROOT/snapshot.pins" ;;
+    *) file="$ROOT/release.pins" ;;
+  esac
+fi
 url="https://github.com/${repo}/releases/download/${tag}/${asset}"
 
 if [ "$upload" -eq 1 ]; then
