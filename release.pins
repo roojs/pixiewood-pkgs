@@ -49,10 +49,10 @@
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "name": "glib",
-      "track": "2.90.0",
-      "resolved": "436d47a723da97fbe67057f6b51dcf49a244fd4a",
-      "inputs": "65a19d6252efb73ef19336dbdcf9855ffe2031734a1e516284e7ee6f7c90fe7c",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/glib-arm-v31-2.90.0.pixie"
+      "track": "2.90.1",
+      "resolved": "e05063ccc6c8f222465a1080927f4c14349f3de6",
+      "inputs": "75c4eed770ada22b45029bd13d500132ad9e6731eb03f3899a5b29d3f6815ac6",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/glib-arm-v31-2.90.1.pixie"
     },
     {
       "abi": "arm64-v8a",
