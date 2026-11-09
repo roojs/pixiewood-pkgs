@@ -6,7 +6,7 @@
       "name": "openssl",
       "track": "openssl-3.0.8.tar.gz",
       "resolved": "6c13d2bf38fdf31eac3ce2a347073673f5d63263398f1f69d0df4a41253e4b3e",
-      "inputs": "e9722a219003e2b32aded053cc08ee5f885c3b6e6a684035a087c4038275c9eb",
+      "inputs": "61042e0af73551232f4b0ad24ef038d411eb6909e4b339faec0f79f8c24586ff",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/openssl-arm-v31-3.0.8.pixie"
     },
     {
