@@ -1,7 +1,7 @@
 [wrap-git]
 directory = gdk-pixbuf
 url = https://gitlab.gnome.org/GNOME/gdk-pixbuf.git
-revision = 2.43.3
+revision = 2.90.3
 depth = 1
 
 [provide]

@@ -2,7 +2,7 @@
 directory=glib
 url=https://gitlab.gnome.org/GNOME/glib.git
 push-url=ssh://git@ssh.gitlab.gnome.org:GNOME/glib.git
-revision=2.90.0
+revision = 2.90.1
 depth=1
 # hack.patch: GDK Android calls private g_set_user_dirs (gdkandroidruntime.c)
 # to set XDG dirs after extracting assets. GLib 2.90.0 still does not export it

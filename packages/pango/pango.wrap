@@ -1,7 +1,7 @@
 [wrap-git]
 directory = pango
 url = https://gitlab.gnome.org/GNOME/pango.git
-revision = 1.58.2
+revision = 1.90
 depth = 1
 
 [provide]
