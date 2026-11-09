@@ -139,10 +139,10 @@
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "name": "gdk-pixbuf",
-      "track": "2.43.3",
-      "resolved": "7df9a8ba0a04ed3dd46f4e5fda5f888288c25c5b",
-      "inputs": "d0e7473cdb8cf76127f29c328426bd2ee439619d18200eb548676f6f11c660d6",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/gdk-pixbuf-arm-v31-2.43.3.pixie"
+      "track": "2.44.8",
+      "resolved": "0bd66153abb6bd548febb82337db79cbefe694b0",
+      "inputs": "978ee6beae42551e0bc0c733e5f371585ee02a7f810daad869474c9402f4f2bc",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/gdk-pixbuf-arm-v31-2.44.8.pixie"
     },
     {
       "abi": "arm64-v8a",
