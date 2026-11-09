@@ -8,6 +8,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=pixie-common.sh
 source "$ROOT/scripts/pixie-common.sh"
+# shellcheck source=require-pixie.sh
+source "$ROOT/scripts/require-pixie.sh"
 # shellcheck source=upstream-index.sh
 source "$ROOT/scripts/upstream-index.sh"
 
@@ -341,6 +343,7 @@ for name in "${names[@]}"; do
     --gtk "$gtk" \
     --created "prove-$name" \
     --out "$work/deps-$name.json"
-  "$ROOT/scripts/pixie.sh" pin "$work/deps-$name.json" --dest "$next"
+  require_pixie
+  pixie fetch --dest "$next" --pins "$work/deps-$name.json" --abi "$abi"
   deps="$next"
 done

@@ -181,14 +181,18 @@ grep -q '"version": "1.261107"' "$tmp/local-index.json"
 grep -q '"version": "deps-libxml2"' "$tmp/deps-index.json"
 grep -q '"created": "deps-libxml2"' "$tmp/deps-index.json"
 
-"$ROOT/scripts/pixie.sh" pin "$tmp/local-index.json" --dest "$tmp/sysroot"
+# shellcheck source=../scripts/require-pixie.sh
+source "$ROOT/scripts/require-pixie.sh"
+require_pixie
+pixie fetch --dest "$tmp/sysroot" --pins "$tmp/local-index.json" --abi "$abi"
 grep -q "^prefix=$tmp/sysroot$" "$tmp/sysroot/lib/$abi/pkgconfig/glib-2.0.pc"
 grep -q "^prefix=$tmp/sysroot$" "$tmp/sysroot/lib/$abi/pkgconfig/gtk4.pc"
-grep -q '"gtk_target": "gnome"' "$tmp/sysroot/share/pixiewood/MANIFEST.json"
+grep -q '"gtk_target": "pixie"' "$tmp/sysroot/share/pixiewood/MANIFEST.json"
 test -f "$tmp/sysroot/share/pixiewood/INDEX.json"
 test -f "$tmp/sysroot/share/pixiewood/gtk-android-java/org/gtk/android/ToplevelActivity.java"
 
-"$ROOT/scripts/pixie.sh" pin "$tmp/local-index.json" --dest "$tmp/sysroot-glib" --exclude gtk
+jq 'del(.packages[] | select(.name == "gtk"))' "$tmp/local-index.json" > "$tmp/glib-only.json"
+pixie fetch --dest "$tmp/sysroot-glib" --pins "$tmp/glib-only.json" --abi "$abi"
 test -f "$tmp/sysroot-glib/lib/$abi/pkgconfig/glib-2.0.pc"
 if [ -f "$tmp/sysroot-glib/lib/$abi/pkgconfig/gtk4.pc" ]; then
   echo "exclude gtk still extracted gtk" >&2

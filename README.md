@@ -1,17 +1,8 @@
 # pixiewood-pkgs
 
-Prebuilt Android libraries for the GTK stack [Pixiewood](https://github.com/sp1ritCS/gtk-android-builder) links. Each library is a `.pixie` file.
+This repository builds the Android libraries for the GTK stack [Pixiewood](https://github.com/sp1ritCS/gtk-android-builder) links, and publishes each one as a `.pixie` file.
 
-- [Using pixie libraries](docs/using-pixie-libraries.md) — point an Android build at a repository, a branch, and release or snapshot.
-- [Sharing your library](docs/sharing-your-library.md) — publish `release.pins` and, when you have snapshots, `snapshot.pins`.
-- [What a pixie file is](docs/pixie-file.md) — the file name and what is inside.
-
-This repository publishes the GTK libraries an Android app links, OpenSSL through glib-networking, in `build-order.txt`. `release.pins` lists the official releases. `snapshot.pins` lists the snapshots.
-
-```bash
-git clone --depth 1 --branch main https://github.com/roojs/pixiewood-pkgs.git
-scripts/pixie.sh latest --dest "$HOME/pixiewood"
-```
+[pixie](https://github.com/roojs/pixie-pkg) installs those files and is what an application build runs. The pin lists are `release.pins` and `snapshot.pins` in this repository. The libraries run from OpenSSL through glib-networking, in `build-order.txt`.
 
 ## This repository
 
@@ -22,19 +13,16 @@ scripts/install-sdk.sh
 scripts/build-pixie.sh --only gtk --arch aarch64
 ```
 
-**Prove package** publishes each finished library before the next one starts. **Monitor upstreams** publishes a library when its upstream revision or its recipe changes.
+**Prove package** publishes each finished library before the next one starts. **Monitor upstreams** publishes a library when its upstream revision or its recipe changes. A dependency set is unpacked with `pixie fetch`.
 
 ## Tests
 
 ```bash
-bash tests/test-pixie-tree.sh
 bash tests/test-pins-and-wrapper.sh
 bash tests/test-index.sh
 ```
 
-These cover packing, activation, runtime staging, wrap pins, and the index. They do not cross-compile GTK.
-
-[Local pixie files](docs/local-install-plan.md) is a plan for the end-user `pixie` command. It is not built yet.
+These cover wrap pins and the package index. They do not cross-compile GTK.
 
 ## Artificial intelligence usage
 

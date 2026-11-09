@@ -254,8 +254,8 @@ index_write() {
       else
         printf ',\n'
       fi
-      printf '    {"name": "%s", "track": "%s", "resolved": "%s", "inputs": "%s", "url": "%s"}' \
-        "$name" "$track" "$resolved" "$inputs" "$pkg_url"
+      printf '    {"name": "%s", "track": "%s", "resolved": "%s", "inputs": "%s", "url": "%s", "abi": "%s", "repo": "%s"}' \
+        "$name" "$track" "$resolved" "$inputs" "$pkg_url" "$abi" "$url"
     done < "$list"
     if [ "$first" -eq 0 ]; then
       printf '\n'

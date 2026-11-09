@@ -12,10 +12,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Pack, activate, and stage pixie libraries
-        run: bash tests/test-pixie-tree.sh
-
-      - name: Check wrap pins and the Meson wrapper
+      - name: Check wrap pins
         run: bash tests/test-pins-and-wrapper.sh
 
       - name: Check the package index

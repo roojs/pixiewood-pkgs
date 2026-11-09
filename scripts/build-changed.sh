@@ -7,6 +7,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/upstream-index.sh"
 # shellcheck source=pixie-common.sh
 source "$ROOT/scripts/pixie-common.sh"
+# shellcheck source=require-pixie.sh
+source "$ROOT/scripts/require-pixie.sh"
 
 plan=""
 arch="${ARCH:-aarch64}"
@@ -132,7 +134,8 @@ for name in "${order[@]}"; do
       --gtk "$gtk" \
       --created "deps-$name" \
       --out "$index"
-    "$ROOT/scripts/pixie.sh" pin "$index" --dest "$deps"
+    require_pixie
+    pixie fetch --dest "$deps" --pins "$index" --abi "$abi"
     args+=(--deps-sysroot "$deps")
   fi
   "$ROOT/scripts/build-pixie.sh" "${args[@]}"
