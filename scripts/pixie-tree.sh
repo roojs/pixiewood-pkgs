@@ -3,8 +3,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=sysroot-common.sh
-source "$ROOT/sysroot-common.sh"
+# shellcheck source=pixie-common.sh
+source "$ROOT/pixie-common.sh"
 
 TOKEN='@PIXIEWOOD_SYSROOT@'
 

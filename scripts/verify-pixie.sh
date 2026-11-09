@@ -8,8 +8,8 @@ if [ "$#" -ne 1 ]; then
 fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=sysroot-common.sh
-source "$ROOT/sysroot-common.sh"
+# shellcheck source=pixie-common.sh
+source "$ROOT/pixie-common.sh"
 
 sysroot="$(cd "$1" && pwd)"
 manifest="$sysroot/share/pixiewood/MANIFEST.json"

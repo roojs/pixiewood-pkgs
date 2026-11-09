@@ -21,8 +21,8 @@ fi
 for name in glib pango gdk gtk; do
   paths=("$ROOT/packages/$name" "$ROOT/cross" "$ROOT/android-distro.conf")
   case "$name" in
-    gdk|gtk) paths+=("$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-sysroot.sh") ;;
-    glib) paths+=("$ROOT/scripts/build-sysroot.sh") ;;
+    gdk|gtk) paths+=("$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-pixie.sh") ;;
+    glib) paths+=("$ROOT/scripts/build-pixie.sh") ;;
   esac
   if ! jq -e --arg name "$name" '.packages[] | select(.name == $name)' "$ROOT/release.pins" >/dev/null; then
     grep -q "^build $name on " "$tmp/default.out"

@@ -15,8 +15,8 @@ find "$ROOT/packages" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C 
 grep -v '^#' "$ROOT/build-order.txt" | grep -v '^$' | LC_ALL=C sort > "$tmp/order"
 diff -u "$tmp/pkgs" "$tmp/order"
 
-# shellcheck source=../scripts/sysroot-common.sh
-source "$ROOT/scripts/sysroot-common.sh"
+# shellcheck source=../scripts/pixie-common.sh
+source "$ROOT/scripts/pixie-common.sh"
 [ "$(sysroot_map "$ROOT/cross/abi" aarch64)" = arm64-v8a ]
 [ "$(sysroot_map "$ROOT/cross/abi" x86_64)" = x86_64 ]
 if sysroot_map "$ROOT/cross/abi" mips >/dev/null; then
@@ -158,11 +158,11 @@ pkg="$tmp/frag"
 mkdir -p "$pkg/lib/$abi/pkgconfig" "$tmp/java/org/gtk/android"
 printf '%s\n' 'prefix=/' 'Name: glib' 'Version: 2.90.0' > "$pkg/lib/$abi/pkgconfig/glib-2.0.pc"
 printf 'class T {}\n' > "$tmp/java/org/gtk/android/ToplevelActivity.java"
-"$ROOT/scripts/sysroot-tree.sh" pack-fragment --destdir "$pkg" --abi "$abi" --tarball "$tmp/glib.tar.xz"
+"$ROOT/scripts/pixie-tree.sh" pack-fragment --destdir "$pkg" --abi "$abi" --tarball "$tmp/glib.tar.xz"
 rm -rf "$pkg"
 mkdir -p "$pkg/lib/$abi/pkgconfig"
 printf '%s\n' 'prefix=/' 'Name: gtk4' 'Version: 4.0.0' > "$pkg/lib/$abi/pkgconfig/gtk4.pc"
-"$ROOT/scripts/sysroot-tree.sh" pack-fragment \
+"$ROOT/scripts/pixie-tree.sh" pack-fragment \
   --destdir "$pkg" --abi "$abi" --tarball "$tmp/gtk.tar.xz" --java-glue "$tmp/java"
 
 "$ROOT/scripts/upstream-index.sh" write \

@@ -9,4 +9,4 @@ if [ "$#" -ne 1 ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
 fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "$ROOT/sysroot-tree.sh" activate "$1"
+exec "$ROOT/pixie-tree.sh" activate "$1"

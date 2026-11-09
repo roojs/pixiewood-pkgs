@@ -195,8 +195,8 @@ index_shared_hash() {
     index_hash_paths "" \
       "$ROOT/cross" \
       "$ROOT/android-distro.conf" \
-      "$ROOT/scripts/build-sysroot.sh" \
-      "$ROOT/scripts/sysroot-tree.sh" \
+      "$ROOT/scripts/build-pixie.sh" \
+      "$ROOT/scripts/pixie-tree.sh" \
       "$ROOT/scripts/gtk-target.sh" \
       "$ROOT/scripts/build-changed.sh"
     printf 'api=%s\nndk=%s\n' "$api" "$ndk"

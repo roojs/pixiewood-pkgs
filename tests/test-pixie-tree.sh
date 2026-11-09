@@ -51,7 +51,7 @@ def codegen_main():
     return 0
 EOF
 
-"$ROOT/scripts/sysroot-tree.sh" finalize \
+"$ROOT/scripts/pixie-tree.sh" finalize \
   --destdir "$destdir" \
   --version 0.1.0 \
   --abi "$abi" \
@@ -83,7 +83,7 @@ grep -q '"pc": "gtk4"' "$manifest"
 grep -q '"pc": "gioopenssl"' "$manifest"
 test -f "$destdir/share/pixiewood/gtk-android-java/org/gtk/android/ToplevelActivity.java"
 
-"$ROOT/scripts/sysroot-tree.sh" activate "$destdir"
+"$ROOT/scripts/pixie-tree.sh" activate "$destdir"
 grep -q "^prefix=$destdir$" "$destdir/lib/$abi/pkgconfig/gtk4.pc"
 cross_tool="$(sed -n "s/^gdbus-codegen = \['\(.*\)'\]/\\1/p" "$destdir/share/pixiewood/pixie.cross")"
 test -n "$cross_tool"
@@ -105,7 +105,7 @@ test -f "$root/share/glib-2.0/schemas/org.gtk.Settings.gschema.xml"
 
 moved="$tmp/moved"
 mv "$destdir" "$moved"
-"$ROOT/scripts/sysroot-tree.sh" activate "$moved"
+"$ROOT/scripts/pixie-tree.sh" activate "$moved"
 grep -q "^prefix=$moved$" "$moved/lib/$abi/pkgconfig/gtk4.pc"
 cross_tool="$(sed -n "s/^gdbus-codegen = \['\(.*\)'\]/\\1/p" "$moved/share/pixiewood/pixie.cross")"
 [ "$("$cross_tool")" = codegen-ok ]

@@ -4,8 +4,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=sysroot-common.sh
-source "$ROOT/scripts/sysroot-common.sh"
+# shellcheck source=pixie-common.sh
+source "$ROOT/scripts/pixie-common.sh"
 # shellcheck source=upstream-index.sh
 source "$ROOT/scripts/upstream-index.sh"
 
@@ -150,7 +150,7 @@ if [ -n "$pkg_resolved" ]; then
   gtk_revision=$pkg_resolved
 fi
 
-"$ROOT/scripts/sysroot-tree.sh" seal \
+"$ROOT/scripts/pixie-tree.sh" seal \
   --destdir "$dest" \
   --version "$(sysroot_json_get version "$index_file")" \
   --abi "$(sysroot_json_get abi "$index_file")" \
@@ -163,5 +163,5 @@ fi
   --gtk-revision "$gtk_revision" \
   --provided "$provided"
 
-"$ROOT/scripts/sysroot-tree.sh" activate "$dest"
+"$ROOT/scripts/pixie-tree.sh" activate "$dest"
 echo "Unpacked $count packages into $dest"

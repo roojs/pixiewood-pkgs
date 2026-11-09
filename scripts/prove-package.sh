@@ -6,8 +6,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=sysroot-common.sh
-source "$ROOT/scripts/sysroot-common.sh"
+# shellcheck source=pixie-common.sh
+source "$ROOT/scripts/pixie-common.sh"
 # shellcheck source=upstream-index.sh
 source "$ROOT/scripts/upstream-index.sh"
 
@@ -295,7 +295,7 @@ for name in "${names[@]}"; do
       if [ -n "$deps" ]; then
         args+=(--deps-sysroot "$deps")
       fi
-      "$ROOT/scripts/build-sysroot.sh" "${args[@]}"
+      "$ROOT/scripts/build-pixie.sh" "${args[@]}"
       if [ -n "$cache" ]; then
         mkdir -p "$cache/$abi"
         cp -a "$tarball" "$cache/$abi/$name.tar.xz"

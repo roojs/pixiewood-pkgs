@@ -5,8 +5,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=sysroot-common.sh
-source "$ROOT/scripts/sysroot-common.sh"
+# shellcheck source=pixie-common.sh
+source "$ROOT/scripts/pixie-common.sh"
 # shellcheck source=upstream-index.sh
 source "$ROOT/scripts/upstream-index.sh"
 # shellcheck source=pins.sh

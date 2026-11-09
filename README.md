@@ -19,10 +19,10 @@ Wrap files live in `packages/`. Cross files live in `cross/`. NDK and API levels
 
 ```bash
 scripts/install-sdk.sh
-scripts/build-sysroot.sh --arch aarch64
+scripts/build-pixie.sh --only gtk --arch aarch64
 ```
 
-`scripts/build-sysroot.sh --only gtk` builds the GTK library. **Prove package** publishes each finished library before the next one starts. **Monitor upstreams** publishes a library when its upstream revision or its recipe changes.
+**Prove package** publishes each finished library before the next one starts. **Monitor upstreams** publishes a library when its upstream revision or its recipe changes.
 
 ## Tests
 

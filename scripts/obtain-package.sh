@@ -32,10 +32,10 @@ obtain_recipe_paths() {
   printf '%s\n' "$ROOT/packages/$name" "$ROOT/cross" "$ROOT/android-distro.conf"
   wrap="$ROOT/packages/$name/$name.wrap"
   if [ -f "$wrap" ] && grep -q '^diff_files[[:space:]]*=' "$wrap"; then
-    printf '%s\n' "$ROOT/scripts/build-sysroot.sh"
+    printf '%s\n' "$ROOT/scripts/build-pixie.sh"
   fi
   if [ "$name" = gtk ] || [ "$name" = gdk ] || { [ -f "$wrap" ] && grep -q '^pixiewood_from[[:space:]]*=[[:space:]]*gtk[[:space:]]*$' "$wrap"; }; then
-    printf '%s\n' "$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-sysroot.sh"
+    printf '%s\n' "$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-pixie.sh"
   fi
 }
 

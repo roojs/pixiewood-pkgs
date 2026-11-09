@@ -90,7 +90,7 @@ cat > "$tmp/sysroot/share/pixiewood/MANIFEST.json" << EOF
 {"format": 1, "abi": "arm64-v8a", "prefix_token": "@PIXIEWOOD_SYSROOT@", "activated_prefix": null}
 EOF
 # activate writes the cross file the wrapper requires
-"$ROOT/scripts/sysroot-tree.sh" activate "$tmp/sysroot"
+"$ROOT/scripts/pixie-tree.sh" activate "$tmp/sysroot"
 
 cat > "$tmp/bin/fake-meson" << 'EOF'
 #!/bin/bash
@@ -121,7 +121,7 @@ forward="$(
 -C
 builddir" ]
 
-# build-sysroot checks the wrap out before Meson, then applies diff_files.
+# build-pixie checks the wrap out before Meson, then applies diff_files.
 # The patch has to match the private declaration it exports.
 glib_tree="$tmp/glib-tree"
 mkdir -p "$glib_tree/glib"

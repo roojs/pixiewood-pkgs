@@ -6,8 +6,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=gtk-target.sh
 source "$ROOT/scripts/gtk-target.sh"
-# shellcheck source=sysroot-common.sh
-source "$ROOT/scripts/sysroot-common.sh"
+# shellcheck source=pixie-common.sh
+source "$ROOT/scripts/pixie-common.sh"
 # shellcheck source=packaged-deps.sh
 source "$ROOT/scripts/packaged-deps.sh"
 
@@ -28,7 +28,7 @@ distro_get() {
 ANDROID_NDK_VERSION="${ANDROID_NDK_VERSION:-$(distro_get ndk)}"
 
 usage() {
-  echo "Usage: $0 [--arch aarch64|x86_64] [--jobs N] [--gtk TARGET] [--only PACKAGE] [--deps-sysroot DIR] [--resolved REV] [--tarball PATH]" >&2
+  echo "Usage: $0 --only PACKAGE [--arch aarch64|x86_64] [--jobs N] [--gtk TARGET] [--deps-sysroot DIR] [--resolved REV] [--tarball PATH]" >&2
   exit 2
 }
 
@@ -63,9 +63,8 @@ if [ -n "$ONLY" ] && [ ! -f "$ROOT/packages/$ONLY/$ONLY.wrap" ]; then
   exit 2
 fi
 
-# The full sysroot is assembled from pins, the package cache, then source.
 if [ -z "$ONLY" ]; then
-  exec "$ROOT/scripts/assemble-sysroot.sh" --arch "$ARCH" --gtk "$GTK_TARGET" --jobs "$JOBS"
+  usage
 fi
 
 need_tool() {
@@ -363,35 +362,10 @@ if [ -n "$ONLY" ]; then
   elif [ "$ONLY" = gtk ] && [ "$gdk_part" != gtk ]; then
     java_args=(--java-glue "$WORK/subprojects/gtk/gdk/android/glue/java")
   fi
-  "$ROOT/scripts/sysroot-tree.sh" pack-fragment \
+  "$ROOT/scripts/pixie-tree.sh" pack-fragment \
     --destdir "$destdir" \
     --abi "$ABI" \
     --tarball "$tarball" \
     "${java_args[@]}"
   exit 0
 fi
-
-destdir="$ROOT/out/sysroot-$GTK_TARGET-$ABI"
-rm -rf "$destdir"
-mkdir -p "$destdir"
-meson install -C "$builddir" --destdir "$destdir" --no-rebuild
-
-"$ROOT/scripts/sysroot-tree.sh" finalize \
-  --destdir "$destdir" \
-  --version "$GTK_TARGET" \
-  --abi "$ABI" \
-  --arch "$ARCH" \
-  --api "$(distro_get api)" \
-  --ndk "$ANDROID_NDK_VERSION" \
-  --pixiewood-revision "$(distro_get pixiewood)" \
-  --gtk-target "$GTK_TARGET" \
-  --gtk-url "$GTK_TARGET_URL" \
-  --gtk-revision "$(git -C "$WORK/subprojects/gtk" rev-parse HEAD)" \
-  --provided "$ROOT/build-order.txt" \
-  --java-glue "$WORK/subprojects/gtk/gdk/android/glue/java"
-
-"$ROOT/scripts/verify-sysroot.sh" "$destdir"
-
-tarball="$ROOT/out/pixiewood-android-${GTK_TARGET}-${ABI}.tar.xz"
-tar -C "$destdir" -cJf "$tarball" .
-echo "Wrote $tarball"
