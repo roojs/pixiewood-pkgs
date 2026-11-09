@@ -34,7 +34,7 @@ obtain_recipe_paths() {
   if [ -f "$wrap" ] && grep -q '^diff_files[[:space:]]*=' "$wrap"; then
     printf '%s\n' "$ROOT/scripts/build-pixie.sh"
   fi
-  if [ "$name" = gtk ] || [ "$name" = gdk ] || { [ -f "$wrap" ] && grep -q '^pixiewood_from[[:space:]]*=[[:space:]]*gtk[[:space:]]*$' "$wrap"; }; then
+  if [ "$name" = gtk ]; then
     printf '%s\n' "$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-pixie.sh"
   fi
 }

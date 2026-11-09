@@ -121,14 +121,9 @@ for dep_dir in "${package_dirs[@]}"; do
   fi
 done
 shopt -u nullglob
-rm -f "$WORK/subprojects/gdk.wrap"
-# GDK is built from the GTK checkout. A one-package gdk build still needs gtk.wrap.
-if [ "$ONLY" = gdk ]; then
-  cp -a "$ROOT/packages/gtk/gtk.wrap" "$WORK/subprojects/gtk.wrap"
-fi
 
 build_gtk=0
-if [ -z "$ONLY" ] || [ "$ONLY" = gtk ] || [ "$ONLY" = gdk ]; then
+if [ "$ONLY" = gtk ]; then
   build_gtk=1
 fi
 
@@ -249,14 +244,7 @@ else
   cp "$ROOT/cross/extra.cross" "$WORK/extra.cross"
 fi
 
-if [ "$ONLY" = gdk ]; then
-  printf 'int main(void) { return 0; }\n' > "$WORK/probe.c"
-  cat > "$WORK/meson.build" << EOF
-project('pixiewood-pkg-gdk', 'c', meson_version: '>=1.3.0', default_options: ['c_std=gnu11'])
-subproject('gtk')
-executable('probe', 'probe.c', install: false)
-EOF
-elif [ -n "$ONLY" ]; then
+if [ -n "$ONLY" ]; then
   printf 'int main(void) { return 0; }\n' > "$WORK/probe.c"
   probe_line="$(awk -v name="$ONLY" '$1 !~ /^#/ && $1 == name { $1 = ""; sub(/^ /, ""); print; found = 1 } END { exit !found }' "$ROOT/packages/probes")" || {
     echo "No meson probe for $ONLY" >&2
@@ -326,21 +314,6 @@ if [ -n "$DEPS_SYSROOT" ]; then
 else
   meson_args+=(--cross-file "$WORK/isolate.cross")
 fi
-gdk_part=""
-if [ "$ONLY" = gdk ]; then
-  gdk_part=gdk
-elif [ "$ONLY" = gtk ] && [ -n "$DEPS_SYSROOT" ] && [ -f "$DEPS_SYSROOT/lib/$ABI/pkgconfig/pixiewood-gdk.pc" ]; then
-  gdk_part=gtk
-fi
-if [ -n "$gdk_part" ]; then
-  cat > "$WORK/part.cross" << EOF
-[gtk:project options]
-pixiewood-part = '$gdk_part'
-EOF
-  meson_args+=(--cross-file "$WORK/part.cross")
-  echo "GTK build part: $gdk_part"
-fi
-
 meson setup \
   "${meson_args[@]}" \
   --buildtype debug \
@@ -356,10 +329,7 @@ if [ -n "$ONLY" ]; then
   meson install -C "$builddir" --destdir "$destdir" --no-rebuild
   tarball="${TARBALL_OUT:-$ROOT/out/${ONLY}-${ABI}.tar.xz}"
   java_args=()
-  if [ "$ONLY" = gdk ]; then
-    "$ROOT/scripts/gtk-part.sh" pack "$builddir" "$destdir" "$ABI"
-    java_args=(--java-glue "$WORK/subprojects/gtk/gdk/android/glue/java")
-  elif [ "$ONLY" = gtk ] && [ "$gdk_part" != gtk ]; then
+  if [ "$ONLY" = gtk ]; then
     java_args=(--java-glue "$WORK/subprojects/gtk/gdk/android/glue/java")
   fi
   "$ROOT/scripts/pixie-tree.sh" pack-fragment \

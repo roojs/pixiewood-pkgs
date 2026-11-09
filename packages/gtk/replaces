@@ -1,6 +1,4 @@
 # Packages a later GTK target may build.
-# gtk is always that target's own build.
-# gdk is built only when gdk/ or gtk/css differs from the first target.
+# gtk is that target's own build.
 # Every other library stays on the first target in packages/gtk/targets.
 gtk
-gdk

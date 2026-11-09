@@ -158,13 +158,8 @@ cmd_write() {
     while IFS=$'\t' read -r status name kind track resolved inputs url _; do
       [ -n "${status:-}" ] || continue
       case "$status" in \#*) continue ;; esac
-      if [ "$gtk" != "$base" ]; then
-        if [ "$name" = gdk ] && [ -n "${base_inputs[gdk]:-}" ] && [ "$inputs" = "${base_inputs[gdk]}" ]; then
-          continue
-        fi
-        if [ -z "${replaced[$name]:-}" ]; then
-          continue
-        fi
+      if [ "$gtk" != "$base" ] && [ -z "${replaced[$name]:-}" ]; then
+        continue
       fi
       label="$(package_pin_label "$name" "$gtk" "$repo")"
       if [ "$status" = build ] || [ -z "$url" ] || [ "$url" = "-" ]; then
@@ -247,17 +242,7 @@ cmd_apply() {
         continue
         ;;
     esac
-    if [ "$name" = gdk ]; then
-      if [ -n "${reuse_url["$base gdk"]:-}" ] && [ "$inputs" = "${reuse_inputs["$base gdk"]:-}" ]; then
-        echo "gdk matches $base; reusing that build" >&2
-        printf 'keep\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-          "$name" "$kind" "$track" "$resolved" "$inputs" "${reuse_url["$base gdk"]}"
-      else
-        echo "gdk differs from $base; building it for $gtk" >&2
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-          "$status" "$name" "$kind" "$track" "$resolved" "$inputs" "$url"
-      fi
-    elif [ -z "${replaced[$name]:-}" ]; then
+    if [ -z "${replaced[$name]:-}" ]; then
       label="$(package_pin_label "$name" "$base")"
       if [ -z "${reuse_url["$label $name"]:-}" ]; then
         echo "No $label tarball for $name. $gtk replaces only the packages in packages/gtk/replaces." >&2

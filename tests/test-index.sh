@@ -317,148 +317,30 @@ if grep -q 'webkitgtk-android' "$tmp/pins-index.json"; then
   exit 1
 fi
 
-jq -n '{packages: [
-  {abi:"arm64-v8a", repo:"https://gitlab.gnome.org/GNOME/gtk.git", name:"gdk", track:"gnome-rev", resolved:"gdkr", inputs:"same-gdk", url:"https://example.invalid/gdk-gnome.tar.xz"},
-  {abi:"arm64-v8a", repo:"https://gitlab.gnome.org/GNOME/gtk.git", name:"gtk", track:"gnome-rev", resolved:"gtkr", inputs:"gtk-in", url:"https://example.invalid/gtk-gnome.tar.xz"}
-]}' > "$tmp/gdk-pins"
-{
-  printf '%s\n' '# publish=1' '# gtk_target=Knowles.android-ime'
-  printf '%s\n' $'build\tgdk\tgit\tandroid-ime\time-gdk\tsame-gdk\t-'
-  printf '%s\n' $'build\tgtk\tgit\tandroid-ime\time-gtk\tgtk-in\t-'
-} > "$tmp/gdk-same.tsv"
-"$ROOT/scripts/current-pins.sh" apply --plan "$tmp/gdk-same.tsv" --out "$tmp/gdk-same-built.tsv" --arch aarch64 --file "$tmp/gdk-pins" 2> "$tmp/gdk-same.out"
-grep -q 'gdk matches gnome' "$tmp/gdk-same.out"
-grep -q $'keep\tgdk\tgit\tandroid-ime\time-gdk\tsame-gdk\thttps://example.invalid/gdk-gnome.tar.xz' "$tmp/gdk-same-built.tsv"
-{
-  printf '%s\n' '# publish=1' '# gtk_target=Knowles.android-ime'
-  printf '%s\n' $'build\tgdk\tgit\tandroid-ime\time-gdk\tdifferent-gdk\t-'
-  printf '%s\n' $'build\tgtk\tgit\tandroid-ime\time-gtk\tgtk-in\t-'
-} > "$tmp/gdk-diff.tsv"
-"$ROOT/scripts/current-pins.sh" apply --plan "$tmp/gdk-diff.tsv" --out "$tmp/gdk-diff-built.tsv" --arch aarch64 --file "$tmp/gdk-pins" 2> "$tmp/gdk-diff.out"
-grep -q 'gdk differs from gnome' "$tmp/gdk-diff.out"
-grep -q $'^build\tgdk\t' "$tmp/gdk-diff-built.tsv"
 {
   printf '%s\n' '# publish=1' '# gtk_target=gnome'
-  printf '%s\n' $'build\tgdk\tgit\tgnome-rev\tgdkr\tsame-gdk\t-'
   printf '%s\n' $'build\tgtk\tgit\tgnome-rev\tgtkr\tgtk-in\t-'
 } > "$tmp/gnome-webkit.tsv"
+{
+  printf '%s\n' '# publish=1' '# gtk_target=Knowles.android-ime'
+  printf '%s\n' $'build\tgtk\tgit\tandroid-ime\time-gtk\tgtk-in\t-'
+} > "$tmp/ime-gtk.tsv"
 "$ROOT/scripts/current-pins.sh" write \
   --file "$tmp/owner-pins" \
   --arch aarch64 \
   --created 2026-11-08T00:00:00Z \
   --repo roojs/pixiewood-pkgs \
   --plan "$tmp/gnome-webkit.tsv" \
-  --plan "$tmp/gdk-diff.tsv"
-jq -e '.packages[] | select(.abi == "arm64-v8a" and .repo == "Knowles.android-ime" and .name == "gdk" and (.url | contains("/1.261108/")))' "$tmp/owner-pins" >/dev/null
-grep -q 'gdk-arm-v31-snapshot.pixie' "$tmp/owner-pins"
+  --plan "$tmp/ime-gtk.tsv"
+jq -e '.packages[] | select(.abi == "arm64-v8a" and .repo == "Knowles.android-ime" and .name == "gtk" and (.url | contains("/1.261108/")))' "$tmp/owner-pins" >/dev/null
+if jq -e '.packages[] | select(.name == "gdk")' "$tmp/owner-pins" >/dev/null; then
+  echo "written pins still name gdk" >&2
+  exit 1
+fi
 if grep -q 'webkitgtk-android' "$tmp/owner-pins"; then
   echo "written pins still name webkitgtk-android" >&2
   exit 1
 fi
-
-part="$tmp/gtk-src"
-mkdir -p "$part/gtk" "$part/gsk" "$part/gdk"
-cat > "$part/gdk/meson.build" << 'EOF'
-gdk_backends = []
-gdk_backends_gen_headers = []
-libgdk = static_library('gdk',
-  link_whole: gdk_backends,
-)
-libgdk_dep = declare_dependency(
-  dependencies: gdk_deps + [libgtk_css_dep],
-)
-EOF
-cat > "$part/meson.options" << 'EOF'
-option('docs', type: 'boolean', value: false)
-EOF
-cat > "$part/meson.build" << 'EOF'
-subdir('gdk/version')
-subdir('gtk/css')
-subdir('gdk')
-subdir('gsk')
-subdir('gtk')
-
-subdir('tools')
-# config.h
-configure_file(output: 'config.h',
-               configuration: cdata)
-pkg_config.generate(libgtk,
-)
-EOF
-cat > "$part/gtk/meson.build" << 'EOF'
-libgtk_static = static_library('gtk',
-  dependencies: gtk_deps + [libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep, media_deps, print_backend_deps],
-  link_with: [libgtk_css, libgtk_svg, libgdk, libgsk ],
-)
-libgtk = shared_library('gtk-4',
-  dependencies: gtk_deps + [libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep],
-  link_whole: [libgtk_static, libgtk_css, libgtk_svg, libgdk, libgsk ],
-)
-libgtk_dep = declare_dependency(
-  dependencies: gtk_deps + [libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep],
-  link_with: libgtk,
-)
-libgtk_static_dep = declare_dependency(
-  dependencies: gtk_deps + [libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep],
-  link_with: [libgtk_static, libgtk_css, libgdk, libgsk ],
-)
-EOF
-printf '%s\n' 'link_with: [ libgdk, libgsk_f16c],' > "$part/gsk/meson.build"
-"$ROOT/scripts/gtk-part.sh" patch "$part"
-grep -q "pixiewood-part" "$part/meson.options"
-grep -q "subdir('gdk')" "$part/meson.build"
-grep -q "pixiewood_part == 'gtk'" "$part/meson.build"
-grep -q "pixiewood_part != 'gtk'" "$part/gdk/meson.build"
-grep -q "dependency('pixiewood-gdk')" "$part/gdk/meson.build"
-if grep -q "pixiewood-gdk" <<< "$(awk '/^  libgdk_dep = declare_dependency/,/^  \\)/' "$part/gdk/meson.build")"; then
-  echo "public GDK dependency still links the GDK archive" >&2
-  exit 1
-fi
-grep -q 'dependencies: gtk_deps + \[libgtk_css_dep, libgtk_svg_dep, libgdk_dep, libgsk_dep\] + pixiewood_gdk_link,' "$part/gtk/meson.build"
-public_deps="$(awk '
-  /^libgtk_dep = declare_dependency/ { on = 1 }
-  on { print }
-  on && /^\)/ { exit }
-' "$part/gtk/meson.build")"
-if printf '%s\n' "$public_deps" | grep -q 'pixiewood_gdk_link'; then
-  echo "public GTK dependency links GDK a second time" >&2
-  exit 1
-fi
-if grep -q "libgdk_dep = dependency('pixiewood-gdk')" "$part/meson.build"; then
-  echo "top-level meson still replaces subdir gdk" >&2
-  exit 1
-fi
-grep -q 'gdk_link' "$part/gtk/meson.build"
-grep -q 'gdk_link' "$part/gsk/meson.build"
-if grep -Eq 'link_(with|whole):[^#]*\blibgdk\b' "$part/gtk/meson.build" "$part/gsk/meson.build"; then
-  echo "fixture still links libgdk directly" >&2
-  exit 1
-fi
-cfg_line="$(grep -n "output: 'config.h'" "$part/meson.build" | head -n1 | cut -d: -f1)"
-pkg_line="$(grep -n 'pkg_config.generate(libgtk' "$part/meson.build" | head -n1 | cut -d: -f1)"
-mapfile -t skip_ifs < <(grep -n "if pixiewood_part != 'gdk'" "$part/meson.build" | cut -d: -f1)
-[ "${#skip_ifs[@]}" -eq 2 ]
-[ "$cfg_line" -gt "${skip_ifs[0]}" ]
-[ "$cfg_line" -lt "${skip_ifs[1]}" ]
-[ "$pkg_line" -gt "${skip_ifs[1]}" ]
-# Pack libgdk, keep a backend whose objects are not already in it, and skip css.
-pack_build="$tmp/gdk-build"
-pack_dest="$tmp/gdk-dest"
-mkdir -p "$pack_build/subprojects/gtk/gdk/android" "$pack_build/subprojects/gtk/gtk/css" "$pack_dest" "$pack_build/subprojects/gtk/gdk"
-printf 'gdk\n' > "$tmp/gdk.o"
-printf 'gdk\n' > "$tmp/android-kept.o"
-printf 'only-android\n' > "$tmp/android-extra.o"
-printf 'css\n' > "$tmp/css.o"
-ar rc "$pack_build/subprojects/gtk/gdk/libgdk.a" "$tmp/gdk.o" "$tmp/android-kept.o"
-ar rc "$pack_build/subprojects/gtk/gdk/android/libgdk-android.a" "$tmp/android-kept.o" "$tmp/android-extra.o"
-ar rc "$pack_build/subprojects/gtk/gtk/css/libgtk_css.a" "$tmp/css.o"
-printf 'config\n' > "$pack_build/subprojects/gtk/gdk/gdkconfig.h"
-"$ROOT/scripts/gtk-part.sh" pack "$pack_build" "$pack_dest" arm64-v8a
-[ -f "$pack_dest/lib/arm64-v8a/libgdk.a" ]
-[ -f "$pack_dest/lib/arm64-v8a/libgdk-android.a" ]
-[ ! -e "$pack_dest/lib/arm64-v8a/libgtk_css.a" ]
-[ -f "$pack_dest/include/gtk-4.0/gdk/gdkconfig.h" ]
-grep -q ' -lgdk -lgdk-android ' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
 
 hdr="$tmp/android-headers"
 mkdir -p "$hdr/gdk/android"
@@ -483,56 +365,6 @@ if [ "$(grep -c gdkandroidcontentfile.h "$hdr/gdk/android/meson.build")" -ne 1 ]
   echo "android content file header was installed twice" >&2
   exit 1
 fi
-grep -q -- '-landroid -ljnigraphics -lnativewindow -llog' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
-grep -q -- '-I${includedir}/gtk-4.0' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"
-if grep -q -- '--start-group' "$pack_dest/lib/arm64-v8a/pkgconfig/pixiewood-gdk.pc"; then
-  echo "pixiewood-gdk.pc nests --start-group" >&2
-  exit 1
-fi
-thin_build="$tmp/thin-build"
-thin_dest="$tmp/thin-dest"
-mkdir -p "$thin_build/subprojects/gtk/gdk/libgdk.a.p" "$thin_dest"
-printf 'enum-bytes\n' > "$thin_build/subprojects/gtk/gdk/libgdk.a.p/gdkenumtypes.c.o"
-( cd "$thin_build/subprojects/gtk/gdk" && ar rcT libgdk.a libgdk.a.p/gdkenumtypes.c.o )
-"$ROOT/scripts/gtk-part.sh" pack "$thin_build" "$thin_dest" arm64-v8a
-installed="$thin_dest/lib/arm64-v8a/libgdk.a"
-if [ "$(head -c 8 "$installed")" = '!<thin>' ]; then
-  echo "packed libgdk.a is still a thin archive" >&2
-  exit 1
-fi
-extract="$tmp/thin-extract"
-mkdir "$extract"
-( cd "$extract" && ar x "$installed" )
-grep -q 'enum-bytes' "$extract/gdkenumtypes.c.o"
-
-src="$(mktemp -d)"
-git -C "$src" init -q -b main
-git -C "$src" config user.email test@example.com
-git -C "$src" config user.name test
-git -C "$src" config uploadpack.allowReachableSHA1InWant true
-mkdir -p "$src/gdk"
-printf 'int a;\n' > "$src/gdk/a.c"
-git -C "$src" add gdk/a.c
-git -C "$src" commit -q -m one
-one="$(git -C "$src" rev-parse HEAD)"
-printf 'int b;\n' > "$src/gdk/a.c"
-git -C "$src" add gdk/a.c
-git -C "$src" commit -q -m two
-two="$(git -C "$src" rev-parse HEAD)"
-# shellcheck source=../scripts/upstream-index.sh
-source "$ROOT/scripts/upstream-index.sh"
-hash_one="$(gdk_tree_hash "$src" "$one")"
-hash_two="$(gdk_tree_hash "$src" "$two")"
-[ "$hash_one" != "$hash_two" ]
-hash_one_again="$(gdk_tree_hash "$src" "$one")"
-[ "$hash_one" = "$hash_one_again" ]
-mkdir -p "$src/gtk/css"
-printf 'int c;\n' > "$src/gtk/css/a.c"
-git -C "$src" add gtk/css/a.c
-git -C "$src" commit -q -m css
-three="$(git -C "$src" rev-parse HEAD)"
-hash_three="$(gdk_tree_hash "$src" "$three")"
-[ "$hash_three" != "$hash_two" ]
 
 {
   printf '%s\n' '# publish=1' '# gtk_target=gnome'

@@ -2,7 +2,6 @@
 # +subproject configures that package before the dependency lookup.
 glib glib-2.0
 fontconfig fontconfig
-gdk pixiewood-gdk
 gtk gtk4
 libadwaita libadwaita-1
 gtksourceview gtksourceview-5

@@ -17,7 +17,6 @@ libtiff
 gdk-pixbuf
 libepoxy
 graphene
-gdk
 gtk
 libadwaita
 gtksourceview

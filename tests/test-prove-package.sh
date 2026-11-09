@@ -18,10 +18,10 @@ if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "
 else
   grep -qx 'build openssl alone' "$tmp/default.out"
 fi
-for name in glib pango gdk gtk; do
+for name in glib pango gtk; do
   paths=("$ROOT/packages/$name" "$ROOT/cross" "$ROOT/android-distro.conf")
   case "$name" in
-    gdk|gtk) paths+=("$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-pixie.sh") ;;
+    gtk) paths+=("$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-pixie.sh") ;;
     glib) paths+=("$ROOT/scripts/build-pixie.sh") ;;
   esac
   if ! jq -e --arg name "$name" '.packages[] | select(.name == $name)' "$ROOT/release.pins" >/dev/null; then
@@ -40,11 +40,10 @@ awk '
   /^pin / || /^cache / || /^build / {
     if ($2 == "cairo") cairo = NR
     if ($2 == "pango") pango = NR
-    if ($2 == "gdk") gdk = NR
     if ($2 == "gtk") gtk = NR
   }
   END {
-    if (!(cairo && pango && gdk && gtk && cairo < pango && pango < gdk && gdk < gtk)) exit 1
+    if (!(cairo && pango && gtk && cairo < pango && pango < gtk)) exit 1
   }
 ' "$tmp/default.out"
 
@@ -141,17 +140,5 @@ printf 'module\n' > "$net/lib/$abi/gio/modules/libgioopenssl.a"
 tar -C "$net" -cJf "$tmp/glib-networking-${abi}.tar.xz" .
 "$ROOT/scripts/prove-package.sh" --check "$tmp/glib-networking-${abi}.tar.xz" --package glib-networking --arch aarch64 > "$tmp/net.out"
 grep -q 'proved glib-networking: gioopenssl 2.80.1 (lib/arm64-v8a/gio/modules/libgioopenssl.a)' "$tmp/net.out"
-
-mkdir -p "$pkg/lib/$abi/pkgconfig" "$pkg/bin/$abi"
-printf '%s\n' 'prefix=/' 'Name: pixiewood-gdk' 'Version: 4' > "$pkg/lib/$abi/pkgconfig/pixiewood-gdk.pc"
-printf '%s\n' 'prefix=/' 'Name: glib' 'Version: 2.80.0' > "$pkg/lib/$abi/pkgconfig/glib-2.0.pc"
-printf 'gdk\n' > "$pkg/lib/$abi/libgdk.a"
-printf '#!/bin/sh\n' > "$pkg/bin/$abi/gdbus-codegen"
-tar -C "$pkg" -cJf "$tmp/polluted-gdk.tar.xz" .
-if "$ROOT/scripts/prove-package.sh" --check "$tmp/polluted-gdk.tar.xz" --package gdk --arch aarch64 > "$tmp/polluted.out" 2> "$tmp/polluted.err"; then
-  echo "gdk tarball containing glib was accepted" >&2
-  exit 1
-fi
-grep -q 'contains glib-2.0.pc from glib' "$tmp/polluted.err"
 
 echo "prove package: ok"

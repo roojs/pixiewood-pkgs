@@ -102,12 +102,12 @@ package_wrap_owner() {
   gtk_target_owner "$url"
 }
 
-# Column in the pin files. gtk and gdk follow the GTK target. A package whose
+# Column in the pin files. gtk follows the GTK target. A package whose
 # git owner is this distribution is pinned as that owner. Everything else
 # stays on the first GTK target.
 package_pin_label() {
   local name=$1 gtk_variant=$2 repo=${3:-${GITHUB_REPOSITORY:-roojs/pixiewood-pkgs}} owner
-  if [ "$name" = gtk ] || [ "$name" = gdk ]; then
+  if [ "$name" = gtk ]; then
     printf '%s\n' "$gtk_variant"
     return 0
   fi

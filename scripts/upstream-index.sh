@@ -161,32 +161,6 @@ index_hash_paths() {
   done
 }
 
-gdk_tree_hash() {
-  local url=$1 rev=$2 cache dir hash
-  cache="${PIXIEWOOD_GDK_CACHE:-${TMPDIR:-/tmp}/pixiewood-gdk-tree}"
-  dir="$cache/$rev"
-  if [ ! -s "$dir/.part-hash" ]; then
-    rm -rf "$dir"
-    mkdir -p "$dir"
-    git -C "$dir" init -q
-    git -C "$dir" remote add origin "$url"
-    git -C "$dir" fetch --depth 1 origin "$rev"
-    git -C "$dir" checkout -q --detach FETCH_HEAD
-    if [ ! -d "$dir/gdk" ]; then
-      echo "GTK checkout has no gdk directory: $rev" >&2
-      return 1
-    fi
-    # GDK compiles against gtk/css. A css-only change still needs its own GDK.
-    local paths=("$dir/gdk")
-    if [ -d "$dir/gtk/css" ]; then
-      paths+=("$dir/gtk/css")
-    fi
-    hash="$(index_hash_paths "" "${paths[@]}" | sha256sum | awk '{print $1}')"
-    printf '%s\n' "$hash" > "$dir/.part-hash"
-  fi
-  cat "$dir/.part-hash"
-}
-
 index_shared_hash() {
   local api ndk
   api="$(distro_get api)"
@@ -320,19 +294,11 @@ cmd_resolve() {
       name="$(basename "$dir")"
       wrap="$dir/$name.wrap"
       [ -f "$wrap" ] || continue
-      if [ "$name" = gtk ] || [ "$(wrap_field "$wrap" pixiewood_from)" = gtk ]; then
+      if [ "$name" = gtk ]; then
         track="$rev"
         kind=git
         resolved="$(index_resolve_git "$url" "$track")"
-        if [ "$name" != gtk ]; then
-          inputs="$(
-            {
-              printf 'shared %s\n' "$shared"
-              printf 'gdk %s\n' "$(gdk_tree_hash "$url" "$resolved")"
-              index_hash_paths "" "$dir" "$ROOT/scripts/gtk-part.sh"
-            } | sha256sum | awk '{print $1}'
-          )"
-        elif [ "$patch" = "-" ]; then
+        if [ "$patch" = "-" ]; then
           inputs="$(
             {
               printf 'shared %s\n' "$shared"
