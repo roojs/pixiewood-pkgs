@@ -3,8 +3,40 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=../scripts/upstream-index.sh
+source "$ROOT/scripts/upstream-index.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
+
+same_release() {
+  local name=$1 wrap pin_track wtrack plabel wlabel
+  pin_track="$(jq -r --arg name "$name" '[.packages[] | select(.abi=="arm64-v8a" and .name==$name)][0].track // empty' "$ROOT/release.pins")"
+  wrap="$ROOT/packages/$name/$name.wrap"
+  [ -n "$pin_track" ] && [ -f "$wrap" ] || return 1
+  if grep -q '^\[wrap-git\]' "$wrap"; then
+    wtrack="$(sed -n 's/^revision[[:space:]]*=[[:space:]]*//p' "$wrap" | head -n1 | tr -d '[:space:]')"
+  else
+    wtrack="$(sed -n 's/^source_filename[[:space:]]*=[[:space:]]*//p' "$wrap" | head -n1 | tr -d '[:space:]')"
+  fi
+  plabel="$(package_track_label "$pin_track")"
+  wlabel="$(package_track_label "$wtrack")"
+  [ "$wlabel" != snapshot ] && [ "$plabel" = "$wlabel" ]
+}
+
+different_release() {
+  local name=$1 wrap pin_track wtrack plabel wlabel
+  pin_track="$(jq -r --arg name "$name" '[.packages[] | select(.abi=="arm64-v8a" and .name==$name)][0].track // empty' "$ROOT/release.pins")"
+  wrap="$ROOT/packages/$name/$name.wrap"
+  [ -n "$pin_track" ] && [ -f "$wrap" ] || return 1
+  if grep -q '^\[wrap-git\]' "$wrap"; then
+    wtrack="$(sed -n 's/^revision[[:space:]]*=[[:space:]]*//p' "$wrap" | head -n1 | tr -d '[:space:]')"
+  else
+    wtrack="$(sed -n 's/^source_filename[[:space:]]*=[[:space:]]*//p' "$wrap" | head -n1 | tr -d '[:space:]')"
+  fi
+  plabel="$(package_track_label "$pin_track")"
+  wlabel="$(package_track_label "$wtrack")"
+  [ "$plabel" != snapshot ] && [ "$wlabel" != snapshot ] && [ "$plabel" != "$wlabel" ]
+}
 
 bash -n "$ROOT/scripts/prove-package.sh"
 
@@ -13,7 +45,7 @@ pins_commit="$(git -C "$ROOT" log -1 --format=%H -- release.pins || true)"
 if [ -z "$pins_commit" ]; then
   pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
 fi
-if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+if same_release openssl || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
   grep -qx 'pin openssl alone' "$tmp/default.out"
 else
   grep -qx 'build openssl alone' "$tmp/default.out"
@@ -25,6 +57,10 @@ for name in glib pango gtk; do
     glib) paths+=("$ROOT/scripts/build-pixie.sh") ;;
   esac
   if ! jq -e --arg name "$name" '.packages[] | select(.name == $name)' "$ROOT/release.pins" >/dev/null; then
+    grep -q "^build $name on " "$tmp/default.out"
+  elif same_release "$name"; then
+    grep -q "^pin $name on " "$tmp/default.out"
+  elif different_release "$name"; then
     grep -q "^build $name on " "$tmp/default.out"
   elif git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "${paths[@]}"; then
     grep -q "^pin $name on " "$tmp/default.out"
@@ -48,24 +84,24 @@ awk '
 ' "$tmp/default.out"
 
 "$ROOT/scripts/prove-package.sh" --dry-run --packages sqlite3 > "$tmp/one.out"
-if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/sqlite3" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+if same_release sqlite3 || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/sqlite3" "$ROOT/cross" "$ROOT/android-distro.conf"; then
   grep -qx 'pin sqlite3 alone' "$tmp/one.out"
 else
   grep -qx 'build sqlite3 alone' "$tmp/one.out"
 fi
 
 "$ROOT/scripts/prove-package.sh" --dry-run --packages 'sqlite3, nghttp2,libpsl' > "$tmp/stack.out"
-if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/sqlite3" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+if same_release sqlite3 || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/sqlite3" "$ROOT/cross" "$ROOT/android-distro.conf"; then
   grep -qx 'pin sqlite3 alone' "$tmp/stack.out"
 else
   grep -qx 'build sqlite3 alone' "$tmp/stack.out"
 fi
-if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/nghttp2" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+if same_release nghttp2 || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/nghttp2" "$ROOT/cross" "$ROOT/android-distro.conf"; then
   grep -qx 'pin nghttp2 on sqlite3' "$tmp/stack.out"
 else
   grep -qx 'build nghttp2 on sqlite3' "$tmp/stack.out"
 fi
-if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/libpsl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+if same_release libpsl || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/libpsl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
   grep -qx 'pin libpsl on sqlite3 nghttp2' "$tmp/stack.out"
 else
   grep -qx 'build libpsl on sqlite3 nghttp2' "$tmp/stack.out"
@@ -80,12 +116,12 @@ grep -qx 'cache libxml2 on openssl' "$tmp/cache.out"
 grep -qx 'build sqlite3 on openssl libxml2' "$tmp/cache.out"
 
 "$ROOT/scripts/prove-package.sh" --dry-run --through libxml2 --cache "$tmp/cache" > "$tmp/pinwins.out"
-if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+if same_release openssl || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
   grep -qx 'pin openssl alone' "$tmp/pinwins.out"
 else
   grep -qx 'cache openssl alone' "$tmp/pinwins.out"
 fi
-if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/libxml2" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+if same_release libxml2 || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/libxml2" "$ROOT/cross" "$ROOT/android-distro.conf"; then
   grep -qx 'pin libxml2 on openssl' "$tmp/pinwins.out"
 else
   grep -qx 'cache libxml2 on openssl' "$tmp/pinwins.out"

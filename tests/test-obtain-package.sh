@@ -59,19 +59,13 @@ decision="$("$ROOT/scripts/obtain-package.sh" --name demo --abi arm64-v8a --gtk 
 decision="$("$ROOT/scripts/obtain-package.sh" --name demo --abi arm64-v8a --gtk gnome --pins "$tmp/pins" --resolved resolved-b --inputs inputs-a)"
 [ "$decision" = build ]
 
-# glib's wrap patch is applied by build-pixie.sh. The cross files and the
-# distro config are part of every package. A change in any of those since
-# the pin is a source build rather than the published tarball.
-pins_commit="$(git -C "$ROOT" log -1 --format=%H -- release.pins || true)"
-if [ -z "$pins_commit" ]; then
-  pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
-fi
-glib="$("$ROOT/scripts/obtain-package.sh" --name glib --abi arm64-v8a --gtk gnome)"
-glib="${glib%%$'\t'*}"
-if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- packages/glib cross android-distro.conf scripts/build-pixie.sh; then
-  [ "$glib" = pin ]
-else
-  [ "$glib" = build ]
-fi
+# glib 2.90.1 is already published. A later recipe change does not build it again.
+glib="$("$ROOT/scripts/obtain-package.sh" --name glib --abi arm64-v8a --gtk gnome --inputs other-inputs)"
+[ "$glib" = "pin"$'\t'"$(jq -r '.packages[] | select(.abi=="arm64-v8a" and .name=="glib") | .url' "$ROOT/release.pins")" ]
+
+# A different release version is not that published file.
+jq -n '{packages: [{abi:"arm64-v8a", repo:"https://gitlab.gnome.org/GNOME/gtk.git", name:"openssl", track:"openssl-3.0.8.tar.gz", resolved:"hash-o", inputs:"inputs-o", url:"https://example.invalid/openssl-3.0.8.pixie"}]}' > "$tmp/old-openssl.pins"
+decision="$("$ROOT/scripts/obtain-package.sh" --name openssl --abi arm64-v8a --gtk gnome --pins "$tmp/old-openssl.pins" --inputs other)"
+[ "$decision" = "pin"$'\t'"https://example.invalid/openssl-3.0.8.pixie" ]
 
 echo "obtain package: ok"

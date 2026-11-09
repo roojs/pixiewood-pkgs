@@ -360,8 +360,9 @@ cmd_plan() {
     return 2
   fi
   declare -A have_kind=() have_track=() have_resolved=() have_inputs=()
-  declare -A prev_resolved=() prev_inputs=() prev_url=() prev_seen=()
+  declare -A prev_track=() prev_resolved=() prev_inputs=() prev_url=() prev_seen=()
   local name kind track rev inputs url status publish=0 build=0
+  local cur_label prev_label release_done item
   while IFS=$'\t' read -r name kind track rev inputs; do
     [ -n "$name" ] || continue
     case "$name" in \#*) continue ;; esac
@@ -373,6 +374,7 @@ cmd_plan() {
   if [ -n "$previous" ] && [ -f "$previous" ]; then
     while IFS=$'\t' read -r name track rev inputs url; do
       [ -n "$name" ] || continue
+      prev_track[$name]=$track
       prev_resolved[$name]=$rev
       prev_inputs[$name]=$inputs
       prev_url[$name]=$url
@@ -395,25 +397,34 @@ cmd_plan() {
     fi
     status=keep
     url="${prev_url[$name]:-}"
-    if [ -z "${prev_seen[$name]:-}" ] \
-      || [ "${prev_resolved[$name]}" != "${have_resolved[$name]}" ] \
-      || [ "${prev_inputs[$name]}" != "${have_inputs[$name]}" ]; then
-      status=build
-      url='-'
+    # A release version that already has a published file is never built again.
+    cur_label="$(package_track_label "${have_track[$name]}")"
+    prev_label="$(package_track_label "${prev_track[$name]:-}")"
+    release_done=0
+    if [ -n "${prev_seen[$name]:-}" ] && [ -n "$url" ] && [ "$url" != "-" ] \
+      && [ "$cur_label" != snapshot ] && [ "$cur_label" = "$prev_label" ]; then
+      release_done=1
     fi
-    if [ "$force" = all ]; then
-      status=build
-      url='-'
-    fi
-    local item
-    for item in "${forced[@]}"; do
-      item=${item#"${item%%[![:space:]]*}"}
-      item=${item%"${item##*[![:space:]]}"}
-      if [ "$item" = "$name" ]; then
+    if [ "$release_done" -eq 0 ]; then
+      if [ -z "${prev_seen[$name]:-}" ] \
+        || [ "${prev_resolved[$name]}" != "${have_resolved[$name]}" ] \
+        || [ "${prev_inputs[$name]}" != "${have_inputs[$name]}" ]; then
         status=build
         url='-'
       fi
-    done
+      if [ "$force" = all ]; then
+        status=build
+        url='-'
+      fi
+      for item in "${forced[@]}"; do
+        item=${item#"${item%%[![:space:]]*}"}
+        item=${item%"${item##*[![:space:]]}"}
+        if [ "$item" = "$name" ]; then
+          status=build
+          url='-'
+        fi
+      done
+    fi
     if [ "$status" = build ]; then
       build=1
       publish=1

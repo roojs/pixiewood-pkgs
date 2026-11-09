@@ -13,7 +13,7 @@ scripts/install-sdk.sh
 scripts/build-pixie.sh --only gtk --arch aarch64
 ```
 
-**Prove package** publishes each finished library before the next one starts. **Monitor upstreams** moves a wrap to the newest release on that version line, then publishes a library when that revision or its recipe changes. A branch or a commit in a wrap stays as written. A dependency set is unpacked with `pixie fetch`.
+**Prove package** publishes each finished library before the next one starts. **Monitor upstreams** moves a wrap to the newest release on that version line. A release version that already has a published file is kept. A snapshot is published again when its commit or its recipe changes. A dependency set is unpacked with `pixie fetch`.
 
 ## Tests
 

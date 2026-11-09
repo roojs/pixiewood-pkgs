@@ -124,6 +124,24 @@ awk -F '\t' '$2 == "gtk" && $1 == "build"' "$tmp/plan.tsv" | grep -q .
 grep -q '^# publish=0$' "$tmp/same.tsv"
 grep -q '^# build=0$' "$tmp/same.tsv"
 
+# A published release stays, including when the recipe hash or a force flag changes.
+"$ROOT/scripts/upstream-index.sh" plan \
+  --resolved <(printf '%s\n' $'glib\tgit\t2.90.0\thash-new\tinputs-new') \
+  --previous "$prev" \
+  --build-order <(printf '%s\n' glib) \
+  --gtk gnome \
+  --force glib \
+  --out "$tmp/kept-release.tsv"
+grep -q '^# build=0$' "$tmp/kept-release.tsv"
+awk -F '\t' '$2 == "glib" && $1 == "keep" && $7 == "https://example.invalid/old/glib.tar.xz"' "$tmp/kept-release.tsv" | grep -q .
+"$ROOT/scripts/upstream-index.sh" plan \
+  --resolved <(printf '%s\n' $'glib\tgit\t2.90.1\thash-new\tinputs-new') \
+  --previous "$prev" \
+  --build-order <(printf '%s\n' glib) \
+  --gtk gnome \
+  --out "$tmp/new-release.tsv"
+awk -F '\t' '$2 == "glib" && $1 == "build"' "$tmp/new-release.tsv" | grep -q .
+
 "$ROOT/scripts/upstream-index.sh" assemble \
   --plan "$tmp/plan.tsv" \
   --built <(printf '%s\n' $'gtk\thttps://example.invalid/new/gtk.tar.xz') \
