@@ -141,7 +141,7 @@
       "name": "gdk-pixbuf",
       "track": "2.43.3",
       "resolved": "7df9a8ba0a04ed3dd46f4e5fda5f888288c25c5b",
-      "inputs": "274890295cdb22d4698685d4b5a872bb28f4036d8f8e93344b79e2aab53276bd",
+      "inputs": "d0e7473cdb8cf76127f29c328426bd2ee439619d18200eb548676f6f11c660d6",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/gdk-pixbuf-arm-v31-2.43.3.pixie"
     },
     {
