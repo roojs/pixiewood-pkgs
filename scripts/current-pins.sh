@@ -343,6 +343,87 @@ cmd_index() {
   rm -f "$list"
 }
 
+# The previous package list is the pin files in git.
+# release.pins wins when a package is in both files.
+cmd_previous() {
+  local abi="" gtk="" out=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --abi) abi=$2; shift 2 ;;
+      --gtk) gtk=$2; shift 2 ;;
+      --out) out=$2; shift 2 ;;
+      *) echo "Unknown argument: $1" >&2; return 2 ;;
+    esac
+  done
+  if [ -z "$abi" ] || [ -z "$gtk" ] || [ -z "$out" ]; then
+    echo "Usage: $0 previous --abi ABI --gtk TARGET --out INDEX" >&2
+    return 2
+  fi
+  local base
+  base="$(gtk_target_base "$ROOT/packages/gtk/targets")" || return 1
+  declare -A row_track=() row_resolved=() row_inputs=() row_url=()
+  local file fill got_abi got_gtk name track resolved inputs url
+  for file in "$ROOT/release.pins" "$ROOT/snapshot.pins"; do
+    [ -f "$file" ] || continue
+    if [ "$file" = "$ROOT/snapshot.pins" ]; then
+      fill=1
+    else
+      fill=0
+    fi
+    while IFS=$'\t' read -r got_abi got_gtk name track resolved inputs url _; do
+      [ -n "${got_abi:-}" ] || continue
+      [ "$got_abi" = "$abi" ] || continue
+      if [ "$got_gtk" != "$gtk" ] && [ "$got_gtk" != "$base" ]; then
+        continue
+      fi
+      if [ "$fill" -eq 1 ] && [ -n "${row_url[$name]:-}" ]; then
+        continue
+      fi
+      row_track[$name]=$track
+      row_resolved[$name]=$resolved
+      row_inputs[$name]=$inputs
+      row_url[$name]=$url
+    done < <(pins_rows "$file")
+  done
+  local list order_name
+  list="$(mktemp)"
+  : > "$list"
+  while IFS= read -r order_name || [ -n "$order_name" ]; do
+    order_name=${order_name%%#*}
+    order_name=${order_name#"${order_name%%[![:space:]]*}"}
+    order_name=${order_name%"${order_name##*[![:space:]]}"}
+    [ -n "$order_name" ] || continue
+    [ -n "${row_url[$order_name]:-}" ] || continue
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+      "$order_name" \
+      "${row_track[$order_name]}" \
+      "${row_resolved[$order_name]}" \
+      "${row_inputs[$order_name]}" \
+      "${row_url[$order_name]}" >> "$list"
+    unset "row_url[$order_name]"
+  done < "$ROOT/build-order.txt"
+  for order_name in "${!row_url[@]}"; do
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+      "$order_name" \
+      "${row_track[$order_name]}" \
+      "${row_resolved[$order_name]}" \
+      "${row_inputs[$order_name]}" \
+      "${row_url[$order_name]}" >> "$list"
+  done
+  if [ ! -s "$list" ]; then
+    rm -f "$list"
+    echo "No published packages for $abi $gtk" >&2
+    return 1
+  fi
+  local arch created set_url tag
+  arch="$(abi_arch "$abi")" || { rm -f "$list"; return 1; }
+  set_url="$(awk -F '\t' 'NF { print $5; exit }' "$list")"
+  tag="$(url_release "$set_url")" || { rm -f "$list"; return 1; }
+  created="$(release_stamp "$tag")" || { rm -f "$list"; return 1; }
+  index_write "$out" "$abi" "$arch" "$gtk" "$created" "$list"
+  rm -f "$list"
+}
+
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   command=${1:-}
   shift || true
@@ -350,8 +431,9 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
     write) cmd_write "$@" ;;
     apply) cmd_apply "$@" ;;
     index) cmd_index "$@" ;;
+    previous) cmd_previous "$@" ;;
     *)
-      echo "Usage: $0 write|apply|index ..." >&2
+      echo "Usage: $0 write|apply|index|previous ..." >&2
       exit 2
       ;;
   esac

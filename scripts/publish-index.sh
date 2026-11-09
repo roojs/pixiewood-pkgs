@@ -111,13 +111,4 @@ else
   gh "${create[@]}"
 fi
 
-if gh release view latest --repo "$repo" >/dev/null 2>&1; then
-  gh release upload latest "$out" --repo "$repo" --clobber
-else
-  gh release create latest "$out" --repo "$repo" \
-    --title "Latest Android sysroot indexes" \
-    --notes "Current indexes. Unchanged packages point at earlier releases." \
-    --latest
-fi
-gh release edit latest --repo "$repo" --latest >/dev/null 2>&1 || true
 echo "Published $tag"

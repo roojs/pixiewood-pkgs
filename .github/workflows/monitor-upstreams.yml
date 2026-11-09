@@ -58,13 +58,12 @@ jobs:
         env:
           ARCH: ${{ github.event.inputs.arch || 'aarch64' }}
           FORCE: ${{ github.event.inputs.force || '' }}
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           gtk="${{ matrix.gtk }}"
           abi="$(awk -v arch="$ARCH" '$1 !~ /^#/ && $1 == arch { print $2; found = 1 } END { exit !found }' cross/abi)"
           scripts/upstream-index.sh resolve --gtk "$gtk" --out resolved.tsv
-          if ! gh release download latest --repo "${GITHUB_REPOSITORY}" --pattern "index-${abi}-${gtk}.json" --output previous.json; then
+          if ! scripts/current-pins.sh previous --abi "$abi" --gtk "$gtk" --out previous.json; then
             rm -f previous.json
           fi
           args=(plan --resolved resolved.tsv --gtk "$gtk" --out plan.tsv)

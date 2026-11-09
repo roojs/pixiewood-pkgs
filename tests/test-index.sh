@@ -278,7 +278,10 @@ if grep -q '1.261107.tgz' "$tmp/gh.log"; then
 fi
 grep -q 'gtk-arm-v31-snapshot.pixie' "$tmp/gh.log"
 grep -q 'out/published.json' "$tmp/gh.log"
-grep -q 'release create latest' "$tmp/gh.log"
+if grep -q 'release create latest' "$tmp/gh.log" || grep -q 'sysroot' "$tmp/gh.log"; then
+  echo "publish created a latest release" >&2
+  exit 1
+fi
 if grep -q 'openssl-arm64-v8a.tar.xz' "$tmp/gh.log"; then
   echo "unchanged openssl was uploaded" >&2
   exit 1
@@ -312,6 +315,9 @@ if grep -q 'index-.*\.json' "$ROOT/release.pins" "$ROOT/snapshot.pins"; then
   echo "a pin file points at an index instead of package tarballs" >&2
   exit 1
 fi
+"$ROOT/scripts/current-pins.sh" previous --abi arm64-v8a --gtk gnome --out "$tmp/previous-pins.json"
+grep -q "$(basename "$openssl_url")" "$tmp/previous-pins.json"
+grep -q 'fontconfig-arm-v31-snapshot.pixie' "$tmp/previous-pins.json"
 "$ROOT/scripts/current-pins.sh" index --abi arm64-v8a --gtk gnome --out "$tmp/pins-index.json"
 index_release="1.${openssl_release:2:6}"
 grep -q "\"version\": \"$index_release\"" "$tmp/pins-index.json"
