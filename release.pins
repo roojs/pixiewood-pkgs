@@ -121,10 +121,10 @@
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "name": "libjpeg-turbo",
-      "track": "libjpeg-turbo-3.1.1.tar.gz",
-      "resolved": "aadc97ea91f6ef078b0ae3a62bba69e008d9a7db19b34e4ac973b19b71b4217c",
-      "inputs": "03a2f4467a11415c61e653548536367cd34ece85ccf4a2114b3406427eb545f3",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/libjpeg-turbo-arm-v31-3.1.1.pixie"
+      "track": "libjpeg-turbo-3.2.0.tar.gz",
+      "resolved": "6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e",
+      "inputs": "aad6a42c9b96c01b7e84cd7b469f317e39ab65e83ca5ed5f454fd0bb3658f1ba",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/libjpeg-turbo-arm-v31-3.2.0.pixie"
     },
     {
       "abi": "arm64-v8a",
