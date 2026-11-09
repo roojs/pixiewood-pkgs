@@ -31,10 +31,10 @@
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "name": "nghttp2",
-      "track": "nghttp2-1.62.1.tar.xz",
-      "resolved": "2345d4dc136fda28ce243e0bb21f2e7e8ef6293d62c799abbf6f633a6887af72",
-      "inputs": "959ecddf70e0f7bd21327303373899062401eccd3bdc9f6b5dc85b3b03b7fa7d",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/nghttp2-arm-v31-1.62.1.pixie"
+      "track": "nghttp2-1.71.0.tar.xz",
+      "resolved": "c0f55121d88650e4b9227aec28cebaf664d2417ca60fe70be0f8d38829f52116",
+      "inputs": "953dfd2bf5d32e74b652f379e49cedd799317f5c7dfc62ac40c0c50199454156",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/nghttp2-arm-v31-1.71.0.pixie"
     },
     {
       "abi": "arm64-v8a",
