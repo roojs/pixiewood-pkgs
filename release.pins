@@ -147,33 +147,6 @@
     {
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "name": "libepoxy",
-      "track": "2df68f811fc1a5f0a6d372ecdb887333ad3f540f",
-      "resolved": "2df68f811fc1a5f0a6d372ecdb887333ad3f540f",
-      "inputs": "ccee78de456f35e2785ac9791dbf370a9cb1f7dd41ca7d0a85a9d5eed854f1f0",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/libepoxy-arm-v31-1.5.11.pixie"
-    },
-    {
-      "abi": "arm64-v8a",
-      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "name": "graphene",
-      "track": "f89522ca60a76512b8b85c7b8e4d16b94849f22f",
-      "resolved": "f89522ca60a76512b8b85c7b8e4d16b94849f22f",
-      "inputs": "e1731aa3e675ae36b8dde303d6557662b74d793febbda9c83cc352882222fcf7",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/graphene-arm-v31-1.11.1.pixie"
-    },
-    {
-      "abi": "arm64-v8a",
-      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
-      "name": "gtk",
-      "track": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",
-      "resolved": "ae709f962a51f9108a1e6381bcfbd05bbaecc840",
-      "inputs": "5f14a17b65f5bcc59bae6ac36a943f1c11d8492cb2f93f1f49a30a98fb8bb675",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/gtk-arm-v31-4.24.1.pixie"
-    },
-    {
-      "abi": "arm64-v8a",
-      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "name": "libadwaita",
       "track": "1.10.0",
       "resolved": "c9ab118612eee92324143783c4641c98eaded3f0",
