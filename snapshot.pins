@@ -5,7 +5,7 @@
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "name": "fontconfig",
       "track": "main",
-      "resolved": "f7e719706f6850eaa9f03dabd59bfcac8f22d5d5",
+      "resolved": "548591665a8e0dcf5c49cc34fb59ad34c503fa1a",
       "inputs": "d301737a05f02396a188171d3fe07b5337a02315f444c28f5c9f08099c51fd53",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/fontconfig-arm-v31-snapshot.pixie"
     }
