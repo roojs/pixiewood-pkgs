@@ -83,12 +83,7 @@ doc_tests = false
 
 [pango:project options]
 introspection = 'disabled'
-build-testsuite = false
-build-examples = false
 documentation = false
-gtk_doc = false
-man-pages = false
-xft = 'disabled'
 libthai = 'disabled'
 sysprof = 'disabled'
 

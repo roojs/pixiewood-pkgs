@@ -51,9 +51,11 @@ mkdir -p "$remote"
 git -C "$remote" init -q
 git -C "$remote" config user.email "test@example.com"
 git -C "$remote" config user.name "test"
-git -C "$remote" commit -q --allow-empty -m start
+GIT_AUTHOR_DATE='2020-01-01T00:00:00Z' GIT_COMMITTER_DATE='2020-01-01T00:00:00Z' \
+  git -C "$remote" commit -q --allow-empty -m start
 git -C "$remote" tag 1.2.3
-git -C "$remote" commit -q --allow-empty -m next
+GIT_AUTHOR_DATE='2024-01-01T00:00:00Z' GIT_COMMITTER_DATE='2024-01-01T00:00:00Z' \
+  git -C "$remote" commit -q --allow-empty -m next
 git -C "$remote" tag 1.2.4
 git -C "$remote" tag 1.3.0
 git -C "$remote" tag 2.0.0
@@ -69,6 +71,27 @@ revision = 1.2.3
 EOF
 update_wrap "$pkg/demo.wrap"
 grep -q '^revision = 1.3.0$' "$pkg/demo.wrap"
+
+oldrev="$tmp/old-upstream"
+mkdir -p "$oldrev"
+git -C "$oldrev" init -q
+git -C "$oldrev" config user.email "test@example.com"
+git -C "$oldrev" config user.name "test"
+GIT_AUTHOR_DATE='2020-01-01T00:00:00Z' GIT_COMMITTER_DATE='2020-01-01T00:00:00Z' \
+  git -C "$oldrev" commit -q --allow-empty -m old
+git -C "$oldrev" tag 1.2.0
+git -C "$oldrev" tag 1.9.0
+GIT_AUTHOR_DATE='2024-01-01T00:00:00Z' GIT_COMMITTER_DATE='2024-01-01T00:00:00Z' \
+  git -C "$oldrev" commit -q --allow-empty -m new
+git -C "$oldrev" tag 1.3.0
+cat > "$pkg/dated.wrap" << EOF
+[wrap-git]
+directory = demo
+url = $oldrev
+revision = 1.2.0
+EOF
+update_wrap "$pkg/dated.wrap"
+grep -q '^revision = 1.3.0$' "$pkg/dated.wrap"
 
 cat > "$pkg/fixed.wrap" << EOF
 [wrap-git]

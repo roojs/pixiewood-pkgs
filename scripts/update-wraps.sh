@@ -130,8 +130,33 @@ git_tags() {
   git ls-remote --tags "$url" | awk '{ print $2 }' | sed -n 's|^refs/tags/||p' | sed 's/\^{}$//' | sort -u > "$dest"
 }
 
+declare -A TAG_REPO=()
+
+tag_time() {
+  local url=$1 tag=$2 repo stamp
+  repo="${TAG_REPO[$url]:-}"
+  if [ -z "$repo" ]; then
+    repo="$(mktemp -d)"
+    git -C "$repo" init -q
+    TAG_REPO[$url]=$repo
+  fi
+  if ! git -C "$repo" rev-parse -q --verify "refs/tags/${tag}^{}" >/dev/null 2>&1; then
+    git -C "$repo" fetch --depth=1 -q "$url" "refs/tags/${tag}:refs/tags/${tag}"
+  fi
+  stamp="$(git -C "$repo" rev-parse "refs/tags/${tag}^{}")"
+  git -C "$repo" log -1 --format=%ct "$stamp"
+}
+
+# A higher version number can be an older tag. Keep the newer commit.
+tag_is_newer() {
+  local url=$1 current=$2 chosen=$3 old new
+  old="$(tag_time "$url" "$current")" || return 1
+  new="$(tag_time "$url" "$chosen")" || return 1
+  [ "$new" -gt "$old" ]
+}
+
 update_git_wrap() {
-  local wrap=$1 dir=$2 rev url depth tags chosen
+  local wrap=$1 dir=$2 rev url depth tags chosen next
   rev="$(wrap_field "$wrap" revision)"
   if revision_is_fixed "$rev"; then
     return 0
@@ -141,9 +166,21 @@ update_git_wrap() {
   [ -n "$url" ] || return 0
   depth="$(series_depth "$dir")"
   tags="$(mktemp)"
+  next="$(mktemp)"
   git_tags "$url" "$tags"
-  chosen="$(pick_release "$rev" "$depth" "$tags")"
-  rm -f "$tags"
+  chosen=""
+  while true; do
+    chosen="$(pick_release "$rev" "$depth" "$tags")"
+    [ -n "$chosen" ] || break
+    if tag_is_newer "$url" "$rev" "$chosen"; then
+      break
+    fi
+    echo "$wrap: skipping $chosen; its commit is older than $rev" >&2
+    grep -vxF "$chosen" "$tags" > "$next" || true
+    mv "$next" "$tags"
+    chosen=""
+  done
+  rm -f "$tags" "$next"
   [ -n "$chosen" ] || return 0
   set_field "$wrap" revision "$chosen"
   echo "$wrap: $rev -> $chosen"
