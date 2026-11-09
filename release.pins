@@ -96,7 +96,7 @@
       "name": "cairo",
       "track": "1.18.6",
       "resolved": "018b3424a10ecd37450360f21454ecf0f3007e17",
-      "inputs": "251d214bde1a5ca9cdcf37563361c502f366aa03c26c0f2d904667ce5b4a124a",
+      "inputs": "f471d97493d5decadcf99724725ea7cfe8181716fc22cfff47cd3c3fb0e45ab3",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/cairo-arm-v31-1.18.6.pixie"
     },
     {
