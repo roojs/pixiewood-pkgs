@@ -94,10 +94,10 @@
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "name": "cairo",
-      "track": "1.18.2",
-      "resolved": "200441e6855854eb4dbf338e44d67b00ababe07f",
-      "inputs": "250b19fe001d149c179ae679139650dc98e1097bbb5130bf823da7c121849b82",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/cairo-arm-v31-1.18.2.pixie"
+      "track": "1.18.6",
+      "resolved": "018b3424a10ecd37450360f21454ecf0f3007e17",
+      "inputs": "251d214bde1a5ca9cdcf37563361c502f366aa03c26c0f2d904667ce5b4a124a",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/cairo-arm-v31-1.18.6.pixie"
     },
     {
       "abi": "arm64-v8a",
