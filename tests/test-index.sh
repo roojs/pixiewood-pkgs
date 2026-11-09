@@ -268,14 +268,12 @@ mkdir -p "$tmp/out"
     --out out/published.json
 )
 grep -q 'release create 1.261107' "$tmp/gh.log"
-grep -q '1.261107.tgz' "$tmp/gh.log"
-grep -q 'gtk-arm-v31-snapshot.pixie' "$tmp/gh.log"
-tar -tzf "$tmp/out/1.261107.tgz" > "$tmp/release-list.txt"
-grep -qx 'index-arm64-v8a-gnome.json' "$tmp/release-list.txt"
-if grep -q -e '\.tar\.xz$' -e '\.pixie$' "$tmp/release-list.txt"; then
-  echo "release file contains a package" >&2
+if grep -q '1.261107.tgz' "$tmp/gh.log"; then
+  echo "publish wrote a release archive" >&2
   exit 1
 fi
+grep -q 'gtk-arm-v31-snapshot.pixie' "$tmp/gh.log"
+grep -q 'out/published.json' "$tmp/gh.log"
 grep -q 'release create latest' "$tmp/gh.log"
 if grep -q 'openssl-arm64-v8a.tar.xz' "$tmp/gh.log"; then
   echo "unchanged openssl was uploaded" >&2

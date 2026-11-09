@@ -57,7 +57,7 @@ out="${out:-$tarball_dir/$asset}"
 
 built="$(mktemp)"
 : > "$built"
-notes="Release file ${tag}.tgz is the package list for ${gtk}. Package tarballs are separate assets named in that list."
+notes="Index for ${gtk}."
 changed=""
 while IFS=$'\t' read -r status name _kind track _resolved _inputs _url; do
   [ -n "${status:-}" ] || continue
@@ -88,8 +88,6 @@ fi
   --created "$created" \
   --out "$out"
 
-list="$(mktemp -d)"
-cp "$out" "$list/$asset"
 pkgs="$(mktemp -d)"
 while IFS=$'\t' read -r name built_url; do
   [ -n "$name" ] || continue
@@ -97,35 +95,7 @@ while IFS=$'\t' read -r name built_url; do
   cp "$tarball_dir/${name}-${abi}.tar.xz" "$pkgs/$asset_name"
 done < "$built"
 
-# A later target on the same day adds its list. The archive stays a list.
-prev="$(mktemp -d)"
-if gh release download "$tag" --repo "$repo" --pattern "${tag}.tgz" --dir "$prev" >/dev/null 2>&1 \
-  && [ -f "$prev/${tag}.tgz" ]; then
-  old="$prev/old"
-  mkdir -p "$old"
-  tar -C "$old" -xzf "$prev/${tag}.tgz"
-  while IFS= read -r rel; do
-    case "$rel" in
-      *.json) ;;
-      *) continue ;;
-    esac
-    if [ ! -e "$list/$rel" ]; then
-      mkdir -p "$list/$(dirname "$rel")"
-      cp "$old/$rel" "$list/$rel"
-    fi
-  done < <(cd "$old" && find . -type f -printf '%P\n')
-fi
-archive="$(dirname "$out")/${tag}.tgz"
-case "$archive" in
-  /*) ;;
-  *) archive="$PWD/$archive" ;;
-esac
-mkdir -p "$(dirname "$archive")"
-(
-  cd "$list"
-  tar -czf "$archive" -- *
-)
-args=("$archive" "$list/$asset")
+args=("$out")
 while IFS=$'\t' read -r name built_url; do
   [ -n "$name" ] || continue
   args+=("$pkgs/$(basename "$built_url")")
@@ -142,9 +112,9 @@ else
 fi
 
 if gh release view latest --repo "$repo" >/dev/null 2>&1; then
-  gh release upload latest "$list/$asset" --repo "$repo" --clobber
+  gh release upload latest "$out" --repo "$repo" --clobber
 else
-  gh release create latest "$list/$asset" --repo "$repo" \
+  gh release create latest "$out" --repo "$repo" \
     --title "Latest Android sysroot indexes" \
     --notes "Current indexes. Unchanged packages point at earlier releases." \
     --latest
