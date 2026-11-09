@@ -15,6 +15,10 @@ scripts/build-pixie.sh --only gtk --arch aarch64
 
 **Prove package** publishes each finished library before the next one starts. **Monitor upstreams** moves a wrap to the newest release on that version line. A release version that already has a published file is kept. A snapshot is published again when its commit or its recipe changes. A dependency set is unpacked with `pixie fetch`.
 
+## Release
+
+Write the version as the first heading in `CHANGELOG.md`, `## [X.Y.Z] - Unreleased`, and put the notes under it. Commit that, then run `scripts/release.sh`. It checks the version is committed, tags `vX.Y.Z`, and pushes. GitHub then builds the libraries. After a failed run, `scripts/release.sh --retry` tags the current commit again.
+
 ## Tests
 
 ```bash
