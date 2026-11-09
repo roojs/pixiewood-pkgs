@@ -105,7 +105,7 @@
       "name": "harfbuzz",
       "track": "14.6.0",
       "resolved": "c7a7457b7385f33178e8cf87615ca077a810bbe7",
-      "inputs": "ed456dcaab4533a7ec9bfa86a038585df49f978f88c688fe79cf6b6cc283588e",
+      "inputs": "bc5293b3aeac1bf231c2ecd4bc87257a7686fb180feda1811f9fbdcd294e91fc",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/harfbuzz-arm-v31-14.6.0.pixie"
     },
     {
