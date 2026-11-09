@@ -103,10 +103,10 @@
       "abi": "arm64-v8a",
       "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
       "name": "harfbuzz",
-      "track": "14.4.0",
-      "resolved": "36cb489cb02ce4b92099669ba9f9bea348eff93f",
-      "inputs": "b7e96b82d641e8a9faac7cd269cbb355da7ed5a7f8f20568304a176990cf97ae",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/harfbuzz-arm-v31-14.4.0.pixie"
+      "track": "14.6.0",
+      "resolved": "c7a7457b7385f33178e8cf87615ca077a810bbe7",
+      "inputs": "ed456dcaab4533a7ec9bfa86a038585df49f978f88c688fe79cf6b6cc283588e",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/harfbuzz-arm-v31-14.6.0.pixie"
     },
     {
       "abi": "arm64-v8a",
