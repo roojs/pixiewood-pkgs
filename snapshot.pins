@@ -6,7 +6,7 @@
       "name": "fontconfig",
       "track": "main",
       "resolved": "cbf1db7f1bd01e641968ca0818e05b0819ce6c74",
-      "inputs": "d33c916db3492908bf4a2e6a5d65b318b91ecacdfcbd52562bc654c075f53337",
+      "inputs": "f1be9db1d85b6422ad49bce6a96f8b61108b5228113baafb381869e35be20efa",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/fontconfig-arm-v31-snapshot.pixie"
     }
   ]
