@@ -196,7 +196,7 @@
       "track": "libsoup-3.6.5.tar.xz",
       "resolved": "6891765aac3e949017945c3eaebd8cc8216df772456dc9f460976fbdb7ada234",
       "inputs": "c75ce08e2621f45bd6408ea14a46cd7b051d992002f1c333c296a43fc5fbb1c9",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/libsoup-arm-v31-3.6.5.pixie"
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/libsoup-arm-v31-3.6.5.pixie"
     },
     {
       "abi": "arm64-v8a",
