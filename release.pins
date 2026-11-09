@@ -33,7 +33,7 @@
       "name": "nghttp2",
       "track": "nghttp2-1.71.0.tar.xz",
       "resolved": "c0f55121d88650e4b9227aec28cebaf664d2417ca60fe70be0f8d38829f52116",
-      "inputs": "953dfd2bf5d32e74b652f379e49cedd799317f5c7dfc62ac40c0c50199454156",
+      "inputs": "8e89a38dc72b04e32f80ef2fe63c5b769020c14ff0353c39c96d0dc09618d166",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/nghttp2-arm-v31-1.71.0.pixie"
     },
     {
