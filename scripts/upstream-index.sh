@@ -37,9 +37,62 @@ package_track_label() {
   printf 'snapshot\n'
 }
 
-# A release tag or tarball keeps that version. A branch or a commit is snapshot.
+# Version from the built pkg-config file. A commit pin still has one.
+package_built_version() {
+  local tarball=$1 abi=$2 name=$3 listing pc token found version
+  [ -f "$tarball" ] || return 1
+  listing="$(mktemp)"
+  if ! tar -tJf "$tarball" > "$listing" 2>/dev/null; then
+    rm -f "$listing"
+    return 1
+  fi
+  pc=""
+  if [ -n "$name" ] && [ -f "$ROOT/packages/probes" ]; then
+    while IFS= read -r token; do
+      [ -n "$token" ] || continue
+      found="$(grep -E "^(\./)?lib/${abi}/pkgconfig/${token}\\.pc$" "$listing" | head -n1 || true)"
+      if [ -n "$found" ]; then
+        pc="$found"
+        break
+      fi
+    done < <(awk -v name="$name" '
+      $1 == name {
+        for (i = 2; i <= NF; i++) if ($i != "+subproject") print $i
+      }
+    ' "$ROOT/packages/probes")
+  fi
+  if [ -z "$pc" ]; then
+    pc="$(grep -E "^(\./)?lib/${abi}/pkgconfig/[^/]+\\.pc$" "$listing" | head -n1 || true)"
+  fi
+  rm -f "$listing"
+  [ -n "$pc" ] || return 1
+  version="$(tar -xJf "$tarball" -O "$pc" 2>/dev/null | awk -F ': ' '/^Version:/ { print $2; exit }' | tr -d '[:space:]')"
+  if [[ ! "$version" =~ ^[0-9]+([.][0-9]+)*$ ]]; then
+    return 1
+  fi
+  printf '%s\n' "$version"
+}
+
+# A release tag or tarball keeps that version. A branch is snapshot.
+# A commit uses the version compiled into the package.
 package_release_label() {
-  package_track_label "$1"
+  local track=$1 tarball=${2:-} abi=${3:-} name=${4:-} label version
+  case "$track" in
+    main|master|HEAD|head|trunk)
+      printf 'snapshot\n'
+      return 0
+      ;;
+  esac
+  label="$(package_track_label "$track")"
+  if [ "$label" != snapshot ]; then
+    printf '%s\n' "$label"
+    return 0
+  fi
+  if [ -n "$tarball" ] && version="$(package_built_version "$tarball" "$abi" "$name")"; then
+    printf '%s\n' "$version"
+    return 0
+  fi
+  printf 'snapshot\n'
 }
 
 # The file name uses a short arch. Libraries stay in lib/arm64-v8a and lib/x86_64.

@@ -2,7 +2,15 @@
 
 This repository builds the Android libraries for the GTK stack [Pixiewood](https://github.com/sp1ritCS/gtk-android-builder) links, and publishes each one as a `.pixie` file.
 
-[pixie](https://github.com/roojs/pixie-pkg) installs those files and is what an application build runs. The pin lists are `release.pins` and `snapshot.pins` in this repository. The libraries run from OpenSSL through glib-networking, in `build-order.txt`.
+The point is two pin lists.
+
+`release.pins` is the released versions of the libraries. A git tag or a release tarball is the version on the pixie file, for example `openssl-arm-v31-3.0.8.pixie`. That version is the file name.
+
+`snapshot.pins` is HEAD. Those files are named `snapshot`. GTK HEAD is the snapshot that matters. The other libraries in that list are the ones that build needs from there.
+
+Publishing either list can fail. Each list keeps the highest version that builds. A pin names a `.pixie` file that is on the release.
+
+[pixie](https://github.com/roojs/pixie-pkg) installs those files and is what an application build runs. The libraries run from OpenSSL through glib-networking, in `build-order.txt`.
 
 ## This repository
 
@@ -13,7 +21,7 @@ scripts/install-sdk.sh
 scripts/build-pixie.sh --only gtk --arch aarch64
 ```
 
-**Prove package** publishes each finished library before the next one starts. **Monitor upstreams** moves a wrap to the newest release on that version line. A release version that already has a published file is kept. A newer version is built once. If that build fails, the published file stays in use until the version or the recipe changes. A snapshot is published again when its commit or its recipe changes. A dependency set is unpacked with `pixie-pkg fetch`.
+**Prove package** publishes each finished library before the next one starts. **Monitor upstreams** fills the two lists. A published file stays when a newer build fails. A dependency set is unpacked with `pixie-pkg fetch`.
 
 ## Tests
 
