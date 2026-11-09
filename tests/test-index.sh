@@ -202,7 +202,7 @@ grep -q '"created": "deps-libxml2"' "$tmp/deps-index.json"
 # shellcheck source=../scripts/require-pixie.sh
 source "$ROOT/scripts/require-pixie.sh"
 require_pixie
-pixie fetch --dest "$tmp/sysroot" --pins "$tmp/local-index.json" --abi "$abi"
+pixie-pkg fetch --dest "$tmp/sysroot" --pins "$tmp/local-index.json" --abi "$abi"
 grep -q "^prefix=$tmp/sysroot$" "$tmp/sysroot/lib/$abi/pkgconfig/glib-2.0.pc"
 grep -q "^prefix=$tmp/sysroot$" "$tmp/sysroot/lib/$abi/pkgconfig/gtk4.pc"
 grep -q '"gtk_target": "pixie"' "$tmp/sysroot/share/pixiewood/MANIFEST.json"
@@ -210,7 +210,7 @@ test -f "$tmp/sysroot/share/pixiewood/INDEX.json"
 test -f "$tmp/sysroot/share/pixiewood/gtk-android-java/org/gtk/android/ToplevelActivity.java"
 
 jq 'del(.packages[] | select(.name == "gtk"))' "$tmp/local-index.json" > "$tmp/glib-only.json"
-pixie fetch --dest "$tmp/sysroot-glib" --pins "$tmp/glib-only.json" --abi "$abi"
+pixie-pkg fetch --dest "$tmp/sysroot-glib" --pins "$tmp/glib-only.json" --abi "$abi"
 test -f "$tmp/sysroot-glib/lib/$abi/pkgconfig/glib-2.0.pc"
 if [ -f "$tmp/sysroot-glib/lib/$abi/pkgconfig/gtk4.pc" ]; then
   echo "exclude gtk still extracted gtk" >&2
@@ -279,6 +279,70 @@ if grep -q 'Published file for libxml2 is gone' "$tmp/missing.err"; then
   echo "a file that is present was marked missing" >&2
   exit 1
 fi
+
+# A deleted file is 404. A gateway error is not a deleted file.
+portfile="$tmp/port"
+python3 - "$portfile" >"$tmp/http.log" 2>&1 << 'PY' &
+import os, sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+class H(BaseHTTPRequestHandler):
+    def do_GET(self):
+        path = self.path.split("?", 1)[0]
+        if path == "/ok.pixie":
+            self.send_response(206)
+            self.send_header("Content-Length", "1")
+            self.end_headers()
+            self.wfile.write(b"x")
+        elif path == "/missing.pixie":
+            self.send_response(404)
+            self.end_headers()
+        else:
+            self.send_response(504)
+            self.end_headers()
+    def log_message(self, fmt, *args):
+        return
+server = ThreadingHTTPServer(("127.0.0.1", 0), H)
+with open(sys.argv[1], "w", encoding="ascii") as fh:
+    fh.write(str(server.server_address[1]))
+server.serve_forever()
+PY
+http_pid=$!
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  [ -s "$portfile" ] && break
+  sleep 0.1
+done
+port="$(cat "$portfile")"
+{
+  printf '%s\n' '# publish=0' '# build=0' '# gtk_target=gnome'
+  while IFS= read -r name || [ -n "$name" ]; do
+    name=${name%%#*}
+    name=${name#"${name%%[![:space:]]*}"}
+    name=${name%"${name##*[![:space:]]}"}
+    [ -n "$name" ] || continue
+    case "$name" in
+      openssl) leaf=missing.pixie ;;
+      libxml2) leaf=ok.pixie ;;
+      *) leaf=down.pixie ;;
+    esac
+    printf 'keep\t%s\tfile\t%s\thash\tinputs\thttp://127.0.0.1:%s/%s\n' \
+      "$name" "$name" "$port" "$leaf"
+  done < "$ROOT/build-order.txt"
+} > "$tmp/http-plan.tsv"
+PUBLISHED_CHECK_TRIES=1 "$ROOT/scripts/build-changed.sh" \
+  --missing-only \
+  --plan "$tmp/http-plan.tsv" \
+  --arch aarch64 \
+  --gtk gnome \
+  --tarball-dir "$tmp/out" >"$tmp/http.out" 2>"$tmp/http.err" || {
+  kill "$http_pid" 2>/dev/null || true
+  exit 1
+}
+kill "$http_pid" 2>/dev/null || true
+wait "$http_pid" 2>/dev/null || true
+awk -F '\t' '$1 == "build" && $2 == "openssl"' "$tmp/http-plan.tsv" | grep -q .
+awk -F '\t' '$1 == "keep" && $2 == "libxml2"' "$tmp/http-plan.tsv" | grep -q .
+awk -F '\t' '$1 == "keep" && $2 == "sqlite3"' "$tmp/http-plan.tsv" | grep -q .
+grep -q 'Could not check' "$tmp/http.err"
 if awk '$1 == "dep" && $2 == "gtk" && $3 == "gtk" { found = 1 } END { exit !found }' "$tmp/dry"; then
   echo "gtk listed itself as a dependency" >&2
   exit 1

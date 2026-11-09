@@ -80,10 +80,24 @@ done
 
 # A published URL is not proof the file is still there.
 published_present() {
-  local got=$1
+  local got=$1 code attempt tries
   case "$got" in
     http://*|https://*)
-      curl -fsSL --retry 2 --retry-delay 1 -o /dev/null -r 0-0 "$got"
+      # 404 means the release file was removed. A 5xx or a network error does not.
+      tries="${PUBLISHED_CHECK_TRIES:-5}"
+      code=000
+      for ((attempt = 1; attempt <= tries; attempt++)); do
+        code="$(curl -sS -o /dev/null -w '%{http_code}' -L -r 0-0 "$got" || true)"
+        case "$code" in
+          200|206) return 0 ;;
+          404|410) return 1 ;;
+        esac
+        if [ "$attempt" -lt "$tries" ]; then
+          sleep 2
+        fi
+      done
+      echo "Could not check $got (HTTP $code); leaving the published file in place" >&2
+      return 0
       ;;
     file://*)
       [ -s "${got#file://}" ]
@@ -196,7 +210,7 @@ for name in "${order[@]}"; do
       --created "deps-$name" \
       --out "$index"
     require_pixie
-    pixie fetch --dest "$deps" --pins "$index" --abi "$abi"
+    pixie-pkg fetch --dest "$deps" --pins "$index" --abi "$abi"
     args+=(--deps-sysroot "$deps")
   fi
   "$ROOT/scripts/build-pixie.sh" "${args[@]}"

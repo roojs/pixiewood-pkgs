@@ -344,6 +344,6 @@ for name in "${names[@]}"; do
     --created "prove-$name" \
     --out "$work/deps-$name.json"
   require_pixie
-  pixie fetch --dest "$next" --pins "$work/deps-$name.json" --abi "$abi"
+  pixie-pkg fetch --dest "$next" --pins "$work/deps-$name.json" --abi "$abi"
   deps="$next"
 done

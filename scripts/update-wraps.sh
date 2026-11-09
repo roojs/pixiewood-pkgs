@@ -40,6 +40,13 @@ same_series() {
   for ((i = 0; i < depth; i++)); do
     [ "${c[i]:-}" = "${d[i]:-}" ] || return 1
   done
+  # Minor 90 and above is the next API. It is not the line a stable release is on.
+  if [ "${c[1]:-0}" -lt 90 ] && [ "${d[1]:-0}" -ge 90 ]; then
+    return 1
+  fi
+  if [ "${c[1]:-0}" -ge 90 ] && [ "${d[1]}" != "${c[1]}" ]; then
+    return 1
+  fi
 }
 
 style_rank() {
