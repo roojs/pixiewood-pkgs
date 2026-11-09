@@ -34,7 +34,7 @@
       "track": "nghttp2-1.62.1.tar.xz",
       "resolved": "2345d4dc136fda28ce243e0bb21f2e7e8ef6293d62c799abbf6f633a6887af72",
       "inputs": "c5bfe7fe1bb294e7ae5adbe1502d5bbd40ff71085e2675592566f8a4dd76d4ab",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/nghttp2-arm-v31-1.62.1.pixie"
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/nghttp2-arm-v31-1.62.1.pixie"
     },
     {
       "abi": "arm64-v8a",
