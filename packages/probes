@@ -12,7 +12,7 @@ pixman pixman-1
 cairo cairo cairo-gobject
 harfbuzz harfbuzz harfbuzz-subset
 pango pango pangocairo pangoft2
-libjpeg-turbo libjpeg libturbojpeg
+libjpeg-turbo libjpeg
 libtiff libtiff-4
 gdk-pixbuf gdk-pixbuf-2.0
 libepoxy epoxy

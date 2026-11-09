@@ -428,6 +428,34 @@ if FAILURES_FILE="$tmp/nofallback-failures.tsv" BUILD_PIXIE="$tmp/fail-build.sh"
   echo "a failed build with no published file was kept" >&2
   exit 1
 fi
+{
+  printf '%s\n' '# publish=1' '# build=1' '# gtk_target=gnome'
+  while IFS= read -r name || [ -n "$name" ]; do
+    name=${name%%#*}
+    name=${name#"${name%%[![:space:]]*}"}
+    name=${name%"${name##*[![:space:]]}"}
+    [ -n "$name" ] || continue
+    if [ "$name" = openssl ]; then
+      printf 'build\topenssl\tfile\topenssl-3.0.9.tar.gz\thasho\tinputs-new\tfile://%s/missing.pixie\n' "$tmp"
+    else
+      printf 'keep\t%s\tfile\t%s\thash\tinputs\tfile://%s/present.pixie\n' "$name" "$name" "$tmp"
+    fi
+  done < "$ROOT/build-order.txt"
+} > "$tmp/dead-plan.tsv"
+if FAILURES_FILE="$tmp/dead-failures.tsv" BUILD_PIXIE="$tmp/fail-build.sh" \
+  "$ROOT/scripts/build-changed.sh" \
+  --skip-missing-check \
+  --plan "$tmp/dead-plan.tsv" \
+  --arch aarch64 \
+  --gtk gnome \
+  --tarball-dir "$tmp/out" >"$tmp/dead.out" 2>"$tmp/dead.err"; then
+  echo "a failed build fell back to a file that is not there" >&2
+  exit 1
+fi
+if [ -s "$tmp/dead-failures.tsv" ]; then
+  echo "a missing published file was remembered as a failed version" >&2
+  exit 1
+fi
 if awk '$1 == "dep" && $2 == "gtk" && $3 == "gtk" { found = 1 } END { exit !found }' "$tmp/dry"; then
   echo "gtk listed itself as a dependency" >&2
   exit 1

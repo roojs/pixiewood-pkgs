@@ -217,7 +217,8 @@ for name in "${order[@]}"; do
   if ! "$builder" "${args[@]}"; then
     fallback="${url[$name]:-}"
     if [ -n "$fallback" ] && [ "$fallback" != "-" ] \
-      && [ "$(package_track_label "${track[$name]}")" != snapshot ]; then
+      && [ "$(package_track_label "${track[$name]}")" != snapshot ] \
+      && published_present "$fallback"; then
       echo "$name ${track[$name]} did not build; using the published file" >&2
       failure_record "$abi" "$name" "${track[$name]}" "${inputs[$name]}"
       status[$name]=keep
