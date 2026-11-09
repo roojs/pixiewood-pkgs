@@ -187,7 +187,7 @@
       "track": "gtksourceview-5.16.0.tar.xz",
       "resolved": "ab35d420102f3e8b055dd3b8642d3a48209f888189e6254d0ffb4b6a7e8c3566",
       "inputs": "d7966b389bd6259ac7214a1ba35478027eba634c264d9902fe364483c2df603a",
-      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261108/gtksourceview-arm-v31-5.16.0.pixie"
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/gtksourceview-arm-v31-5.16.0.pixie"
     },
     {
       "abi": "arm64-v8a",
