@@ -15,6 +15,9 @@ jobs:
       - name: Check wrap pins
         run: bash tests/test-pins-and-wrapper.sh
 
+      - name: Check wrap version updates
+        run: bash tests/test-update-wraps.sh
+
       - name: Check the package index
         run: bash tests/test-index.sh
 

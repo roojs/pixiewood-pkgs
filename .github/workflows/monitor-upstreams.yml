@@ -41,8 +41,44 @@ jobs:
           json="$(printf '%s\n' "${all[@]}" | jq -R . | jq -sc .)"
           echo "names=$json" >> "$GITHUB_OUTPUT"
 
+  update-wraps:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.done.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Move wraps to the newest release on their version line
+        run: |
+          set -euo pipefail
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y jq
+          fi
+          scripts/update-wraps.sh
+
+      - name: Commit wrap updates
+        id: done
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages
+          if git diff --cached --quiet; then
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "Update wraps to the newest release on each version line."
+            git pull --rebase origin main
+            git push origin HEAD:main
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
   plan:
-    needs: targets
+    needs: [targets, update-wraps]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -51,6 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ needs.update-wraps.outputs.sha }}
           fetch-depth: 0
 
       - name: Resolve and compare
@@ -86,7 +123,7 @@ jobs:
             resolved.tsv
 
   pins:
-    needs: [targets, plan]
+    needs: [targets, plan, update-wraps]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -96,6 +133,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ needs.update-wraps.outputs.sha }}
           fetch-depth: 0
 
       - uses: actions/download-artifact@v7
