@@ -51,7 +51,7 @@
       "name": "glib",
       "track": "2.90.0",
       "resolved": "436d47a723da97fbe67057f6b51dcf49a244fd4a",
-      "inputs": "4db8e38f7566e77557b13f4a6e36acb068b0de518bcef55ea72232ee21fea499",
+      "inputs": "65a19d6252efb73ef19336dbdcf9855ffe2031734a1e516284e7ee6f7c90fe7c",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/glib-arm-v31-2.90.0.pixie"
     },
     {
