@@ -114,7 +114,7 @@
       "name": "pango",
       "track": "1.58.2",
       "resolved": "d360f14004e4a4824f2352f6e2722016f9a51dd6",
-      "inputs": "d44683b2eacacd870273ea06ea6873c2fdceb62a44449cbeb9571256178a4400",
+      "inputs": "fa75c4ef51acef5b972c7f8ae1d25540d24435ef671f65e99f8670c3ac4fd724",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/pango-arm-v31-1.58.2.pixie"
     },
     {
