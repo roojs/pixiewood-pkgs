@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Publish changed package tarballs.
 # If the plan says nothing changed, this exits without creating a release.
-# The pin files in git are the package lists. This does not upload an index.
+# The pin files in the worktree are the package lists. This does not upload an index.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

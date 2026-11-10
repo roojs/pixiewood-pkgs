@@ -90,6 +90,9 @@ jobs:
           ref: ${{ needs.update-wraps.outputs.sha }}
           fetch-depth: 0
 
+      - name: Use the published pin lists
+        run: scripts/pins-page.sh fetch
+
       - name: Resolve and compare
         id: result
         env:
@@ -157,12 +160,18 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     permissions:
+      actions: write
       contents: write
+    outputs:
+      pages: ${{ steps.page.outputs.ready }}
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.pins.outputs.sha }}
           fetch-depth: 0
+
+      - name: Use the published pin lists
+        run: scripts/pins-page.sh fetch
 
       - name: Restore package cache and checkouts
         id: packages
@@ -289,10 +298,23 @@ jobs:
                 --track "$track" \
                 --resolved "$resolved" \
                 --inputs "$inputs" \
-                --created "$RELEASE_CREATED" \
-                --commit
+                --created "$RELEASE_CREATED"
             done < "$built"
           done
+
+      - name: Stage the pin page
+        id: page
+        if: ${{ always() && !cancelled() }}
+        run: |
+          set -euo pipefail
+          scripts/pins-page.sh stage --out site
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the pin page
+        if: ${{ always() && !cancelled() && steps.page.outputs.ready == 'true' }}
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
 
       - name: Save package cache and checkouts
         if: always()
@@ -303,3 +325,19 @@ jobs:
             .cache/packages
             .cache/checkouts
           key: packages-${{ github.event.inputs.arch || 'aarch64' }}-${{ github.run_id }}
+
+  deploy-pins:
+    needs: publish
+    if: always() && needs.publish.outputs.pages == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy the pin page
+        id: deployment
+        uses: actions/deploy-pages@v5

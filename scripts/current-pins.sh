@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # release.pins and snapshot.pins are the package lists.
 # release.pins names official releases. snapshot.pins names snapshots.
-# A line is committed when that package is on a GitHub release.
+# The published lists are on this project's GitHub Pages site.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

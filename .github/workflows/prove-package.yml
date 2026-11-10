@@ -23,11 +23,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     permissions:
+      actions: write
       contents: write
+    outputs:
+      pages: ${{ steps.page.outputs.ready }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Use the published pin lists
+        run: scripts/pins-page.sh fetch
 
       - name: Restore package cache and checkouts
         id: packages
@@ -69,8 +75,6 @@ jobs:
           set -euo pipefail
           hash -r
           meson --version
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           args=(--arch "$ARCH" --gtk "$GTK_TARGET" --cache "$PWD/.cache/packages")
           if [ -n "$PACKAGES" ]; then
             args+=(--packages "$PACKAGES")
@@ -79,24 +83,19 @@ jobs:
           fi
           scripts/prove-package.sh "${args[@]}"
 
-      - name: Record pins for packages already published
-        if: always()
+      - name: Stage the pin page
+        id: page
+        if: ${{ always() && !cancelled() }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add release.pins snapshot.pins
-          if ! git diff --cached --quiet; then
-            git commit -m "Record published package pins"
-          fi
-          git fetch origin "${GITHUB_REF_NAME}"
-          if git merge-base --is-ancestor HEAD "origin/${GITHUB_REF_NAME}"; then
-            exit 0
-          fi
-          git push origin "HEAD:${GITHUB_REF_NAME}" || {
-            git pull --rebase origin "${GITHUB_REF_NAME}"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          }
+          scripts/pins-page.sh stage --out site
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the pin page
+        if: ${{ always() && !cancelled() && steps.page.outputs.ready == 'true' }}
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
 
       - name: Save package cache and checkouts
         if: always()
@@ -115,3 +114,19 @@ jobs:
           name: prove-${{ inputs.arch || 'aarch64' }}
           path: out/prove/*.tar.xz
           if-no-files-found: ignore
+
+  deploy-pins:
+    needs: prove
+    if: always() && needs.prove.outputs.pages == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy the pin page
+        id: deployment
+        uses: actions/deploy-pages@v5

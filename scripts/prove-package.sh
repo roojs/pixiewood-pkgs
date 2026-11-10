@@ -325,8 +325,7 @@ for name in "${names[@]}"; do
         --track "${track_of[$name]:-}" \
         --resolved "${resolved_of[$name]:-}" \
         --inputs "${inputs_of[$name]:-}" \
-        --created "${PROVE_CREATED:-}" \
-        --commit
+        --created "${PROVE_CREATED:-}"
     fi
   fi
   proved+=("$name")

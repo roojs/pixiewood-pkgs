@@ -23,10 +23,9 @@ created=""
 repo="${GITHUB_REPOSITORY:-roojs/pixiewood-pkgs}"
 file=""
 upload=1
-commit=0
 
 usage() {
-  echo "Usage: $0 --name NAME --tarball FILE --arch ARCH --gtk TARGET --track TRACK --resolved REV --inputs HASH [--created STAMP] [--repo OWNER/NAME] [--file PATH] [--snapshot] [--no-upload] [--commit]" >&2
+  echo "Usage: $0 --name NAME --tarball FILE --arch ARCH --gtk TARGET --track TRACK --resolved REV --inputs HASH [--created STAMP] [--repo OWNER/NAME] [--file PATH] [--snapshot] [--no-upload]" >&2
   exit 2
 }
 
@@ -44,7 +43,6 @@ while [ "$#" -gt 0 ]; do
     --file) file=$2; shift 2 ;;
     --snapshot) file="$ROOT/snapshot.pins"; shift ;;
     --no-upload) upload=0; shift ;;
-    --commit) commit=1; shift ;;
     -h|--help) usage ;;
     *) echo "Unknown argument: $1" >&2; usage ;;
   esac
@@ -89,20 +87,6 @@ if [ "$upload" -eq 1 ]; then
 fi
 
 pins_upsert "$file" "$abi" "$label" "$name" "$track" "$resolved" "$inputs" "$url"
-
-if [ "$commit" -eq 1 ] && { [ "$file" = "$ROOT/release.pins" ] || [ "$file" = "$ROOT/snapshot.pins" ]; }; then
-  git -C "$ROOT" add -- "$file"
-  if ! git -C "$ROOT" diff --cached --quiet -- "$file"; then
-    git -C "$ROOT" commit -m "Publish ${name} to ${tag}" </dev/null
-    ref="${GITHUB_REF_NAME:-}"
-    if [ -n "$ref" ]; then
-      if ! git -C "$ROOT" push origin "HEAD:${ref}" </dev/null; then
-        git -C "$ROOT" pull --rebase origin "$ref" </dev/null
-        git -C "$ROOT" push origin "HEAD:${ref}" </dev/null
-      fi
-    fi
-  fi
-fi
 
 echo "Published $name $tag"
 echo "$url"
