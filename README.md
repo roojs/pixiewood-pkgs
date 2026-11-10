@@ -6,7 +6,9 @@ The point is two pin lists.
 
 `release.pins` is the released versions of the libraries. A git tag or a release tarball is the version on the pixie file, for example `openssl-arm-v31-3.0.8.pixie`. That version is the file name.
 
-`snapshot.pins` is HEAD. Those files are named `snapshot`. GTK HEAD is the snapshot that matters. The other libraries in that list are the ones that build needs from there.
+`snapshot.pins` is a branch, such as `main`. Those files are named `snapshot`.
+
+The wrap in `packages/` is the upstream source the next build compiles. The daily monitor moves a numbered wrap to the newest release on that same version line. A branch or a commit stays as written. A build that succeeds replaces that library's pin. A build that fails leaves the published file as it is. The table on the project page is those published files, not every version the wrap has asked for.
 
 Publishing either list can fail. Each list keeps the highest version that builds. A pin names a `.pixie` file that is on the release.
 

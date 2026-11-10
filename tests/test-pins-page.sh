@@ -90,6 +90,23 @@ row openssl local-only > "$work/release.pins"
 jq -e '.packages[0].track == "local-only"' "$offline/release.pins" >/dev/null
 [ -f "$offline/index.html" ]
 
+named="$tmp/named"
+named_out="$tmp/named-out"
+mkdir -p "$named" "$named_out"
+jq -n '{packages: [{
+  abi:"arm64-v8a",
+  repo:"https://gitlab.gnome.org/GNOME/gtk.git",
+  name:"gtk",
+  track:"ae709f962a51f9108a1e6381bcfbd05bbaecc840",
+  resolved:"ae709f962a51f9108a1e6381bcfbd05bbaecc840",
+  inputs:"i",
+  url:"https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/gtk-arm-v31-4.24.1.pixie"
+}]}' > "$named/release.pins"
+jq -n '{packages:[]}' > "$named/snapshot.pins"
+"$ROOT/scripts/pins-page.sh" stage --dest "$named" --out "$named_out" --url "file://${tmp}/missing"
+grep -q '<th scope="row">gtk</th><td><a href="https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/gtk-arm-v31-4.24.1.pixie">4.24.1</a></td>' "$named_out/index.html"
+grep -q 'newest release on that same version line' "$named_out/index.html"
+
 if grep -q 'git add release.pins' "$ROOT/.github/workflows/prove-package.yml"; then
   echo "prove still commits the pin lists" >&2
   exit 1

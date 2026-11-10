@@ -134,6 +134,18 @@ cmd_fetch() {
   done
 }
 
+# The published version is the one in the file name.
+# openssl-arm-v31-3.0.8.pixie is 3.0.8. A commit with no version in the name is snapshot.
+published_label() {
+  local track=$1 url=$2 version
+  version="$(printf '%s\n' "$url" | sed -n 's/.*-v[0-9][0-9]*-\([^/]*\)\.pixie$/\1/p')"
+  if [ -n "$version" ]; then
+    printf '%s\n' "$version"
+    return 0
+  fi
+  package_track_label "$track"
+}
+
 html_text() {
   local s=$1
   s=${s//&/&amp;}
@@ -151,7 +163,7 @@ pins_rows_html() {
     [ -f "$file" ] || return 0
     while IFS=$'\t' read -r name abi track url; do
       [ -n "${name:-}" ] || continue
-      label="$(package_track_label "$track")"
+      label="$(published_label "$track" "$url")"
       abi_label="$(package_abi_label "$abi")"
       printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$side" "$abi_label" "$label" "$url" >> "$rows"
     done < <(jq -r '.packages[] | [.name, .abi, .track, (.url // "")] | @tsv' "$file")
@@ -242,8 +254,9 @@ write_index() {
   <p>These are the package lists for the Android libraries. A pin names a <code>.pixie</code> file on a GitHub release. <a href="https://github.com/roojs/pixie-pkg">pixie-pkg</a> reads these files and installs the libraries.</p>
   <ul>
     <li><a href="release.pins"><code>release.pins</code></a> is the released versions. The version is the file name, for example <code>openssl-arm-v31-3.0.8.pixie</code>.</li>
-    <li><a href="snapshot.pins"><code>snapshot.pins</code></a> is HEAD. Those files are named <code>snapshot</code>. GTK HEAD is the snapshot that matters. The other libraries in that list are the ones that build needs from there.</li>
+    <li><a href="snapshot.pins"><code>snapshot.pins</code></a> is a branch, such as <code>main</code>. Those files are named <code>snapshot</code>. GTK HEAD is the snapshot that matters when a build needs it from there.</li>
   </ul>
+  <p>Each row is the library published now. The number is the version in the file name. The wrap in this repository names the upstream source the next build compiles. A numbered wrap moves to the newest release on that same version line. A branch or a commit stays as written. The daily monitor builds a library when that source or its recipe has changed. A build that fails leaves the published file in place.</p>
   <table>
     <thead>
       <tr><th scope="col">Package</th><th scope="col">Release</th><th scope="col">Snapshot</th></tr>
