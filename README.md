@@ -10,7 +10,9 @@ The point is two pin lists.
 
 Publishing either list can fail. Each list keeps the highest version that builds. A pin names a `.pixie` file that is on the release.
 
-[pixie](https://github.com/roojs/pixie-pkg) installs those files and is what an application build runs. The libraries run from OpenSSL through glib-networking, in `build-order.txt`.
+The published lists are at <https://roojs.github.io/pixiewood-pkgs/>. That page is the package list [pixie](https://github.com/roojs/pixie-pkg) reads. It links `release.pins` and `snapshot.pins`, and shows the version of each library in each list.
+
+The libraries run from OpenSSL through glib-networking, in `build-order.txt`.
 
 ## This repository
 
