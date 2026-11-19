@@ -22,4 +22,3 @@ libadwaita
 gtksourceview
 libsoup
 glib-networking
-freerdp

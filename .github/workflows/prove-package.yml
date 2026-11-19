@@ -6,7 +6,7 @@ on:
       through:
         description: Last package to prove, from the start of build-order.txt. Each finished package is published before the next one starts. A later failure leaves those packages on the release.
         type: string
-        default: freerdp
+        default: glib-networking
       packages:
         description: Explicit package list instead of through. Leave empty to use through.
         type: string

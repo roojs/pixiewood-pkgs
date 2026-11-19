@@ -24,4 +24,3 @@ libpsl libpsl
 libsoup libsoup-3.0
 openssl openssl libssl libcrypto
 glib-networking +subproject gioopenssl
-freerdp freerdp3 freerdp-client3 freerdp-server3 winpr3
