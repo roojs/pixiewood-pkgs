@@ -34,6 +34,10 @@ deps = [
   dependency('libcrypto'),
   dependency('libssl'),
   dependency('libpsl'),
+  dependency('winpr3'),
+  dependency('freerdp3'),
+  dependency('freerdp-client3'),
+  dependency('freerdp-server3'),
 ]
 
 # glib-networking exposes gioopenssl only after its subproject has run
