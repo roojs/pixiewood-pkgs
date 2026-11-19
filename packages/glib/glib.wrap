@@ -8,7 +8,9 @@ depth=1
 # to set XDG dirs after extracting assets. GLib 2.90.0 still does not export it
 # (no GLIB_AVAILABLE_IN_ALL). gtk-android-builder does not ship this patch.
 # Long-term: GLib #3449 (Android glue in GLib, not a GDK extern).
-diff_files=glib/hack.patch
+# pthread-restrictions.patch: gtk-android-builder, 2024-10-13. Bionic rejects
+# inheriting a boosted UI-thread policy (SCHED_FIFO) from pthread_create.
+diff_files=glib/hack.patch,glib/pthread-restrictions.patch
 
 [provide]
 dependency_names=gthread-2.0, gobject-2.0, gmodule-no-export-2.0, gmodule-export-2.0, gmodule-2.0, glib-2.0, gio-2.0, gio-windows-2.0, gio-unix-2.0

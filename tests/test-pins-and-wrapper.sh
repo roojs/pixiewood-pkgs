@@ -101,4 +101,27 @@ EOF
 patch -p1 -d "$glib_tree" --forward --batch < "$ROOT/packages/glib/packagefiles/glib/hack.patch" >/dev/null
 grep -q '^GLIB_AVAILABLE_IN_ALL$' "$glib_tree/glib/gutilsprivate.h"
 
+grep -q 'glib/pthread-restrictions.patch' "$ROOT/packages/glib/glib.wrap"
+cat > "$glib_tree/glib/gthread-posix.c" << 'EOF'
+#endif /* _SC_THREAD_STACK_MIN */
+      /* No error check here, because some systems can't do it and
+       * we simply don't want threads to fail because of that. */
+      pthread_attr_setstacksize (&attr, stack_size);
+    }
+#endif /* HAVE_PTHREAD_ATTR_SETSTACKSIZE */
+
+#ifdef HAVE_PTHREAD_ATTR_SETINHERITSCHED
+    {
+      /* While this is the default, better be explicit about it */
+      pthread_attr_setinheritsched (&attr, PTHREAD_INHERIT_SCHED);
+    }
+#endif /* HAVE_PTHREAD_ATTR_SETINHERITSCHED */
+EOF
+patch -p1 -d "$glib_tree" --forward --batch < "$ROOT/packages/glib/packagefiles/glib/pthread-restrictions.patch" >/dev/null
+grep -q '//pthread_attr_setinheritsched' "$glib_tree/glib/gthread-posix.c"
+if grep -q '^[[:space:]]*pthread_attr_setinheritsched' "$glib_tree/glib/gthread-posix.c"; then
+  echo "pthread inherit-sched call is still active" >&2
+  exit 1
+fi
+
 echo "wrap pins: ok"
