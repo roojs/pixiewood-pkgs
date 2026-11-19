@@ -1,0 +1,9 @@
+[wrap-file]
+directory = freerdp-3.33.1
+source_url = https://github.com/FreeRDP/FreeRDP/releases/download/3.33.1/freerdp-3.33.1.tar.gz
+source_filename = freerdp-3.33.1.tar.gz
+source_hash = 4431bbf04d370545cfe2924b9d9f116b95c90c64ff156b2550bbaf82d34e7124
+patch_directory = freerdp
+
+[provide]
+dependency_names = freerdp3, freerdp-client3, freerdp-server3, winpr3
