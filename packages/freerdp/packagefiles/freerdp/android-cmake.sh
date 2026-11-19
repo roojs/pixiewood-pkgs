@@ -80,6 +80,35 @@ unset PKG_CONFIG_SYSROOT_DIR || true
 export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
 export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
 
+# The NDK toolchain searches libraries only under its own sysroot, and its
+# library architecture is aarch64-linux-android rather than arm64-v8a.
+# FreeRDP's FindCairo therefore misses libcairo.so when pkg-config is not
+# what answers. Point it at the pixie copies directly.
+cmake_extra=()
+pkg_config=$(command -v pkg-config || true)
+if [ -n "$pkg_config" ]; then
+  cmake_extra+=(-DPKG_CONFIG_EXECUTABLE="$pkg_config")
+fi
+if [ "$cairo" = ON ]; then
+  cairo_lib="$libdir/libcairo.so"
+  if [ -f "$prefix/include/cairo/cairo.h" ]; then
+    cairo_inc="$prefix/include/cairo"
+  elif [ -f "$prefix/include/cairo.h" ]; then
+    cairo_inc="$prefix/include"
+  else
+    cairo_inc=""
+  fi
+  if [ ! -e "$cairo_lib" ] || [ -z "$cairo_inc" ]; then
+    echo "Cairo was requested, but libcairo was not found under $prefix" >&2
+    exit 1
+  fi
+  cmake_extra+=(
+    -DCAIRO_LIBRARY="$cairo_lib"
+    -DCAIRO_LIBRARIES="$cairo_lib"
+    -DCAIRO_INCLUDE_DIR="$cairo_inc"
+  )
+fi
+
 # A prefix of "/" makes GNUInstallDirs rewrite libdir to usr/lib, which
 # is not the pixie layout. Install under a plain prefix, then hoist the
 # tree to the stage root. pkg-config files stay relocatable.
@@ -120,6 +149,7 @@ cmake -S "$src" -B "$build" -G Ninja \
   -DWITH_FFMPEG=OFF \
   -DWITH_SWSCALE=OFF \
   -DWITH_CAIRO="$cairo" \
+  "${cmake_extra[@]}" \
   -DWITH_JPEG=OFF \
   -DWITH_OPENH264=OFF \
   -DWITH_GSM=OFF \
