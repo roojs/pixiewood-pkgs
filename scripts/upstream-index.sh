@@ -433,13 +433,16 @@ cmd_plan() {
     fi
     status=keep
     url="${prev_url[$name]:-}"
-    # A release version that already has a published file is never built again.
+    # A numbered release that is already published is not rebuilt until its
+    # source or recipe changes.
     cur_label="$(package_track_label "${have_track[$name]}")"
     prev_label="$(package_track_label "${prev_track[$name]:-}")"
     release_done=0
     named_force=0
     if [ -n "${prev_seen[$name]:-}" ] && [ -n "$url" ] && [ "$url" != "-" ] \
-      && [ "$cur_label" != snapshot ] && [ "$cur_label" = "$prev_label" ]; then
+      && [ "$cur_label" != snapshot ] && [ "$cur_label" = "$prev_label" ] \
+      && [ "${prev_resolved[$name]}" = "${have_resolved[$name]}" ] \
+      && [ "${prev_inputs[$name]}" = "${have_inputs[$name]}" ]; then
       release_done=1
     fi
     if [ "$release_done" -eq 0 ]; then

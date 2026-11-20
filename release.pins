@@ -206,6 +206,123 @@
       "resolved": "b80e2874157cd55071f1b6710fa0b911d5ac5de106a9ee2a4c9c7bee61782f8e",
       "inputs": "53bb5fb5b03941e0388b0c26ed03e371a2b8f158d743df0b7c7e2772995d051e",
       "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/glib-networking-arm-v31-2.80.1.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "openssl",
+      "track": "openssl-3.0.8.tar.gz",
+      "resolved": "6c13d2bf38fdf31eac3ce2a347073673f5d63263398f1f69d0df4a41253e4b3e",
+      "inputs": "a53eeb89f475b76db40acab818f8c20996594f510846c7b750182babc5e6e25a",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/openssl-x86-v31-3.0.8.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "libxml2",
+      "track": "libxml2-2.15.3.tar.xz",
+      "resolved": "78262a6e7ac170d6528ebfe2efccdf220191a5af6a6cd61ea4a9a9a5042c7a07",
+      "inputs": "a01517468df2d85b98886943f0e21b18b99da63ee22d114db4ce9fd91df91533",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/libxml2-x86-v31-2.15.3.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "sqlite3",
+      "track": "sqlite-amalgamation-3540100.zip",
+      "resolved": "0a9c8e34352dad46006aa82836d5383bff9dc6bc9ce5a60553c05aa30e6ad1f9",
+      "inputs": "43e208946594dec4aaca81f1c7d506a4f34a7034bfc846a50fd9877db5c8e0a1",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/sqlite3-x86-v31-3540100.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "nghttp2",
+      "track": "nghttp2-1.71.0.tar.xz",
+      "resolved": "c0f55121d88650e4b9227aec28cebaf664d2417ca60fe70be0f8d38829f52116",
+      "inputs": "df489161a5622bfc5a5794060502c1d28a08897ce278095f660bc0d075d45b0c",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/nghttp2-x86-v31-1.71.0.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "libpsl",
+      "track": "libpsl-0.21.5.tar.gz",
+      "resolved": "1dcc9ceae8b128f3c0b3f654decd0e1e891afc6ff81098f227ef260449dae208",
+      "inputs": "e7af708c2c4f85438778b1fa116deeb01bee9d2cba902dd9496e3f2e18a531bc",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/libpsl-x86-v31-0.21.5.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "glib",
+      "track": "2.90.1",
+      "resolved": "e05063ccc6c8f222465a1080927f4c14349f3de6",
+      "inputs": "45bfc13045c3aa3a87fff139a081c7d5b6fbbd174c171270449b69867d4c5a30",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/glib-x86-v31-2.90.1.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "gee",
+      "track": "libgee-0.20.8.tar.xz",
+      "resolved": "189815ac143d89867193b0c52b7dc31f3aa108a15f04d6b5dca2b6adfad0b0ee",
+      "inputs": "c5eacb0533625ef4de796d17c3469730d2a43eb873fddb9dbcefb332ed93f320",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/gee-x86-v31-0.20.8.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "json-glib",
+      "track": "json-glib-1.10.8.tar.xz",
+      "resolved": "55c5c141a564245b8f8fbe7698663c87a45a7333c2a2c56f06f811ab73b212dd",
+      "inputs": "3910918dfa963f29726928f178d643d3f7422580edf68be937a3e764f99447d4",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/json-glib-x86-v31-1.10.8.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "fribidi",
+      "track": "v1.0.18",
+      "resolved": "15393e4937aa95bcf865d92143735746aeb654fa",
+      "inputs": "f189c72b7e865834456ffdc6fcdb6495fcb6d60454c9c7e6c4f16eb644efb07f",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/fribidi-x86-v31-1.0.18.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "pixman",
+      "track": "pixman-0.43.4.tar.gz",
+      "resolved": "a0624db90180c7ddb79fc7a9151093dc37c646d8c38d3f232f767cf64b85a226",
+      "inputs": "162956cb65b0ef20d5165ac74e18e9c4157f36e113ec72a91249eeafad9c09d0",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/pixman-x86-v31-0.43.4.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "cairo",
+      "track": "1.18.6",
+      "resolved": "018b3424a10ecd37450360f21454ecf0f3007e17",
+      "inputs": "bc41ff9394e1d7157d30c939d611b63af81959603436f382a89fc7512c7c68ca",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/cairo-x86-v31-1.18.6.pixie"
+    },
+    {
+      "abi": "x86_64",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "harfbuzz",
+      "track": "14.6.0",
+      "resolved": "c7a7457b7385f33178e8cf87615ca077a810bbe7",
+      "inputs": "ee73bd9c6cbc8aa2c405d862ec34eaac6892f83386e77ec82cd4e7cb2cdd8b37",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/harfbuzz-x86-v31-14.6.0.pixie"
+    },
+    {
+      "abi": "arm64-v8a",
+      "repo": "https://gitlab.gnome.org/GNOME/gtk.git",
+      "name": "freerdp",
+      "track": "freerdp-3.33.1.tar.gz",
+      "resolved": "4431bbf04d370545cfe2924b9d9f116b95c90c64ff156b2550bbaf82d34e7124",
+      "inputs": "702aed561f16268ad543eee681c282a4f23cf358aedf901f10e73850f244c038",
+      "url": "https://github.com/roojs/pixiewood-pkgs/releases/download/1.261119/freerdp-arm-v31-3.33.1.pixie"
     }
   ]
 }
