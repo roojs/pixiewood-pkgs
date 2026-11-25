@@ -314,19 +314,41 @@ if [ -n "$DEPS_SYSROOT" ]; then
 else
   meson_args+=(--cross-file "$WORK/isolate.cross")
 fi
+# Published packages ship these libraries to apps. A command-line build type
+# also overrides any buildtype in a project's default_options.
 meson setup \
   "${meson_args[@]}" \
-  --buildtype debug \
+  --buildtype release \
+  --strip \
   "$builddir" \
   "$WORK"
 
 ninja -C "$builddir" -j "$JOBS"
+
+# Meson strips only the build targets it installs. Static archives and files
+# copied by install scripts keep any debug info their own build added.
+strip_debug_info() {
+  local dir=$1 strip_tool="$prebuilt/bin/llvm-strip" file magic
+  if [ ! -x "$strip_tool" ]; then
+    echo "NDK strip tool missing: $strip_tool" >&2
+    exit 1
+  fi
+  while IFS= read -r -d '' file; do
+    magic="$(head -c 7 "$file" | od -An -tx1 | tr -d ' \n')"
+    case "$magic" in
+      7f454c46*|213c617263683e)
+        "$strip_tool" --strip-debug "$file"
+        ;;
+    esac
+  done < <(find "$dir" -type f -print0)
+}
 
 if [ -n "$ONLY" ]; then
   destdir="$ROOT/out/pkg-$ONLY-$GTK_TARGET-$ABI"
   rm -rf "$destdir"
   mkdir -p "$destdir"
   meson install -C "$builddir" --destdir "$destdir" --no-rebuild
+  strip_debug_info "$destdir"
   tarball="${TARBALL_OUT:-$ROOT/out/${ONLY}-${ABI}.tar.xz}"
   java_args=()
   if [ "$ONLY" = gtk ]; then
