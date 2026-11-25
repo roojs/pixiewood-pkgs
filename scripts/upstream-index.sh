@@ -121,6 +121,85 @@ package_asset_name() {
   printf '%s-%s-v%s-%s.pixie\n' "$name" "$label" "$api" "$version"
 }
 
+# A pin, plan row, or index row records the sha256 of the .pixie bytes:
+# 64 lowercase hex digits, no prefix. "-" or an empty field means none.
+artifact_sha256() {
+  sha256sum "$1" | awk '{ print $1 }'
+}
+
+artifact_digest_valid() {
+  [[ "${1:-}" =~ ^[0-9a-f]{64}$ ]]
+}
+
+artifact_is_remote() {
+  case "${1:-}" in
+    http://*|https://*) return 0 ;;
+  esac
+  return 1
+}
+
+# Copy URL to DEST only when its bytes have the recorded sha256. The digest is
+# taken from the same local file that is moved to DEST, so DEST is what was
+# checked; read DEST afterwards and never fetch URL again.
+# 1: no recorded digest, or the file could not be fetched. 2: different bytes.
+artifact_fetch_verified() {
+  local url=$1 want=$2 dest=$3 partial got
+  if ! artifact_digest_valid "$want"; then
+    echo "No sha256 is recorded for $url" >&2
+    return 1
+  fi
+  partial="$dest.partial"
+  rm -f "$partial"
+  mkdir -p "$(dirname "$dest")"
+  case "$url" in
+    http://*|https://*)
+      if ! curl -fsSL "$url" -o "$partial"; then
+        rm -f "$partial"
+        echo "Could not download $url" >&2
+        return 1
+      fi
+      ;;
+    file://*)
+      cp "${url#file://}" "$partial" 2>/dev/null || { rm -f "$partial"; echo "Missing $url" >&2; return 1; }
+      ;;
+    /*)
+      cp "$url" "$partial" 2>/dev/null || { rm -f "$partial"; echo "Missing $url" >&2; return 1; }
+      ;;
+    *)
+      echo "Unsupported package URL: $url" >&2
+      return 1
+      ;;
+  esac
+  got="$(artifact_sha256 "$partial")"
+  if [ "$got" != "$want" ]; then
+    rm -f "$partial"
+    echo "$url has sha256 $got, not the recorded $want" >&2
+    return 2
+  fi
+  mv "$partial" "$dest"
+}
+
+# Add FILE to release TAG under its own name. A published asset is never
+# replaced: when the name is already taken, this succeeds only if the release
+# already holds these exact bytes.
+release_upload_immutable() {
+  local tag=$1 repo=$2 file=$3 name held
+  name="$(basename "$file")"
+  if gh release upload "$tag" "$file" --repo "$repo" </dev/null; then
+    return 0
+  fi
+  held="$(mktemp)"
+  if artifact_fetch_verified "https://github.com/${repo}/releases/download/${tag}/${name}" \
+    "$(artifact_sha256 "$file")" "$held" 2>/dev/null; then
+    rm -f "$held"
+    echo "$name is already on $tag with the same sha256" >&2
+    return 0
+  fi
+  rm -f "$held" "$held.partial"
+  echo "Refusing to replace $name on release $tag; a published asset is not changed" >&2
+  return 1
+}
+
 wrap_field() {
   local file=$1 key=$2
   sed -n "s/^${key}[[:space:]]*=[[:space:]]*//p" "$file" | head -n1 | tr -d '[:space:]'
@@ -186,7 +265,11 @@ index_check_token() {
 
 index_packages() {
   local file=$1
-  sed -n 's/^    {"name": "\([^"]*\)", "track": "\([^"]*\)", "resolved": "\([^"]*\)", "inputs": "\([^"]*\)", "url": "\([^"]*\)".*/\1\t\2\t\3\t\4\t\5/p' "$file"
+  sed -n \
+    -e 's/^    {"name": "\([^"]*\)", "track": "\([^"]*\)", "resolved": "\([^"]*\)", "inputs": "\([^"]*\)", "url": "\([^"]*\)".*"sha256": "\([0-9a-f]*\)".*/\1\t\2\t\3\t\4\t\5\t\6/p' \
+    -e 't' \
+    -e 's/^    {"name": "\([^"]*\)", "track": "\([^"]*\)", "resolved": "\([^"]*\)", "inputs": "\([^"]*\)", "url": "\([^"]*\)".*/\1\t\2\t\3\t\4\t\5/p' \
+    "$file"
 }
 
 # 1.yymmdd from a UTC date. 7 November 2026 is 1.261107.
@@ -206,7 +289,7 @@ release_version() {
 index_write() {
   local out=$1 abi=$2 arch=$3 gtk=$4 created=$5 list=$6
   local api ndk pixiewood url rev patch target_line version
-  local name track resolved inputs pkg_url first
+  local name track resolved inputs pkg_url sha first
   api="$(distro_get api)"
   ndk="$(distro_get ndk)"
   pixiewood="$(distro_get pixiewood)"
@@ -239,7 +322,7 @@ index_write() {
     printf '  "created": "%s",\n' "$created"
     printf '  "packages": [\n'
     first=1
-    while IFS=$'\t' read -r name track resolved inputs pkg_url; do
+    while IFS=$'\t' read -r name track resolved inputs pkg_url sha; do
       [ -n "$name" ] || continue
       case "$name" in
         \#*) continue ;;
@@ -254,8 +337,12 @@ index_write() {
       else
         printf ',\n'
       fi
-      printf '    {"name": "%s", "track": "%s", "resolved": "%s", "inputs": "%s", "url": "%s", "abi": "%s", "repo": "%s"}' \
+      printf '    {"name": "%s", "track": "%s", "resolved": "%s", "inputs": "%s", "url": "%s", "abi": "%s", "repo": "%s"' \
         "$name" "$track" "$resolved" "$inputs" "$pkg_url" "$abi" "$url"
+      if artifact_digest_valid "${sha:-}"; then
+        printf ', "sha256": "%s"' "$sha"
+      fi
+      printf '}'
     done < "$list"
     if [ "$first" -eq 0 ]; then
       printf '\n'
@@ -396,8 +483,8 @@ cmd_plan() {
     return 2
   fi
   declare -A have_kind=() have_track=() have_resolved=() have_inputs=()
-  declare -A prev_track=() prev_resolved=() prev_inputs=() prev_url=() prev_seen=()
-  local name kind track rev inputs url status publish=0 build=0
+  declare -A prev_track=() prev_resolved=() prev_inputs=() prev_url=() prev_sha=() prev_seen=()
+  local name kind track rev inputs url sha status publish=0 build=0
   local cur_label prev_label release_done item named_force
   while IFS=$'\t' read -r name kind track rev inputs; do
     [ -n "$name" ] || continue
@@ -408,12 +495,13 @@ cmd_plan() {
     have_inputs[$name]=$inputs
   done < "$resolved"
   if [ -n "$previous" ] && [ -f "$previous" ]; then
-    while IFS=$'\t' read -r name track rev inputs url; do
+    while IFS=$'\t' read -r name track rev inputs url sha; do
       [ -n "$name" ] || continue
       prev_track[$name]=$track
       prev_resolved[$name]=$rev
       prev_inputs[$name]=$inputs
       prev_url[$name]=$url
+      prev_sha[$name]=${sha:-}
       prev_seen[$name]=1
     done < <(index_packages "$previous")
   fi
@@ -433,6 +521,10 @@ cmd_plan() {
     fi
     status=keep
     url="${prev_url[$name]:-}"
+    sha='-'
+    if artifact_digest_valid "${prev_sha[$name]:-}"; then
+      sha="${prev_sha[$name]}"
+    fi
     # A numbered release that is already published is not rebuilt until its
     # source or recipe changes.
     cur_label="$(package_track_label "${have_track[$name]}")"
@@ -483,9 +575,9 @@ cmd_plan() {
       build=1
       publish=1
     fi
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$status" "$name" "${have_kind[$name]}" "${have_track[$name]}" \
-      "${have_resolved[$name]}" "${have_inputs[$name]}" "$url" >> "$out"
+      "${have_resolved[$name]}" "${have_inputs[$name]}" "$url" "$sha" >> "$out"
     unset "have_resolved[$name]"
   done < "$order"
   for name in "${!have_resolved[@]}"; do
@@ -530,22 +622,24 @@ cmd_assemble() {
     echo "assemble requires --plan --abi --arch --gtk --created --out" >&2
     return 2
   fi
-  declare -A built_url=()
+  declare -A built_url=() built_sha=()
   if [ -n "$built" ] && [ -r "$built" ]; then
-    local bname burl
-    while IFS=$'\t' read -r bname burl; do
+    local bname burl bsha
+    while IFS=$'\t' read -r bname burl bsha; do
       [ -n "$bname" ] || continue
       case "$bname" in \#*) continue ;; esac
       built_url[$bname]=$burl
+      built_sha[$bname]=${bsha:-}
     done < "$built"
   fi
-  local list status name kind track resolved inputs url
+  local list status name kind track resolved inputs url sha
   list="$(mktemp)"
-  while IFS=$'\t' read -r status name kind track resolved inputs url; do
+  while IFS=$'\t' read -r status name kind track resolved inputs url sha; do
     [ -n "${status:-}" ] || continue
     case "$status" in \#*) continue ;; esac
     if [ "$status" = build ]; then
       url="${built_url[$name]:-}"
+      sha="${built_sha[$name]:-}"
       if [ -z "$url" ]; then
         echo "No tarball URL for changed package $name" >&2
         return 1
@@ -554,7 +648,7 @@ cmd_assemble() {
       echo "Bad plan status: $status" >&2
       return 1
     fi
-    printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$track" "$resolved" "$inputs" "$url" >> "$list"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$track" "$resolved" "$inputs" "$url" "${sha:--}" >> "$list"
   done < "$plan"
   index_write "$out" "$abi" "$arch" "$gtk" "$created" "$list"
   rm -f "$list"

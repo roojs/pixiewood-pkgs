@@ -70,23 +70,26 @@ if [ -z "$file" ]; then
 fi
 url="https://github.com/${repo}/releases/download/${tag}/${asset}"
 
+stage="$(mktemp -d)"
+trap 'rm -rf "$stage"' EXIT
+cp -a "$tarball" "$stage/$asset"
+sha="$(artifact_sha256 "$stage/$asset")"
 if [ "$upload" -eq 1 ]; then
-  stage="$(mktemp -d)"
-  cp -a "$tarball" "$stage/$asset"
   if gh release view "$tag" --repo "$repo" >/dev/null 2>&1 </dev/null; then
-    gh release upload "$tag" "$stage/$asset" --repo "$repo" --clobber </dev/null
+    release_upload_immutable "$tag" "$repo" "$stage/$asset"
   else
     create=(release create "$tag" "$stage/$asset" --repo "$repo" --title "$tag" --notes "Packages completed in this run." --latest=false)
     target="${RELEASE_SHA:-${GITHUB_SHA:-}}"
     if [ -n "$target" ]; then
       create+=(--target "$target")
     fi
-    gh "${create[@]}" </dev/null
+    if ! gh "${create[@]}" </dev/null; then
+      release_upload_immutable "$tag" "$repo" "$stage/$asset"
+    fi
   fi
-  rm -rf "$stage"
 fi
 
-pins_upsert "$file" "$abi" "$label" "$name" "$track" "$resolved" "$inputs" "$url"
+pins_upsert "$file" "$abi" "$label" "$name" "$track" "$resolved" "$inputs" "$url" "$sha"
 
 echo "Published $name $tag"
 echo "$url"

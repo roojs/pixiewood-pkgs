@@ -58,6 +58,7 @@ out="${out:-$tarball_dir/$asset}"
 
 built="$(mktemp)"
 : > "$built"
+pkgs="$(mktemp -d)"
 notes="Index for ${gtk}."
 changed=""
 while IFS=$'\t' read -r status name _kind track _resolved _inputs _url; do
@@ -70,8 +71,9 @@ while IFS=$'\t' read -r status name _kind track _resolved _inputs _url; do
     continue
   fi
   pkg_asset="$(package_asset_name "$name" "$abi" "$(package_release_label "$track" "$tarball" "$abi" "$name")")"
-  printf '%s\thttps://github.com/%s/releases/download/%s/%s\n' \
-    "$name" "$repo" "$tag" "$pkg_asset" >> "$built"
+  cp "$tarball" "$pkgs/$pkg_asset"
+  printf '%s\thttps://github.com/%s/releases/download/%s/%s\t%s\n' \
+    "$name" "$repo" "$tag" "$pkg_asset" "$(artifact_sha256 "$pkgs/$pkg_asset")" >> "$built"
   changed="${changed} ${name}"
 done < "$plan"
 if [ -n "$changed" ]; then
@@ -89,27 +91,33 @@ fi
   --created "$created" \
   --out "$out"
 
-pkgs="$(mktemp -d)"
 args=()
-while IFS=$'\t' read -r name built_url; do
+while IFS=$'\t' read -r name built_url _sha; do
   [ -n "$name" ] || continue
-  asset_name="$(basename "$built_url")"
-  cp "$tarball_dir/${name}-${abi}.tar.xz" "$pkgs/$asset_name"
-  args+=("$pkgs/$asset_name")
+  args+=("$pkgs/$(basename "$built_url")")
 done < "$built"
 if [ "${#args[@]}" -eq 0 ]; then
   echo "No packages to upload."
   exit 0
 fi
-if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
-  gh release upload "$tag" "${args[@]}" --repo "$repo" --clobber
+upload_each() {
+  local file failed=0
+  for file in "${args[@]}"; do
+    release_upload_immutable "$tag" "$repo" "$file" || failed=1
+  done
+  return "$failed"
+}
+if gh release view "$tag" --repo "$repo" >/dev/null 2>&1 </dev/null; then
+  upload_each
 else
   create=(release create "$tag" "${args[@]}" --repo "$repo" --title "$tag" --notes "$notes" --latest=false)
   target="${RELEASE_SHA:-${GITHUB_SHA:-}}"
   if [ -n "$target" ]; then
     create+=(--target "$target")
   fi
-  gh "${create[@]}"
+  if ! gh "${create[@]}" </dev/null; then
+    upload_each
+  fi
 fi
 
 echo "Published $tag"

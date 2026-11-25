@@ -363,8 +363,8 @@ port="$(cat "$portfile")"
       libxml2) leaf=ok.pixie ;;
       *) leaf=down.pixie ;;
     esac
-    printf 'keep\t%s\tfile\t%s\thash\tinputs\thttp://127.0.0.1:%s/%s\n' \
-      "$name" "$name" "$port" "$leaf"
+    printf 'keep\t%s\tfile\t%s\thash\tinputs\thttp://127.0.0.1:%s/%s\t%s\n' \
+      "$name" "$name" "$port" "$leaf" "$(printf '%064d' 0)"
   done < "$ROOT/build-order.txt"
 } > "$tmp/http-plan.tsv"
 PUBLISHED_CHECK_TRIES=1 "$ROOT/scripts/build-changed.sh" \

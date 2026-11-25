@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Build only the packages a plan marks as changed, against the kept tarballs.
-# A kept file is reused only while it still downloads. A deleted release means
-# that file is gone, so the package is built.
+# A kept file is reused only while it still downloads and its bytes match the
+# sha256 in the plan. A deleted release, or a kept release file with no recorded
+# sha256, means the package is built.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -49,7 +50,7 @@ if ! abi="$(sysroot_map "$ROOT/cross/abi" "$arch")"; then
   exit 2
 fi
 
-declare -A status=() kind=() track=() resolved=() inputs=() url=()
+declare -A status=() kind=() track=() resolved=() inputs=() url=() sha=()
 declare -A built=()
 order=()
 while IFS= read -r name || [ -n "$name" ]; do
@@ -60,7 +61,7 @@ while IFS= read -r name || [ -n "$name" ]; do
   order+=("$name")
 done < "$ROOT/build-order.txt"
 
-while IFS=$'\t' read -r st name kd tr rs inn u; do
+while IFS=$'\t' read -r st name kd tr rs inn u sh; do
   [ -n "${st:-}" ] || continue
   case "$st" in \#*) continue ;; esac
   status[$name]=$st
@@ -69,6 +70,7 @@ while IFS=$'\t' read -r st name kd tr rs inn u; do
   resolved[$name]=$rs
   inputs[$name]=$inn
   url[$name]=$u
+  sha[$name]=${sh:--}
 done < "$plan"
 
 for name in "${order[@]}"; do
@@ -111,12 +113,26 @@ published_present() {
   esac
 }
 
+# A release file is used only with the sha256 of its bytes. A local file is
+# this run's own and needs none.
+published_bound() {
+  local got=$1 digest=$2
+  if artifact_is_remote "$got" && ! artifact_digest_valid "$digest"; then
+    return 1
+  fi
+  return 0
+}
+
 if [ "$dry" -eq 0 ] && [ "$skip_missing" -eq 0 ]; then
   declare -A gone=()
   flipped=0
   for name in "${order[@]}"; do
     [ "${status[$name]}" = keep ] || continue
-    if ! published_present "${url[$name]:-}"; then
+    if ! published_bound "${url[$name]:-}" "${sha[$name]}"; then
+      echo "Published file for $name has no recorded sha256; building it" >&2
+      gone[$name]=1
+      flipped=1
+    elif ! published_present "${url[$name]:-}"; then
       echo "Published file for $name is gone; building it" >&2
       gone[$name]=1
       flipped=1
@@ -131,11 +147,12 @@ if [ "$dry" -eq 0 ] && [ "$skip_missing" -eq 0 ]; then
         '#'*) printf '%s\n' "$line" >> "$tmp"; continue ;;
         '') continue ;;
       esac
-      IFS=$'\t' read -r st nm kd tr rs inn u <<< "$line"
+      IFS=$'\t' read -r st nm kd tr rs inn u sh <<< "$line"
       if [ -n "${gone[$nm]:-}" ]; then
         status[$nm]=build
         url[$nm]='-'
-        printf 'build\t%s\t%s\t%s\t%s\t%s\t-\n' "$nm" "$kd" "$tr" "$rs" "$inn" >> "$tmp"
+        sha[$nm]='-'
+        printf 'build\t%s\t%s\t%s\t%s\t%s\t-\t-\n' "$nm" "$kd" "$tr" "$rs" "$inn" >> "$tmp"
       else
         printf '%s\n' "$line" >> "$tmp"
       fi
@@ -151,6 +168,34 @@ mkdir -p "$tarball_dir"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
+# Each kept file is read once into this run's work directory and checked there.
+# The dependency index names that local copy, so nothing reads the URL again.
+declare -A kept_file=()
+kept_path=""
+kept_local() {
+  local other=$1 got=${url[$1]} digest=${sha[$1]} dest rc
+  if [ -n "${kept_file[$other]:-}" ]; then
+    kept_path=${kept_file[$other]}
+    return 0
+  fi
+  if ! artifact_is_remote "$got" && ! artifact_digest_valid "$digest"; then
+    kept_path=$got
+    return 0
+  fi
+  dest="$work/kept/${other}.pixie"
+  rc=0
+  artifact_fetch_verified "$got" "$digest" "$dest" || rc=$?
+  if [ "$rc" -eq 2 ]; then
+    echo "Published file for $other does not match its recorded sha256; refusing it" >&2
+    return 1
+  elif [ "$rc" -ne 0 ]; then
+    echo "Published file for $other could not be used" >&2
+    return 1
+  fi
+  kept_file[$other]=$dest
+  kept_path=$dest
+}
+
 for name in "${order[@]}"; do
   [ "${status[$name]}" = build ] || continue
   list="$work/deps.tsv"
@@ -162,7 +207,12 @@ for name in "${order[@]}"; do
     if [ -n "${built[$other]:-}" ]; then
       dep_url="${built[$other]}"
     elif [ "${status[$other]}" = keep ]; then
-      dep_url="${url[$other]}"
+      if [ "$dry" -eq 1 ]; then
+        dep_url="${url[$other]}"
+      else
+        kept_local "$other"
+        dep_url=$kept_path
+      fi
     else
       continue
     fi
@@ -210,7 +260,7 @@ for name in "${order[@]}"; do
       --created "deps-$name" \
       --out "$index"
     require_pixie
-    pixie-pkg fetch --dest "$deps" --pins "$index" --abi "$abi"
+    pixie-pkg fetch --force --dest "$deps" --pins "$index" --abi "$abi"
     args+=(--deps-sysroot "$deps")
   fi
   builder="${BUILD_PIXIE:-$ROOT/scripts/build-pixie.sh}"
@@ -218,6 +268,7 @@ for name in "${order[@]}"; do
     fallback="${url[$name]:-}"
     if [ -n "$fallback" ] && [ "$fallback" != "-" ] \
       && [ "$(package_track_label "${track[$name]}")" != snapshot ] \
+      && published_bound "$fallback" "${sha[$name]}" \
       && published_present "$fallback"; then
       echo "$name ${track[$name]} did not build; using the published file" >&2
       failure_record "$abi" "$name" "${track[$name]}" "${inputs[$name]}"
@@ -229,10 +280,10 @@ for name in "${order[@]}"; do
           '#'*) printf '%s\n' "$line" >> "$tmp"; continue ;;
           '') continue ;;
         esac
-        IFS=$'\t' read -r st nm kd tr rs inn u <<< "$line"
+        IFS=$'\t' read -r st nm kd tr rs inn u sh <<< "$line"
         if [ "$nm" = "$name" ]; then
-          printf 'keep\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "$nm" "$kd" "$tr" "$rs" "$inn" "$fallback" >> "$tmp"
+          printf 'keep\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$nm" "$kd" "$tr" "$rs" "$inn" "$fallback" "${sha[$name]}" >> "$tmp"
         else
           printf '%s\n' "$line" >> "$tmp"
         fi
