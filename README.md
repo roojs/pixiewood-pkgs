@@ -10,7 +10,7 @@ The point is two pin lists.
 
 The wrap in `packages/` is the upstream source the next build compiles. The daily monitor moves a numbered wrap to the newest release on that same version line. A branch or a commit stays as written. A build that succeeds replaces that library's pin. A build that fails leaves the published file as it is. The table on the project page is those published files, not every version the wrap has asked for.
 
-Publishing either list can fail. Each list keeps the highest version that builds. A pin names a `.pixie` file that is on the release.
+Publishing either list can fail. Each list keeps the highest version that builds. A pin names a `.pixie` file that is on the release, and its `sha256` is the digest of that file's bytes. A published file is never replaced: publishing different bytes under a name the release already has fails. A build here reuses a published file only when its bytes match the pin's `sha256`; a pin without one is built again.
 
 The published lists are at <https://roojs.github.io/pixiewood-pkgs/>. That page is the package list [pixie](https://github.com/roojs/pixie-pkg) reads. It links `release.pins` and `snapshot.pins`, and shows the version of each library in each list.
 

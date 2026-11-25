@@ -16,12 +16,12 @@ source "$ROOT/scripts/upstream-index.sh"
 
 obtain_pin_fields() {
   local file=$1 abi=$2 label=$3 name=$4
-  local got_abi got_gtk got_name track resolved inputs url
+  local got_abi got_gtk got_name track resolved inputs url sha
   [ -f "$file" ] || return 1
-  while IFS=$'\t' read -r got_abi got_gtk got_name track resolved inputs url _; do
+  while IFS=$'\t' read -r got_abi got_gtk got_name track resolved inputs url sha _; do
     [ -n "${got_abi:-}" ] || continue
     if [ "$got_abi" = "$abi" ] && [ "$got_gtk" = "$label" ] && [ "$got_name" = "$name" ] && [ -n "$url" ]; then
-      printf '%s\t%s\t%s\t%s\n' "$track" "$resolved" "$inputs" "$url"
+      printf '%s\t%s\t%s\t%s\t%s\n' "$track" "$resolved" "$inputs" "$url" "${sha:-}"
       return 0
     fi
   done < <(pins_rows "$file")
@@ -86,7 +86,6 @@ obtain_cache_path() {
   printf '%s\n' "$cache/$abi/$name.tar.xz"
 }
 
-# Print "pin URL", "cache PATH", or "build".
 obtain_wrap_track() {
   local name=$1 wrap
   wrap="$ROOT/packages/$name/$name.wrap"
@@ -98,28 +97,39 @@ obtain_wrap_track() {
   fi
 }
 
+# A pin prints "pin URL SHA256", with no third field when the pin records no sha256.
+obtain_print_pin() {
+  local url=$1 sha=$2
+  if artifact_digest_valid "$sha"; then
+    printf 'pin\t%s\t%s\n' "$url" "$sha"
+  else
+    printf 'pin\t%s\n' "$url"
+  fi
+}
+
+# Print "pin URL [SHA256]", "cache PATH", or "build".
 obtain_decide() {
   local name=$1 abi=$2 gtk=$3 cache=$4 pins=$5 current_resolved=$6 current_inputs=$7
-  local label fields pin_track pin_resolved pin_inputs pin_url cached
+  local label fields pin_track pin_resolved pin_inputs pin_url pin_sha cached
   local pin_label cur_track cur_label
   label="$(package_pin_label "$name" "$gtk")"
   if fields="$(obtain_pin_fields "$pins" "$abi" "$label" "$name")"; then
-    IFS=$'\t' read -r pin_track pin_resolved pin_inputs pin_url <<< "$fields"
+    IFS=$'\t' read -r pin_track pin_resolved pin_inputs pin_url pin_sha <<< "$fields"
     pin_label="$(package_track_label "$pin_track")"
     cur_track="$(obtain_wrap_track "$name")"
     cur_label="$(package_track_label "$cur_track")"
     if [ "$cur_label" != snapshot ] && [ "$pin_label" = "$cur_label" ]; then
-      printf 'pin\t%s\n' "$pin_url"
+      obtain_print_pin "$pin_url" "${pin_sha:-}"
       return 0
     fi
     if [ "$cur_label" != snapshot ] \
       && failure_seen "$abi" "$name" "$cur_track" "$current_inputs"; then
-      printf 'pin\t%s\n' "$pin_url"
+      obtain_print_pin "$pin_url" "${pin_sha:-}"
       return 0
     fi
     if [ "$cur_label" = snapshot ] || [ -z "$cur_track" ]; then
       if obtain_pin_current "$name" "$pin_resolved" "$pin_inputs" "$current_resolved" "$current_inputs" "$pins"; then
-        printf 'pin\t%s\n' "$pin_url"
+        obtain_print_pin "$pin_url" "${pin_sha:-}"
         return 0
       fi
     fi

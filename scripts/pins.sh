@@ -46,32 +46,36 @@ pins_label_of() {
   printf '%s\n' "$repo"
 }
 
+# The eighth column is the sha256 of the .pixie file, or empty when the pin has none.
 pins_rows() {
-  local file=$1 abi repo name track resolved inputs url label
+  local file=$1 abi repo name track resolved inputs url sha label
   [ -f "$file" ] || return 0
-  while IFS=$'\t' read -r abi repo name track resolved inputs url; do
+  while IFS=$'\t' read -r abi repo name track resolved inputs url sha; do
     [ -n "${abi:-}" ] || continue
     label="$(pins_label_of "$repo")"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-      "$abi" "$label" "$name" "$track" "$resolved" "$inputs" "$url"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$abi" "$label" "$name" "$track" "$resolved" "$inputs" "$url" "${sha:-}"
   done < <(jq -r '
     .packages[]
-    | [.abi, (.repo // .gtk // ""), .name, .track, .resolved, .inputs, .url]
+    | [.abi, (.repo // .gtk // ""), .name, .track, .resolved, .inputs, .url, (.sha256 // "")]
     | @tsv
   ' "$file")
 }
 
 pins_store() {
-  local file=$1 src line abi label name track resolved inputs url repo
+  local file=$1 src line abi label name track resolved inputs url sha repo
   src="$(mktemp)"
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in ''|\#*) continue ;; esac
-    IFS=$'\t' read -r abi label name track resolved inputs url <<< "$line"
+    IFS=$'\t' read -r abi label name track resolved inputs url sha <<< "$line"
     [ -n "${abi:-}" ] || continue
     [ -n "${url:-}" ] || continue
     repo="$(pins_repo_of "$label")"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-      "$abi" "$repo" "$name" "$track" "$resolved" "$inputs" "$url"
+    if ! artifact_digest_valid "${sha:-}"; then
+      sha=""
+    fi
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$abi" "$repo" "$name" "$track" "$resolved" "$inputs" "$url" "$sha"
   done > "$src"
   if [ ! -s "$src" ]; then
     jq -n '{packages: []}' > "$file"
@@ -92,21 +96,27 @@ pins_store() {
           resolved: .[4],
           inputs: .[5],
           url: .[6]
-        })
+        } + (if (.[7] // "") != "" then {sha256: .[7]} else {} end))
       }
   ' "$src" > "$file"
   rm -f "$src"
 }
 
+# sha256 is the digest of the uploaded .pixie bytes, not the upstream source hash.
 pins_upsert() {
   local file=$1
-  local abi=$2 label=$3 name=$4 track=$5 resolved=$6 inputs=$7 url=$8
+  local abi=$2 label=$3 name=$4 track=$5 resolved=$6 inputs=$7 url=$8 sha=$9
   local tmp row repo
+  if ! artifact_digest_valid "$sha"; then
+    echo "pins_upsert needs the sha256 of the .pixie for $name" >&2
+    return 1
+  fi
   repo="$(pins_repo_of "$label")"
   row="$(jq -n \
     --arg abi "$abi" --arg repo "$repo" --arg name "$name" \
     --arg track "$track" --arg resolved "$resolved" --arg inputs "$inputs" --arg url "$url" \
-    '{abi:$abi, repo:$repo, name:$name, track:$track, resolved:$resolved, inputs:$inputs, url:$url}')"
+    --arg sha "$sha" \
+    '{abi:$abi, repo:$repo, name:$name, track:$track, resolved:$resolved, inputs:$inputs, url:$url, sha256:$sha}')"
   tmp="$(mktemp)"
   if [ ! -f "$file" ]; then
     jq -n --argjson row "$row" '{packages: [$row]}' > "$tmp"

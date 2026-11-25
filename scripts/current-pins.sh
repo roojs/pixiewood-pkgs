@@ -114,10 +114,10 @@ cmd_write() {
   pins_mark_replaced replaced || return 1
   declare -A groups=()
   declare -A base_inputs=()
-  local got_abi got_gtk name track resolved inputs url key label owner
+  local got_abi got_gtk name track resolved inputs url sha key label owner
   owner="$(distro_owner "$repo")"
   if [ -f "$file" ]; then
-    while IFS=$'\t' read -r got_abi got_gtk name track resolved inputs url _; do
+    while IFS=$'\t' read -r got_abi got_gtk name track resolved inputs url sha _; do
       [ -n "${got_abi:-}" ] || continue
       [ -n "$url" ] || continue
       if [ "$got_gtk" = "$base" ]; then
@@ -128,7 +128,7 @@ cmd_write() {
         base_inputs[$name]=$inputs
       fi
       key="${got_abi} ${got_gtk}"
-      groups[$key]+="${got_abi}"$'\t'"${got_gtk}"$'\t'"${name}"$'\t'"${track}"$'\t'"${resolved}"$'\t'"${inputs}"$'\t'"${url}"$'\n'
+      groups[$key]+="${got_abi}"$'\t'"${got_gtk}"$'\t'"${name}"$'\t'"${track}"$'\t'"${resolved}"$'\t'"${inputs}"$'\t'"${url}"$'\t'"${sha:-}"$'\n'
     done < <(pins_rows "$file")
   fi
   local plan gtk status kind
@@ -155,7 +155,7 @@ cmd_write() {
     if [ "$gtk" = "$base" ] && [ "$owner" != "$base" ]; then
       groups["${abi} ${owner}"]=""
     fi
-    while IFS=$'\t' read -r status name kind track resolved inputs url _; do
+    while IFS=$'\t' read -r status name kind track resolved inputs url sha _; do
       [ -n "${status:-}" ] || continue
       case "$status" in \#*) continue ;; esac
       if [ "$gtk" != "$base" ] && [ -z "${replaced[$name]:-}" ]; then
@@ -164,6 +164,7 @@ cmd_write() {
       label="$(package_pin_label "$name" "$gtk" "$repo")"
       if [ "$status" = build ] || [ -z "$url" ] || [ "$url" = "-" ]; then
         url="https://github.com/${repo}/releases/download/${version}/$(package_asset_name "$name" "$abi" "$(package_track_label "$track")")"
+        sha=""
       elif [ "$status" != keep ]; then
         echo "Bad plan status: $status" >&2
         return 1
@@ -171,7 +172,7 @@ cmd_write() {
       if [ "$gtk" = "$base" ]; then
         base_inputs[$name]=$inputs
       fi
-      groups["${abi} ${label}"]+="${abi}"$'\t'"${label}"$'\t'"${name}"$'\t'"${track}"$'\t'"${resolved}"$'\t'"${inputs}"$'\t'"${url}"$'\n'
+      groups["${abi} ${label}"]+="${abi}"$'\t'"${label}"$'\t'"${name}"$'\t'"${track}"$'\t'"${resolved}"$'\t'"${inputs}"$'\t'"${url}"$'\t'"${sha:-}"$'\n'
     done < "$plan"
     if [ -z "${groups[${abi} ${gtk}]}" ]; then
       echo "plan has no packages: $plan" >&2
@@ -219,20 +220,22 @@ cmd_apply() {
   declare -A replaced=()
   declare -A reuse_url=()
   declare -A reuse_inputs=()
-  local got_abi got_gtk name track resolved inputs url label
+  declare -A reuse_sha=()
+  local got_abi got_gtk name track resolved inputs url sha label
   pins_mark_replaced replaced || return 1
   if [ -f "$file" ]; then
-    while IFS=$'\t' read -r got_abi got_gtk name track resolved inputs url _; do
+    while IFS=$'\t' read -r got_abi got_gtk name track resolved inputs url sha _; do
       [ -n "${got_abi:-}" ] || continue
       if [ "$got_abi" = "$abi" ] && [ -n "$url" ]; then
         reuse_url["${got_gtk} ${name}"]=$url
         reuse_inputs["${got_gtk} ${name}"]=$inputs
+        reuse_sha["${got_gtk} ${name}"]=${sha:-}
       fi
     done < <(pins_rows "$file")
   fi
   local tmp status kind
   tmp="$(mktemp)"
-  while IFS=$'\t' read -r status name kind track resolved inputs url || [ -n "${status:-}" ]; do
+  while IFS=$'\t' read -r status name kind track resolved inputs url sha || [ -n "${status:-}" ]; do
     if [ -z "${status:-}" ]; then
       continue
     fi
@@ -248,11 +251,12 @@ cmd_apply() {
         echo "No $label tarball for $name. $gtk replaces only the packages in packages/gtk/replaces." >&2
         return 1
       fi
-      printf 'keep\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "$name" "$kind" "$track" "$resolved" "$inputs" "${reuse_url["$label $name"]}"
+      printf 'keep\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$name" "$kind" "$track" "$resolved" "$inputs" "${reuse_url["$label $name"]}" \
+        "${reuse_sha["$label $name"]:--}"
     else
-      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "$status" "$name" "$kind" "$track" "$resolved" "$inputs" "$url"
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$status" "$name" "$kind" "$track" "$resolved" "$inputs" "$url" "${sha:--}"
     fi
   done < "$plan" > "$tmp"
   mv "$tmp" "$out"
@@ -285,15 +289,17 @@ cmd_index() {
   base="$(gtk_target_base "$ROOT/packages/gtk/targets")" || return 1
   owner="$(distro_owner)"
   declare -A replaced=()
-  declare -A row_track=() row_resolved=() row_inputs=() row_url=()
+  declare -A row_track=() row_resolved=() row_inputs=() row_url=() row_sha=()
+  local sha
   pins_mark_replaced replaced || return 1
-  while IFS=$'\t' read -r got_abi got_gtk name track resolved inputs url _; do
+  while IFS=$'\t' read -r got_abi got_gtk name track resolved inputs url sha _; do
     [ -n "${got_abi:-}" ] || continue
     [ "$got_abi" = "$abi" ] || continue
     row_track["${got_gtk} ${name}"]=$track
     row_resolved["${got_gtk} ${name}"]=$resolved
     row_inputs["${got_gtk} ${name}"]=$inputs
     row_url["${got_gtk} ${name}"]=$url
+    row_sha["${got_gtk} ${name}"]=${sha:-}
   done < <(pins_rows "$file")
   if [ "$gtk" != "$base" ] && [ -z "${row_url["$gtk gtk"]:-}" ]; then
     echo "$file has no gtk package for $abi $gtk" >&2
@@ -319,12 +325,13 @@ cmd_index() {
     if [ "$order_name" = gtk ]; then
       set_url="${row_url["$picked gtk"]}"
     fi
-    printf '%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$order_name" \
       "${row_track["$picked $order_name"]}" \
       "${row_resolved["$picked $order_name"]}" \
       "${row_inputs["$picked $order_name"]}" \
-      "${row_url["$picked $order_name"]}" >> "$list"
+      "${row_url["$picked $order_name"]}" \
+      "${row_sha["$picked $order_name"]:--}" >> "$list"
   done < "$ROOT/build-order.txt"
   if [ -z "$set_url" ]; then
     set_url="${row_url["$base openssl"]:-${row_url["$gtk gtk"]:-}}"
@@ -361,8 +368,8 @@ cmd_previous() {
   fi
   local base
   base="$(gtk_target_base "$ROOT/packages/gtk/targets")" || return 1
-  declare -A row_track=() row_resolved=() row_inputs=() row_url=()
-  local file fill got_abi got_gtk name track resolved inputs url
+  declare -A row_track=() row_resolved=() row_inputs=() row_url=() row_sha=()
+  local file fill got_abi got_gtk name track resolved inputs url sha
   for file in "$ROOT/release.pins" "$ROOT/snapshot.pins"; do
     [ -f "$file" ] || continue
     if [ "$file" = "$ROOT/snapshot.pins" ]; then
@@ -370,7 +377,7 @@ cmd_previous() {
     else
       fill=0
     fi
-    while IFS=$'\t' read -r got_abi got_gtk name track resolved inputs url _; do
+    while IFS=$'\t' read -r got_abi got_gtk name track resolved inputs url sha _; do
       [ -n "${got_abi:-}" ] || continue
       [ "$got_abi" = "$abi" ] || continue
       if [ "$got_gtk" != "$gtk" ] && [ "$got_gtk" != "$base" ]; then
@@ -383,6 +390,7 @@ cmd_previous() {
       row_resolved[$name]=$resolved
       row_inputs[$name]=$inputs
       row_url[$name]=$url
+      row_sha[$name]=${sha:-}
     done < <(pins_rows "$file")
   done
   local list order_name
@@ -394,21 +402,23 @@ cmd_previous() {
     order_name=${order_name%"${order_name##*[![:space:]]}"}
     [ -n "$order_name" ] || continue
     [ -n "${row_url[$order_name]:-}" ] || continue
-    printf '%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$order_name" \
       "${row_track[$order_name]}" \
       "${row_resolved[$order_name]}" \
       "${row_inputs[$order_name]}" \
-      "${row_url[$order_name]}" >> "$list"
+      "${row_url[$order_name]}" \
+      "${row_sha[$order_name]:--}" >> "$list"
     unset "row_url[$order_name]"
   done < "$ROOT/build-order.txt"
   for order_name in "${!row_url[@]}"; do
-    printf '%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$order_name" \
       "${row_track[$order_name]}" \
       "${row_resolved[$order_name]}" \
       "${row_inputs[$order_name]}" \
-      "${row_url[$order_name]}" >> "$list"
+      "${row_url[$order_name]}" \
+      "${row_sha[$order_name]:--}" >> "$list"
   done
   if [ ! -s "$list" ]; then
     rm -f "$list"

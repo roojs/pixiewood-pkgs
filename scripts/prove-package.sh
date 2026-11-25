@@ -252,7 +252,8 @@ for name in "${names[@]}"; do
     obtain_args+=(--resolved "${resolved_of[$name]:-}" --inputs "${inputs_of[$name]:-}")
   fi
   decision="$("$ROOT/scripts/obtain-package.sh" "${obtain_args[@]}")"
-  IFS=$'\t' read -r kind loc <<< "$decision"
+  digest=""
+  IFS=$'\t' read -r kind loc digest <<< "$decision"
   if [ "${#proved[@]}" -eq 0 ]; then
     echo "$kind $name alone"
   else
@@ -260,8 +261,15 @@ for name in "${names[@]}"; do
   fi
   if [ "$dry" -eq 0 ]; then
     if [ "$kind" = pin ]; then
-      if ! curl -fsSL "$loc" -o "$tarball"; then
-        echo "Release pin for $name did not download" >&2
+      rm -f "$tarball"
+      fetched=0
+      artifact_fetch_verified "$loc" "${digest:-}" "$tarball" || fetched=$?
+      if [ "$fetched" -eq 2 ]; then
+        echo "Release pin for $name does not match its recorded sha256; refusing it" >&2
+        exit 1
+      fi
+      if [ "$fetched" -ne 0 ]; then
+        echo "Release pin for $name did not download with a recorded sha256" >&2
         rm -f "$tarball"
         fallback="$("$ROOT/scripts/obtain-package.sh" \
           --name "$name" \
@@ -343,6 +351,6 @@ for name in "${names[@]}"; do
     --created "prove-$name" \
     --out "$work/deps-$name.json"
   require_pixie
-  pixie-pkg fetch --dest "$next" --pins "$work/deps-$name.json" --abi "$abi"
+  pixie-pkg fetch --force --dest "$next" --pins "$work/deps-$name.json" --abi "$abi"
   deps="$next"
 done
