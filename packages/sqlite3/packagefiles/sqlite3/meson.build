@@ -47,7 +47,6 @@ extensions = [
     [
       '-DSQLITE_ENABLE_FTS3',
       '-DSQLITE_ENABLE_FTS3_PARENTHESIS',
-      '-DSQLITE_ENABLE_FTS3_TOKENIZER',
     ],
   ],
   ['fts5', true, '-DSQLITE_ENABLE_FTS5'],
