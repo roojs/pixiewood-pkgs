@@ -118,7 +118,7 @@ cmake -S "$src" -B "$build" -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE="$ndk/build/cmake/android.toolchain.cmake" \
   -DANDROID_ABI="$abi" \
   -DANDROID_PLATFORM="android-$api" \
-  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON \
   -DCMAKE_INSTALL_PREFIX="$install_prefix" \
   -DCMAKE_INSTALL_LIBDIR="lib/$abi" \
@@ -171,7 +171,23 @@ cmake -S "$src" -B "$build" -G Ninja \
   -DWITH_RDPECAM_MOVIE=OFF
 
 cmake --build "$build" --parallel "$(nproc)"
-DESTDIR="$stage" cmake --install "$build"
+DESTDIR="$stage" cmake --install "$build" --strip
+
+# The NDK toolchain compiles with -g in every build type, and CMake does not
+# strip static archives on install.
+strip_tool="$(dirname "$cc")/llvm-strip"
+if [ ! -x "$strip_tool" ]; then
+  echo "NDK strip tool missing: $strip_tool" >&2
+  exit 1
+fi
+while IFS= read -r -d '' file; do
+  magic="$(head -c 7 "$file" | od -An -tx1 | tr -d ' \n')"
+  case "$magic" in
+    7f454c46*|213c617263683e)
+      "$strip_tool" --strip-debug "$file"
+      ;;
+  esac
+done < <(find "$stage" -type f -print0)
 
 installed="$stage${install_prefix}"
 if [ ! -d "$installed" ]; then
