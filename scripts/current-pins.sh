@@ -218,7 +218,7 @@ cmd_apply() {
   fi
   declare -A replaced=()
   declare -A reuse_url=()
-  declare -A reuse_inputs=()
+  declare -A reuse_track=() reuse_resolved=() reuse_inputs=()
   local got_abi got_gtk name track resolved inputs url label
   pins_mark_replaced replaced || return 1
   if [ -f "$file" ]; then
@@ -226,6 +226,8 @@ cmd_apply() {
       [ -n "${got_abi:-}" ] || continue
       if [ "$got_abi" = "$abi" ] && [ -n "$url" ]; then
         reuse_url["${got_gtk} ${name}"]=$url
+        reuse_track["${got_gtk} ${name}"]=$track
+        reuse_resolved["${got_gtk} ${name}"]=$resolved
         reuse_inputs["${got_gtk} ${name}"]=$inputs
       fi
     done < <(pins_rows "$file")
@@ -248,8 +250,10 @@ cmd_apply() {
         echo "No $label tarball for $name. $gtk replaces only the packages in packages/gtk/replaces." >&2
         return 1
       fi
+      # The kept tarball is the base pin's, so its row describes that build.
       printf 'keep\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "$name" "$kind" "$track" "$resolved" "$inputs" "${reuse_url["$label $name"]}"
+        "$name" "$kind" "${reuse_track["$label $name"]}" "${reuse_resolved["$label $name"]}" \
+        "${reuse_inputs["$label $name"]}" "${reuse_url["$label $name"]}"
     else
       printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$status" "$name" "$kind" "$track" "$resolved" "$inputs" "$url"

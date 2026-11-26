@@ -76,12 +76,12 @@ obtain_pin_current() {
 }
 
 obtain_cache_path() {
-  local cache=$1 abi=$2 name=$3
+  local cache=$1 abi=$2 name=$3 resolved=${4:-} inputs=${5:-}
   [ -n "$cache" ] || return 1
   [ -f "$cache/$abi/$name.tar.xz" ] || return 1
-  if [ -n "${4:-}" ]; then
+  if [ -n "$resolved" ] || [ -n "$inputs" ]; then
     [ -f "$cache/$abi/$name.inputs" ] || return 1
-    [ "$(cat "$cache/$abi/$name.inputs")" = "$4" ] || return 1
+    [ "$(cat "$cache/$abi/$name.inputs")" = "$(package_cache_stamp "$resolved" "$inputs")" ] || return 1
   fi
   printf '%s\n' "$cache/$abi/$name.tar.xz"
 }
@@ -124,7 +124,7 @@ obtain_decide() {
       fi
     fi
   fi
-  if cached="$(obtain_cache_path "$cache" "$abi" "$name" "$current_inputs")"; then
+  if cached="$(obtain_cache_path "$cache" "$abi" "$name" "$current_resolved" "$current_inputs")"; then
     printf 'cache\t%s\n' "$cached"
     return 0
   fi

@@ -218,11 +218,12 @@ mkdir -p "$out"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-declare -A inputs_of=() resolved_of=() track_of=()
+declare -A inputs_of=() resolved_of=() track_of=() kind_of=()
 if [ "$dry" -eq 0 ]; then
   "$ROOT/scripts/upstream-index.sh" resolve --gtk "$gtk" --out "$work/resolved.tsv"
-  while IFS=$'\t' read -r name _kind track resolved inputs; do
+  while IFS=$'\t' read -r name kind track resolved inputs; do
     [ -n "$name" ] || continue
+    kind_of[$name]=$kind
     track_of[$name]=$track
     resolved_of[$name]=$resolved
     inputs_of[$name]=$inputs
@@ -281,6 +282,17 @@ for name in "${names[@]}"; do
     fi
     if [ "$kind" = cache ]; then
       cp -a "$loc" "$tarball"
+      if [ "${kind_of[$name]:-}" = git ] \
+        && [ "$(package_tarball_revision "$tarball" || true)" != "${resolved_of[$name]:-}" ]; then
+        echo "Cached $name does not record ${resolved_of[$name]:-}; building it" >&2
+        rm -f "$tarball"
+        kind=build
+        if [ "${#proved[@]}" -eq 0 ]; then
+          echo "$kind $name alone"
+        else
+          echo "$kind $name on ${proved[*]}"
+        fi
+      fi
     fi
     if [ "$kind" != build ]; then
       if ! prove_tarball "$tarball" "$abi" "$name"; then
@@ -294,14 +306,21 @@ for name in "${names[@]}"; do
     fi
     if [ "$kind" = build ]; then
       args=(--only "$name" --arch "$arch" --gtk "$gtk" --tarball "$tarball")
+      if [ "${kind_of[$name]:-}" = git ]; then
+        args+=(--resolved "${resolved_of[$name]}")
+      fi
       if [ -n "$deps" ]; then
         args+=(--deps-sysroot "$deps")
       fi
       "$ROOT/scripts/build-pixie.sh" "${args[@]}"
+      if [ "${kind_of[$name]:-}" = git ]; then
+        package_mark_revision "$tarball" "${resolved_of[$name]}"
+      fi
       if [ -n "$cache" ]; then
         mkdir -p "$cache/$abi"
+        rm -f "$cache/$abi/$name.inputs"
         cp -a "$tarball" "$cache/$abi/$name.tar.xz"
-        printf '%s\n' "${inputs_of[$name]}" > "$cache/$abi/$name.inputs"
+        package_cache_stamp "${resolved_of[$name]}" "${inputs_of[$name]}" > "$cache/$abi/$name.inputs"
       fi
       prove_tarball "$tarball" "$abi" "$name"
     fi

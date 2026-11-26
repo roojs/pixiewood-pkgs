@@ -58,6 +58,7 @@ fi
 if ! abi="$(sysroot_map "$ROOT/cross/abi" "$arch")"; then
   exit 2
 fi
+package_revision_check "$name" "$track" "$resolved" "$tarball" || exit 1
 created="${created:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 tag="$(release_version "$created")" || exit 1
 label="$(package_pin_label "$name" "$gtk" "$repo")"
