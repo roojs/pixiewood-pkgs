@@ -299,11 +299,16 @@ echo "Downloading Meson subprojects"
 drop_satisfied_wraps "$WORK" "$DEPS_SYSROOT" "$ABI"
 
 builddir="$WORK/build-$ARCH"
+cat > "$WORK/native.cross" << 'EOF'
+[binaries]
+pkg-config = 'pkg-config'
+EOF
 meson_args=(
   --cross-file "$WORK/toolchain.cross"
   --cross-file "$ROOT/cross/$ARCH.cross"
   --cross-file "$ROOT/cross/android.cross"
   --cross-file "$WORK/extra.cross"
+  --native-file "$WORK/native.cross"
 )
 if [ -n "$DEPS_SYSROOT" ]; then
   if [ ! -f "$DEPS_SYSROOT/share/pixiewood/pixie.cross" ]; then

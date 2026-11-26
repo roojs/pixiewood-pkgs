@@ -80,8 +80,13 @@ case "$package" in
     if have_vapi 'gtk4.vapi'; then
       exit 0
     fi
-    vapigen_gtk
-    require_vapi 'gtk4.vapi' 'gtk4.vapi'
+  # GObject Introspection stays off for the Android GTK build. VAPI only when
+  # GIR files were installed some other way (for example a future host scan).
+    if [ -d "$gir_dir" ] && compgen -G "$gir_dir/*.gir" >/dev/null; then
+      vapigen_gtk
+      require_vapi 'gtk4.vapi' 'gtk4.vapi'
+    fi
+    exit 0
     ;;
   libadwaita)
     require_vapi 'libadwaita-1.vapi' 'libadwaita-1.vapi'
