@@ -26,4 +26,23 @@ require "$android" "gpu_demo = 'disabled'"
 require "$android" "thumbnailer = 'disabled'"
 require "$android" "examples = false"
 
+require_block() {
+  local file=$1 block=$2 text=$3
+  if ! awk -v block="$block" -v want="$text" '
+    $0 == block { inblock = 1; next }
+    /^\[/ && inblock { inblock = 0 }
+  inblock && $0 == want { found = 1 }
+  END { exit !found }
+  ' "$file"; then
+    echo "missing from $file block $block: $text" >&2
+    exit 1
+  fi
+}
+
+require_block "$android" "[libadwaita:project options]" "introspection = 'enabled'"
+require_block "$android" "[libadwaita:project options]" "vapi = true"
+require_block "$android" "[gtksourceview:project options]" "introspection = 'enabled'"
+require_block "$android" "[gtksourceview:project options]" "vapi = true"
+require_block "$android" "[gtk:project options]" "introspection = 'enabled'"
+
 echo "library options: ok"

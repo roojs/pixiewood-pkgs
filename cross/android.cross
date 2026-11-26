@@ -119,7 +119,7 @@ android-backend = true
 x11-backend = false
 wayland-backend = false
 broadway-backend = false
-introspection = 'disabled'
+introspection = 'enabled'
 documentation = false
 man-pages = false
 screenshots = false
@@ -132,8 +132,8 @@ build-examples = false
 build-tests = false
 
 [gtksourceview:project options]
-introspection = 'disabled'
-vapi = false
+introspection = 'enabled'
+vapi = true
 documentation = false
 build-testsuite = false
 install-tests = false
@@ -142,8 +142,8 @@ install-tests = false
 default_library = 'shared'
 
 [libadwaita:project options]
-introspection = 'disabled'
-vapi = false
+introspection = 'enabled'
+vapi = true
 documentation = false
 gtk_doc = false
 tests = false

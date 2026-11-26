@@ -31,6 +31,7 @@ jobs:
           bash tests/test-packaged-deps.sh
           bash tests/test-list-package-cache.sh
           bash tests/test-library-options.sh
+          bash tests/test-vapi-stage.sh
           bash tests/test-place-upstream-plans.sh
           bash tests/test-publish-package.sh
           bash tests/test-pins-page.sh
