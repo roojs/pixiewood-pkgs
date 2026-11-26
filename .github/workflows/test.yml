@@ -34,3 +34,4 @@ jobs:
           bash tests/test-place-upstream-plans.sh
           bash tests/test-publish-package.sh
           bash tests/test-pins-page.sh
+          bash tests/test-stale-upstream-cache.sh
