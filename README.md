@@ -25,7 +25,7 @@ scripts/install-sdk.sh
 scripts/build-pixie.sh --only gtk --arch aarch64
 ```
 
-**Prove package** publishes each finished library before the next one starts. **Monitor upstreams** fills the two lists. A published file stays when a newer build fails. A dependency set is unpacked with `pixie-pkg fetch`.
+**Prove package** publishes each finished library before the next one starts. **Monitor upstreams** fills the two lists. A published file stays when a newer build fails. A dependency set is unpacked with `pixie-pkg fetch`. The pixie-pkg commit it runs is the git object id in `scripts/pixie-pkg.pin`; change that file in a reviewed commit to move to a newer pixie-pkg.
 
 ## Tests
 
