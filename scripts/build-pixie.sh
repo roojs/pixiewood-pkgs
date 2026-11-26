@@ -302,6 +302,11 @@ builddir="$WORK/build-$ARCH"
 cat > "$WORK/native.cross" << 'EOF'
 [binaries]
 pkg-config = 'pkg-config'
+g-ir-scanner = 'g-ir-scanner'
+vapigen = 'vapigen'
+
+[properties]
+pkg_config_libdir = ['/usr/lib/x86_64-linux-gnu/pkgconfig', '/usr/share/pkgconfig']
 EOF
 meson_args=(
   --cross-file "$WORK/toolchain.cross"
@@ -361,7 +366,12 @@ if [ -n "$ONLY" ]; then
   rm -rf "$destdir"
   mkdir -p "$destdir"
   meson install -C "$builddir" --destdir "$destdir" --no-rebuild
-  "$ROOT/scripts/vapi-stage.sh" --package "$ONLY" --destdir "$destdir"
+  cross_cc="$prebuilt/bin/${ARCH}-linux-android$(distro_get api)-clang"
+  "$ROOT/scripts/vapi-stage.sh" \
+    --package "$ONLY" \
+    --destdir "$destdir" \
+    --abi "$ABI" \
+    --cross-cc "$cross_cc"
   strip_debug_info "$destdir"
   tarball="${TARBALL_OUT:-$ROOT/out/${ONLY}-${ABI}.tar.xz}"
   java_args=()

@@ -39,10 +39,10 @@ require_block() {
   fi
 }
 
-require_block "$android" "[libadwaita:project options]" "introspection = 'enabled'"
-require_block "$android" "[libadwaita:project options]" "vapi = true"
-require_block "$android" "[gtksourceview:project options]" "introspection = 'enabled'"
-require_block "$android" "[gtksourceview:project options]" "vapi = true"
+require_block "$android" "[libadwaita:project options]" "introspection = 'disabled'"
+require_block "$android" "[libadwaita:project options]" "vapi = false"
+require_block "$android" "[gtksourceview:project options]" "introspection = 'disabled'"
+require_block "$android" "[gtksourceview:project options]" "vapi = false"
 require_block "$android" "[gtk:project options]" "introspection = 'disabled'"
 
 echo "library options: ok"

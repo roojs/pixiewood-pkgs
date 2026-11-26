@@ -132,8 +132,8 @@ build-examples = false
 build-tests = false
 
 [gtksourceview:project options]
-introspection = 'enabled'
-vapi = true
+introspection = 'disabled'
+vapi = false
 documentation = false
 build-testsuite = false
 install-tests = false
@@ -142,8 +142,8 @@ install-tests = false
 default_library = 'shared'
 
 [libadwaita:project options]
-introspection = 'enabled'
-vapi = true
+introspection = 'disabled'
+vapi = false
 documentation = false
 gtk_doc = false
 tests = false
