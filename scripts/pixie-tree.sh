@@ -35,7 +35,7 @@ libdir=\${prefix}/lib/${abi}
 
 Name: gioopenssl
 Description: Static GIO OpenSSL TLS backend
-Version: 2.80.1
+Version: 2.90.1
 Requires: gio-2.0
 Requires.private: libssl libcrypto
 Libs: \${libdir}/gio/modules/libgioopenssl.a
