@@ -28,17 +28,26 @@ obtain_pin_fields() {
   return 1
 }
 
-# Files that change the bytes of this package. A shared script is included
-# only when that package's build actually runs it.
+# Keep in sync with index_shared_hash() in upstream-index.sh.
+obtain_shared_recipe_paths() {
+  printf '%s\n' \
+    "$ROOT/cross" \
+    "$ROOT/android-distro.conf" \
+    "$ROOT/scripts/build-pixie.sh" \
+    "$ROOT/scripts/vapi-stage.sh" \
+    "$ROOT/scripts/pixie-tree.sh" \
+    "$ROOT/scripts/gtk-target.sh" \
+    "$ROOT/scripts/build-changed.sh"
+}
+
+# Files that change the bytes of this package.
 obtain_recipe_paths() {
   local name=$1 wrap
-  printf '%s\n' "$ROOT/packages/$name" "$ROOT/cross" "$ROOT/android-distro.conf"
+  obtain_shared_recipe_paths
+  printf '%s\n' "$ROOT/packages/$name"
   wrap="$ROOT/packages/$name/$name.wrap"
-  if [ -f "$wrap" ] && grep -q '^diff_files[[:space:]]*=' "$wrap"; then
-    printf '%s\n' "$ROOT/scripts/build-pixie.sh"
-  fi
   if [ "$name" = gtk ]; then
-    printf '%s\n' "$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-pixie.sh"
+    printf '%s\n' "$ROOT/scripts/gtk-part.sh"
   fi
 }
 
@@ -101,16 +110,25 @@ obtain_wrap_track() {
 obtain_decide() {
   local name=$1 abi=$2 gtk=$3 cache=$4 pins=$5 current_resolved=$6 current_inputs=$7
   local label fields pin_track pin_resolved pin_inputs pin_url cached
-  local pin_label cur_track cur_label
+  local pin_label cur_track cur_label pin_commit
   label="$(package_pin_label "$name" "$gtk")"
   if fields="$(obtain_pin_fields "$pins" "$abi" "$label" "$name")"; then
     IFS=$'\t' read -r pin_track pin_resolved pin_inputs pin_url <<< "$fields"
     pin_label="$(package_track_label "$pin_track")"
     cur_track="$(obtain_wrap_track "$name")"
     cur_label="$(package_track_label "$cur_track")"
+    pin_commit="$(obtain_pin_commit "$pins")"
     if [ "$cur_label" != snapshot ] && [ "$pin_label" = "$cur_label" ]; then
-      printf 'pin\t%s\n' "$pin_url"
-      return 0
+      if [ -z "$pin_commit" ]; then
+        printf 'pin\t%s\n' "$pin_url"
+        return 0
+      fi
+      if [ -n "$current_inputs" ] && [ "$pin_inputs" != "$current_inputs" ]; then
+        :
+      elif obtain_pin_current "$name" "$pin_resolved" "$pin_inputs" "$current_resolved" "$current_inputs" "$pins"; then
+        printf 'pin\t%s\n' "$pin_url"
+        return 0
+      fi
     fi
     if [ "$cur_label" != snapshot ] \
       && failure_seen "$abi" "$name" "$cur_track" "$current_inputs"; then
