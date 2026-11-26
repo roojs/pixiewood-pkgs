@@ -12,7 +12,7 @@ assert_pinned() {
   local file="$1" rev
   rev="$(revision_of "$file")"
   case "$rev" in
-    ""|main|master|HEAD)
+    ""|main|master|HEAD|head|trunk)
       echo "wrap must not track '$rev': $file" >&2
       exit 1
       ;;
@@ -32,12 +32,14 @@ assert_pinned "$ROOT/packages/gdk-pixbuf/gdk-pixbuf.wrap"
 assert_pinned "$ROOT/packages/libepoxy/libepoxy.wrap"
 assert_pinned "$ROOT/packages/graphene/graphene.wrap"
 
-fontconfig_rev="$(revision_of "$ROOT/packages/fontconfig/fontconfig.wrap")"
-if [ "$fontconfig_rev" != "main" ]; then
-  echo "fontconfig.wrap changed upstream pin unexpectedly: $fontconfig_rev" >&2
-  echo "If you pinned it, update this test and the release notes." >&2
-  exit 1
-fi
+assert_pinned "$ROOT/packages/fontconfig/fontconfig.wrap"
+
+# A git wrap or pin names a full commit or a release tag. Resolve and
+# checkout refuse a branch, so no wrap may name one.
+for wrap in "$ROOT"/packages/*/*.wrap "$ROOT"/packages/*/*.wrap.pin; do
+  grep -q '^\[wrap-git\]' "$wrap" || continue
+  assert_pinned "$wrap"
+done
 
 # shellcheck source=../scripts/gtk-target.sh
 source "$ROOT/scripts/gtk-target.sh"

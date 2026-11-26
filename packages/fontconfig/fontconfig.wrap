@@ -3,8 +3,8 @@ directory = fontconfig
 url = https://gitlab.freedesktop.org/fontconfig/fontconfig.git
 push-url = git@gitlab.freedesktop.org:fontconfig/fontconfig.git
 depth = 1
-revision = main
+# fontconfig 2.18.4. Move this commit only in a reviewed change.
+revision = fbe1d59967aabb7b05e785c7a86704a1ece8fa6f
 
 [provide]
 fontconfig = fontconfig_dep
-

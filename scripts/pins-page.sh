@@ -254,7 +254,7 @@ write_index() {
   <p>These are the package lists for the Android libraries. A pin names a <code>.pixie</code> file on a GitHub release. <a href="https://github.com/roojs/pixie-pkg">pixie-pkg</a> reads these files and installs the libraries.</p>
   <ul>
     <li><a href="release.pins"><code>release.pins</code></a> is the released versions. The version is the file name, for example <code>openssl-arm-v31-3.0.8.pixie</code>.</li>
-    <li><a href="snapshot.pins"><code>snapshot.pins</code></a> is a branch, such as <code>main</code>. Those files are named <code>snapshot</code>. GTK HEAD is the snapshot that matters when a build needs it from there.</li>
+    <li><a href="snapshot.pins"><code>snapshot.pins</code></a> is a pinned upstream commit with no release version. Those files are named <code>snapshot</code>. A reviewed commit from GTK HEAD is the snapshot that matters when a build needs it from there.</li>
   </ul>
   <p>Each row is the library published now. The number is the version in the file name. The wrap in this repository names the upstream source the next build compiles. A numbered wrap moves to the newest release on that same version line. A branch or a commit stays as written. The daily monitor builds a library when that source or its recipe has changed. A build that fails leaves the published file in place.</p>
   <table>

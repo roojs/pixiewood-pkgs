@@ -43,13 +43,14 @@ echo one > "$repo/file"
 git -C "$repo" add file
 git -C "$repo" commit -q -m one
 first="$(git -C "$repo" rev-parse HEAD)"
+git -C "$repo" tag -a 1.0 -m 1.0
 
 mkdir -p "$tmp/packages/demo" "$tmp/packages/filepkg" "$tmp/packages/pinned"
 cat > "$tmp/packages/demo/demo.wrap" << EOF
 [wrap-git]
 directory = demo
 url = $repo
-revision = main
+revision = 1.0
 EOF
 cat > "$tmp/packages/filepkg/filepkg.wrap" << 'EOF'
 [wrap-file]
@@ -75,14 +76,31 @@ echo two > "$repo/file"
 git -C "$repo" add file
 git -C "$repo" commit -q -m two
 second="$(git -C "$repo" rev-parse HEAD)"
+# A new commit upstream is not the tag the wrap names.
+"$ROOT/scripts/upstream-index.sh" resolve --packages "$tmp/packages" --gtk gnome --out "$tmp/resolved-same.tsv"
+awk -F '\t' '$1 == "demo" { print $4 }' "$tmp/resolved-same.tsv" | grep -qx "$first"
+git -C "$repo" tag -a 1.1 -m 1.1
+sed -i 's/^revision = 1.0$/revision = 1.1/' "$tmp/packages/demo/demo.wrap"
 "$ROOT/scripts/upstream-index.sh" resolve --packages "$tmp/packages" --gtk gnome --out "$tmp/resolved2.tsv"
 awk -F '\t' '$1 == "demo" { print $4 }' "$tmp/resolved2.tsv" | grep -qx "$second"
 # Editing the wrap changes inputs, not only the resolved commit.
-inputs1="$(awk -F '\t' '$1 == "demo" { print $5 }' "$tmp/resolved.tsv")"
+inputs2="$(awk -F '\t' '$1 == "demo" { print $5 }' "$tmp/resolved2.tsv")"
 echo '# edited' >> "$tmp/packages/demo/demo.wrap"
 "$ROOT/scripts/upstream-index.sh" resolve --packages "$tmp/packages" --gtk gnome --out "$tmp/resolved3.tsv"
 inputs3="$(awk -F '\t' '$1 == "demo" { print $5 }' "$tmp/resolved3.tsv")"
-[ "$inputs1" != "$inputs3" ]
+[ "$inputs2" != "$inputs3" ]
+
+# A branch is not resolved. Its head is whatever upstream pushed last.
+mkdir -p "$tmp/branchpkgs/demo"
+for branch in main master HEAD trunk; do
+  git -C "$repo" branch -f "$branch" "$second" 2>/dev/null || true
+  sed "s/^revision = .*/revision = $branch/" "$tmp/packages/demo/demo.wrap" > "$tmp/branchpkgs/demo/demo.wrap"
+  if "$ROOT/scripts/upstream-index.sh" resolve --packages "$tmp/branchpkgs" --gtk gnome --out "$tmp/branch.tsv" 2> "$tmp/branch.err"; then
+    echo "branch $branch was resolved" >&2
+    exit 1
+  fi
+  grep -q 'a branch is not built' "$tmp/branch.err"
+done
 
 order="$tmp/build-order.txt"
 printf '%s\n' openssl glib gtk > "$order"

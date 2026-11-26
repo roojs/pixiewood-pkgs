@@ -126,25 +126,27 @@ wrap_field() {
   sed -n "s/^${key}[[:space:]]*=[[:space:]]*//p" "$file" | head -n1 | tr -d '[:space:]'
 }
 
+# A revision is a full commit or a release tag. A branch is refused: its
+# head is whatever upstream pushed last, and nobody here reviewed it.
 index_resolve_git() {
   local url=$1 rev=$2 lines sha needle
   if [[ "$rev" =~ ^[0-9a-f]{40}$ ]]; then
     printf '%s' "$rev"
     return 0
   fi
-  lines="$(git ls-remote "$url" "refs/tags/${rev}" "refs/tags/${rev}^{}" "refs/heads/${rev}")" || return 1
+  if [ -z "$rev" ]; then
+    echo "No revision for $url; pin a commit or a release tag" >&2
+    return 1
+  fi
+  lines="$(git ls-remote "$url" "refs/tags/${rev}" "refs/tags/${rev}^{}")" || return 1
   needle="refs/tags/${rev}^{}"
   sha="$(printf '%s\n' "$lines" | awk -v needle="$needle" '$2 == needle { print $1; exit }')"
-  if [ -z "$sha" ]; then
-    needle="refs/heads/${rev}"
-    sha="$(printf '%s\n' "$lines" | awk -v needle="$needle" '$2 == needle { print $1; exit }')"
-  fi
   if [ -z "$sha" ]; then
     needle="refs/tags/${rev}"
     sha="$(printf '%s\n' "$lines" | awk -v needle="$needle" '$2 == needle { print $1; exit }')"
   fi
   if [ -z "$sha" ]; then
-    echo "Could not resolve $rev from $url" >&2
+    echo "$rev is not a tag or a full commit in $url; a branch is not built" >&2
     return 1
   fi
   printf '%s' "$sha"

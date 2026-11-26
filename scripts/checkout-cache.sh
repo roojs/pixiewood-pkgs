@@ -16,29 +16,40 @@ checkout_cache_dir() {
   printf '%s/%s/%s\n' "$(checkout_cache_root)" "$key" "$safe"
 }
 
-# Print the commit a revision names. Tags and branches need the remote.
+# Print the commit a revision names: a full commit, or a tag on the remote.
+# A branch is refused. Its head is whatever upstream pushed last.
 checkout_resolve_rev() {
   local url=$1 rev=$2 lines sha needle
   if [[ "$rev" =~ ^[0-9a-f]{40}$ ]]; then
     printf '%s\n' "$rev"
     return 0
   fi
-  lines="$(git ls-remote "$url" "refs/tags/${rev}" "refs/tags/${rev}^{}" "refs/heads/${rev}")" || return 1
+  if [ -z "$rev" ]; then
+    echo "No revision for $url; pin a commit or a release tag" >&2
+    return 1
+  fi
+  lines="$(git ls-remote "$url" "refs/tags/${rev}" "refs/tags/${rev}^{}")" || return 1
   needle="refs/tags/${rev}^{}"
   sha="$(printf '%s\n' "$lines" | awk -v needle="$needle" '$2 == needle { print $1; exit }')"
-  if [ -z "$sha" ]; then
-    needle="refs/heads/${rev}"
-    sha="$(printf '%s\n' "$lines" | awk -v needle="$needle" '$2 == needle { print $1; exit }')"
-  fi
   if [ -z "$sha" ]; then
     needle="refs/tags/${rev}"
     sha="$(printf '%s\n' "$lines" | awk -v needle="$needle" '$2 == needle { print $1; exit }')"
   fi
   if [ -z "$sha" ]; then
-    echo "Could not resolve $rev from $url" >&2
+    echo "$rev is not a tag or a full commit in $url; a branch is not checked out" >&2
     return 1
   fi
   printf '%s\n' "$sha"
+}
+
+# The ref fetched for a revision checkout_resolve_rev accepted.
+checkout_fetch_ref() {
+  local rev=$1
+  if [[ "$rev" =~ ^[0-9a-f]{40}$ ]]; then
+    printf '%s\n' "$rev"
+  else
+    printf 'refs/tags/%s\n' "$rev"
+  fi
 }
 
 checkout_head_is() {
@@ -74,9 +85,10 @@ checkout_cache_ensure() {
     echo "Reusing checkout $name at $rev"
   else
     echo "Fetching checkout $name at $rev"
-    checkout_fetch "$cache" "$url" "$rev"
+    checkout_fetch "$cache" "$url" "$(checkout_fetch_ref "$rev")"
     if ! checkout_head_is "$cache" "$sha"; then
       echo "Checkout $name is $(git -C "$cache" rev-parse HEAD), wanted $sha" >&2
+      rm -rf "$cache"
       return 1
     fi
   fi
