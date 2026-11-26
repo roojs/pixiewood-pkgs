@@ -62,6 +62,12 @@ if [ -z "$ndk" ]; then
   exit 1
 fi
 
+strip_tool="$(dirname "$cc")/llvm-strip"
+if [ ! -x "$strip_tool" ]; then
+  echo "NDK llvm-strip missing next to $cc" >&2
+  exit 1
+fi
+
 ssl_lib="$libdir/libssl.so"
 crypto_lib="$libdir/libcrypto.so"
 if [ ! -e "$ssl_lib" ] || [ ! -e "$crypto_lib" ]; then
@@ -198,6 +204,14 @@ fi
 shopt -s dotglob
 mv "$installed"/* "$stage"/
 rmdir "$installed"
+
+# The stage is what the pixie package ships, so every ELF in it is stripped
+# before the link copies are taken from it.
+while IFS= read -r -d '' file; do
+  if cmp -s -n 4 "$file" <(printf '\177ELF'); then
+    "$strip_tool" --strip-unneeded "$file"
+  fi
+done < <(find "$stage" -type f -print0)
 
 # Text files still name the temporary prefix. A quoted prefix becomes "."
 # so it matches FreeRDP's Android relative paths. A prefix with a following

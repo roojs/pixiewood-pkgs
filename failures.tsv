@@ -1,1 +1,3 @@
-arm64-v8a	pango	1.90	a73215524272be5728bc915b2fa97bd306517cc6d92a0bdbcd599a5893f4d850
+arm64-v8a	pango	1.90	b7efd0320cb106fd3d41058fc6a73dd6de7fd9fece0104a6e8b632bfee9867d4
+arm64-v8a	libadwaita	1.10.0	8f51ddba400280ea44865788bafbfb06f4af50dc2fbccfaf366e117069ea622b
+arm64-v8a	gtksourceview	gtksourceview-5.16.0.tar.xz	eff0c3f0b704f0e9229f8b1e38ab0f189fdf6ce803468594ec70c4fc730e601b

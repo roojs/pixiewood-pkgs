@@ -3,6 +3,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=../scripts/obtain-package.sh
+source "$ROOT/scripts/obtain-package.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
@@ -13,7 +15,12 @@ if [ -z "$pins_commit" ]; then
   pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
 fi
 openssl_recipe_current=0
-if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
+openssl_recipe_paths=()
+while IFS= read -r path; do
+  [ -n "$path" ] || continue
+  openssl_recipe_paths+=("$path")
+done < <(obtain_recipe_paths openssl)
+if git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "${openssl_recipe_paths[@]}"; then
   openssl_recipe_current=1
 fi
 
@@ -59,9 +66,15 @@ decision="$("$ROOT/scripts/obtain-package.sh" --name demo --abi arm64-v8a --gtk 
 decision="$("$ROOT/scripts/obtain-package.sh" --name demo --abi arm64-v8a --gtk gnome --pins "$tmp/pins" --resolved resolved-b --inputs inputs-a)"
 [ "$decision" = build ]
 
-# glib 2.90.1 is already published. A later recipe change does not build it again.
+# glib 2.90.1 is published, but the wrap can move ahead on its version line.
+glib_track="$(sed -n 's/^revision[[:space:]]*=[[:space:]]*//p' "$ROOT/packages/glib/glib.wrap" | head -n1 | tr -d '[:space:]')"
+glib_pin="$(jq -r '.packages[] | select(.abi=="arm64-v8a" and .name=="glib") | .track' "$ROOT/release.pins")"
 glib="$("$ROOT/scripts/obtain-package.sh" --name glib --abi arm64-v8a --gtk gnome --inputs other-inputs)"
-[ "$glib" = "pin"$'\t'"$(jq -r '.packages[] | select(.abi=="arm64-v8a" and .name=="glib") | .url' "$ROOT/release.pins")" ]
+if [ "$glib_track" = "$glib_pin" ]; then
+  [ "$glib" = "pin"$'\t'"$(jq -r '.packages[] | select(.abi=="arm64-v8a" and .name=="glib") | .url' "$ROOT/release.pins")" ]
+else
+  [ "$glib" = build ]
+fi
 
 # A different release version is not that published file.
 jq -n '{packages: [{abi:"arm64-v8a", repo:"https://gitlab.gnome.org/GNOME/gtk.git", name:"openssl", track:"openssl-3.0.8.tar.gz", resolved:"hash-o", inputs:"inputs-o", url:"https://example.invalid/openssl-3.0.8.pixie"}]}' > "$tmp/old-openssl.pins"

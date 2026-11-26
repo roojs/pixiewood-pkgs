@@ -170,6 +170,7 @@ index_shared_hash() {
       "$ROOT/cross" \
       "$ROOT/android-distro.conf" \
       "$ROOT/scripts/build-pixie.sh" \
+      "$ROOT/scripts/vapi-stage.sh" \
       "$ROOT/scripts/pixie-tree.sh" \
       "$ROOT/scripts/gtk-target.sh" \
       "$ROOT/scripts/build-changed.sh"

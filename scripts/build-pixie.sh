@@ -299,11 +299,16 @@ echo "Downloading Meson subprojects"
 drop_satisfied_wraps "$WORK" "$DEPS_SYSROOT" "$ABI"
 
 builddir="$WORK/build-$ARCH"
+cat > "$WORK/native.cross" << 'EOF'
+[binaries]
+pkg-config = 'pkg-config'
+EOF
 meson_args=(
   --cross-file "$WORK/toolchain.cross"
   --cross-file "$ROOT/cross/$ARCH.cross"
   --cross-file "$ROOT/cross/android.cross"
   --cross-file "$WORK/extra.cross"
+  --native-file "$WORK/native.cross"
 )
 if [ -n "$DEPS_SYSROOT" ]; then
   if [ ! -f "$DEPS_SYSROOT/share/pixiewood/pixie.cross" ]; then
@@ -311,6 +316,14 @@ if [ -n "$DEPS_SYSROOT" ]; then
     exit 1
   fi
   meson_args+=(--cross-file "$DEPS_SYSROOT/share/pixiewood/pixie.cross")
+  deps_vapi="$DEPS_SYSROOT/share/vala/vapi"
+  if [ -d "$deps_vapi" ]; then
+    cat > "$WORK/vala.cross" << EOF
+[binaries]
+valac = ['valac', '--vapidir', '$deps_vapi']
+EOF
+    meson_args+=(--cross-file "$WORK/vala.cross")
+  fi
 else
   meson_args+=(--cross-file "$WORK/isolate.cross")
 fi
@@ -348,6 +361,7 @@ if [ -n "$ONLY" ]; then
   rm -rf "$destdir"
   mkdir -p "$destdir"
   meson install -C "$builddir" --destdir "$destdir" --no-rebuild
+  "$ROOT/scripts/vapi-stage.sh" --package "$ONLY" --destdir "$destdir"
   strip_debug_info "$destdir"
   tarball="${TARBALL_OUT:-$ROOT/out/${ONLY}-${ABI}.tar.xz}"
   java_args=()

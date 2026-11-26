@@ -287,12 +287,16 @@ EOF
 write_cross() {
   local sysroot=$1 abi=$2 wrapper=$3
   local pkgconfig="$sysroot/lib/$abi/pkgconfig"
+  local vapidir="$sysroot/share/vala/vapi"
   local dest="$sysroot/share/pixiewood/pixie.cross"
   local tool script launch quoted_wrapper
   quoted_wrapper="$(meson_quote "$wrapper")"
   {
     printf '[binaries]\n'
     printf 'pkg-config = [%s]\n' "$quoted_wrapper"
+    if [ -d "$vapidir" ]; then
+      printf "valac = ['valac', '--vapidir', %s]\n" "$(meson_quote "$vapidir")"
+    fi
     for tool in glib-mkenums glib-genmarshal gdbus-codegen; do
       script="$sysroot/bin/$abi/$tool"
       # Installed GLib tools are scripts. Run them through their shebang.

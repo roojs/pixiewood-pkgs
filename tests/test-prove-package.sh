@@ -7,66 +7,40 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/upstream-index.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
+abi=arm64-v8a
+gtk=gnome
 
-same_release() {
-  local name=$1 wrap pin_track wtrack plabel wlabel
-  pin_track="$(jq -r --arg name "$name" '[.packages[] | select(.abi=="arm64-v8a" and .name==$name)][0].track // empty' "$ROOT/release.pins")"
-  wrap="$ROOT/packages/$name/$name.wrap"
-  [ -n "$pin_track" ] && [ -f "$wrap" ] || return 1
-  if grep -q '^\[wrap-git\]' "$wrap"; then
-    wtrack="$(sed -n 's/^revision[[:space:]]*=[[:space:]]*//p' "$wrap" | head -n1 | tr -d '[:space:]')"
-  else
-    wtrack="$(sed -n 's/^source_filename[[:space:]]*=[[:space:]]*//p' "$wrap" | head -n1 | tr -d '[:space:]')"
+obtain_kind() {
+  local name=$1 pins=${2:-$ROOT/release.pins} cache=${3:-}
+  local args=(--name "$name" --abi "$abi" --gtk "$gtk" --pins "$pins")
+  if [ -n "$cache" ]; then
+    args+=(--cache "$cache")
   fi
-  plabel="$(package_track_label "$pin_track")"
-  wlabel="$(package_track_label "$wtrack")"
-  [ "$wlabel" != snapshot ] && [ "$plabel" = "$wlabel" ]
+  "$ROOT/scripts/obtain-package.sh" "${args[@]}" | cut -f1
 }
 
-different_release() {
-  local name=$1 wrap pin_track wtrack plabel wlabel
-  pin_track="$(jq -r --arg name "$name" '[.packages[] | select(.abi=="arm64-v8a" and .name==$name)][0].track // empty' "$ROOT/release.pins")"
-  wrap="$ROOT/packages/$name/$name.wrap"
-  [ -n "$pin_track" ] && [ -f "$wrap" ] || return 1
-  if grep -q '^\[wrap-git\]' "$wrap"; then
-    wtrack="$(sed -n 's/^revision[[:space:]]*=[[:space:]]*//p' "$wrap" | head -n1 | tr -d '[:space:]')"
+expect_line() {
+  local file=$1 kind=$2 name=$3
+  shift 3
+  if [ "$#" -eq 0 ]; then
+    grep -qx "$kind $name alone" "$file"
   else
-    wtrack="$(sed -n 's/^source_filename[[:space:]]*=[[:space:]]*//p' "$wrap" | head -n1 | tr -d '[:space:]')"
+    grep -qx "$kind $name on $*" "$file"
   fi
-  plabel="$(package_track_label "$pin_track")"
-  wlabel="$(package_track_label "$wtrack")"
-  [ "$plabel" != snapshot ] && [ "$wlabel" != snapshot ] && [ "$plabel" != "$wlabel" ]
 }
 
 bash -n "$ROOT/scripts/prove-package.sh"
 
 "$ROOT/scripts/prove-package.sh" --dry-run > "$tmp/default.out"
-pins_commit="$(git -C "$ROOT" log -1 --format=%H -- release.pins || true)"
-if [ -z "$pins_commit" ]; then
-  pins_commit="$(git -C "$ROOT" log -1 --format=%H -- current.pins)"
-fi
-if same_release openssl || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
-  grep -qx 'pin openssl alone' "$tmp/default.out"
-else
-  grep -qx 'build openssl alone' "$tmp/default.out"
-fi
+expect_line "$tmp/default.out" "$(obtain_kind openssl)" openssl
 for name in glib pango gtk; do
-  paths=("$ROOT/packages/$name" "$ROOT/cross" "$ROOT/android-distro.conf")
-  case "$name" in
-    gtk) paths+=("$ROOT/scripts/gtk-part.sh" "$ROOT/scripts/build-pixie.sh") ;;
-    glib) paths+=("$ROOT/scripts/build-pixie.sh") ;;
-  esac
   if ! jq -e --arg name "$name" '.packages[] | select(.name == $name)' "$ROOT/release.pins" >/dev/null; then
     grep -q "^build $name on " "$tmp/default.out"
-  elif same_release "$name"; then
-    grep -q "^pin $name on " "$tmp/default.out"
-  elif different_release "$name"; then
-    grep -q "^build $name on " "$tmp/default.out"
-  elif git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "${paths[@]}"; then
-    grep -q "^pin $name on " "$tmp/default.out"
-  else
-    grep -q "^build $name on " "$tmp/default.out"
+    continue
   fi
+  deps="$(sed -n "/^\\(pin\\|cache\\|build\\) $name on /s/^[^ ]* [^ ]* on //p" "$tmp/default.out" | head -n1)"
+  read -r -a dep_array <<< "${deps:-}"
+  expect_line "$tmp/default.out" "$(obtain_kind "$name")" "$name" "${dep_array[@]}"
 done
 if grep -q webkitgtk-android "$tmp/default.out"; then
   echo "default proof continued past gtk" >&2
@@ -84,28 +58,12 @@ awk '
 ' "$tmp/default.out"
 
 "$ROOT/scripts/prove-package.sh" --dry-run --packages sqlite3 > "$tmp/one.out"
-if same_release sqlite3 || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/sqlite3" "$ROOT/cross" "$ROOT/android-distro.conf"; then
-  grep -qx 'pin sqlite3 alone' "$tmp/one.out"
-else
-  grep -qx 'build sqlite3 alone' "$tmp/one.out"
-fi
+expect_line "$tmp/one.out" "$(obtain_kind sqlite3)" sqlite3
 
 "$ROOT/scripts/prove-package.sh" --dry-run --packages 'sqlite3, nghttp2,libpsl' > "$tmp/stack.out"
-if same_release sqlite3 || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/sqlite3" "$ROOT/cross" "$ROOT/android-distro.conf"; then
-  grep -qx 'pin sqlite3 alone' "$tmp/stack.out"
-else
-  grep -qx 'build sqlite3 alone' "$tmp/stack.out"
-fi
-if same_release nghttp2 || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/nghttp2" "$ROOT/cross" "$ROOT/android-distro.conf"; then
-  grep -qx 'pin nghttp2 on sqlite3' "$tmp/stack.out"
-else
-  grep -qx 'build nghttp2 on sqlite3' "$tmp/stack.out"
-fi
-if same_release libpsl || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/libpsl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
-  grep -qx 'pin libpsl on sqlite3 nghttp2' "$tmp/stack.out"
-else
-  grep -qx 'build libpsl on sqlite3 nghttp2' "$tmp/stack.out"
-fi
+expect_line "$tmp/stack.out" "$(obtain_kind sqlite3)" sqlite3
+expect_line "$tmp/stack.out" "$(obtain_kind nghttp2)" nghttp2 sqlite3
+expect_line "$tmp/stack.out" "$(obtain_kind libpsl)" libpsl sqlite3 nghttp2
 
 : > "$tmp/empty.pins"
 mkdir -p "$tmp/cache/arm64-v8a"
@@ -116,16 +74,8 @@ grep -qx 'cache libxml2 on openssl' "$tmp/cache.out"
 grep -qx 'build sqlite3 on openssl libxml2' "$tmp/cache.out"
 
 "$ROOT/scripts/prove-package.sh" --dry-run --through libxml2 --cache "$tmp/cache" > "$tmp/pinwins.out"
-if same_release openssl || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/openssl" "$ROOT/cross" "$ROOT/android-distro.conf"; then
-  grep -qx 'pin openssl alone' "$tmp/pinwins.out"
-else
-  grep -qx 'cache openssl alone' "$tmp/pinwins.out"
-fi
-if same_release libxml2 || git -C "$ROOT" diff --quiet "$pins_commit" HEAD -- "$ROOT/packages/libxml2" "$ROOT/cross" "$ROOT/android-distro.conf"; then
-  grep -qx 'pin libxml2 on openssl' "$tmp/pinwins.out"
-else
-  grep -qx 'cache libxml2 on openssl' "$tmp/pinwins.out"
-fi
+expect_line "$tmp/pinwins.out" "$(obtain_kind openssl "$ROOT/release.pins" "$tmp/cache")" openssl
+expect_line "$tmp/pinwins.out" "$(obtain_kind libxml2 "$ROOT/release.pins" "$tmp/cache")" libxml2 openssl
 
 if "$ROOT/scripts/prove-package.sh" --dry-run --packages 'nghttp2,sqlite3' > "$tmp/order.out" 2> "$tmp/order.err"; then
   echo "out-of-order packages were accepted" >&2
@@ -139,7 +89,6 @@ if "$ROOT/scripts/prove-package.sh" --dry-run --packages 'not-a-package' > "$tmp
 fi
 grep -q 'Unknown package: not-a-package' "$tmp/unknown.err"
 
-abi=arm64-v8a
 pkg="$tmp/frag"
 mkdir -p "$pkg/lib/$abi/pkgconfig" "$pkg/lib/$abi"
 printf '%s\n' 'prefix=/' 'Name: sqlite3' 'Version: 3.53.2' > "$pkg/lib/$abi/pkgconfig/sqlite3.pc"
@@ -167,7 +116,7 @@ printf 'ssl\n' > "$ssl/lib/$abi/libssl.so"
 printf 'crypto\n' > "$ssl/lib/$abi/libcrypto.so"
 tar -C "$ssl" -cJf "$tmp/openssl-${abi}.tar.xz" .
 "$ROOT/scripts/prove-package.sh" --check "$tmp/openssl-${abi}.tar.xz" --package openssl --arch aarch64 > "$tmp/ssl.out"
-grep -q 'proved openssl: OpenSSL 3.0.8 (lib/arm64-v8a/libssl.so)' "$tmp/ssl.out"
+grep -qE 'proved openssl: OpenSSL 3.0.8 \(lib/arm64-v8a/lib(ssl|crypto)\.so\)' "$tmp/ssl.out"
 
 net="$tmp/net"
 mkdir -p "$net/lib/$abi/pkgconfig" "$net/lib/$abi/gio/modules"

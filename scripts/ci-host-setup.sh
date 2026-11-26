@@ -29,6 +29,8 @@ fi
   pkg-config \
   python3 \
   python3-packaging \
+  gobject-introspection \
+  libgirepository-2.0-dev \
   sassc \
   unzip \
   valac
