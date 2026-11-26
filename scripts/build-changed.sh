@@ -177,16 +177,24 @@ for name in "${order[@]}"; do
       fi
     fi
   done
+  stamp="$(package_cache_stamp "${resolved[$name]}" "${inputs[$name]}")"
   if [ -n "$cache" ] && [ -f "$cache/$abi/$name.tar.xz" ] && [ -f "$cache/$abi/$name.inputs" ] \
-    && [ "$(cat "$cache/$abi/$name.inputs")" = "${inputs[$name]}" ]; then
-    echo "cache $name"
+    && [ "$(cat "$cache/$abi/$name.inputs")" = "$stamp" ]; then
     if [ "$dry" -eq 1 ]; then
+      echo "cache $name"
       built[$name]="$cache/$abi/$name.tar.xz"
       continue
     fi
-    cp -a "$cache/$abi/$name.tar.xz" "$tarball_dir/${name}-${abi}.tar.xz"
-    built[$name]="$tarball_dir/${name}-${abi}.tar.xz"
-    continue
+    out_tb="$tarball_dir/${name}-${abi}.tar.xz"
+    cp -a "$cache/$abi/$name.tar.xz" "$out_tb"
+    if [ "${kind[$name]}" != git ] \
+      || [ "$(package_tarball_revision "$out_tb" || true)" = "${resolved[$name]}" ]; then
+      echo "cache $name"
+      built[$name]="$out_tb"
+      continue
+    fi
+    echo "Cached $name does not record ${resolved[$name]}; building it" >&2
+    rm -f "$out_tb"
   fi
   echo "build $name"
   if [ "$dry" -eq 1 ]; then
@@ -244,9 +252,13 @@ for name in "${order[@]}"; do
     exit 1
   fi
   built[$name]="$tarball_dir/${name}-${abi}.tar.xz"
+  if [ "${kind[$name]}" = git ]; then
+    package_mark_revision "${built[$name]}" "${resolved[$name]}"
+  fi
   if [ -n "$cache" ]; then
     mkdir -p "$cache/$abi"
+    rm -f "$cache/$abi/$name.inputs"
     cp -a "${built[$name]}" "$cache/$abi/$name.tar.xz"
-    printf '%s\n' "${inputs[$name]}" > "$cache/$abi/$name.inputs"
+    printf '%s\n' "$stamp" > "$cache/$abi/$name.inputs"
   fi
 done

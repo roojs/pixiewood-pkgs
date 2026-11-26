@@ -60,7 +60,7 @@ built="$(mktemp)"
 : > "$built"
 notes="Index for ${gtk}."
 changed=""
-while IFS=$'\t' read -r status name _kind track _resolved _inputs _url; do
+while IFS=$'\t' read -r status name _kind track resolved _inputs _url; do
   [ -n "${status:-}" ] || continue
   case "$status" in \#*) continue ;; esac
   [ "$status" = build ] || continue
@@ -69,6 +69,7 @@ while IFS=$'\t' read -r status name _kind track _resolved _inputs _url; do
     echo "Skipping $name; its tarball is not built yet" >&2
     continue
   fi
+  package_revision_check "$name" "$track" "$resolved" "$tarball" || exit 1
   pkg_asset="$(package_asset_name "$name" "$abi" "$(package_release_label "$track" "$tarball" "$abi" "$name")")"
   printf '%s\thttps://github.com/%s/releases/download/%s/%s\n' \
     "$name" "$repo" "$tag" "$pkg_asset" >> "$built"

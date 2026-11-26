@@ -95,6 +95,67 @@ package_release_label() {
   printf 'snapshot\n'
 }
 
+package_track_is_branch() {
+  case "$1" in
+    main|master|HEAD|head|trunk) return 0 ;;
+  esac
+  return 1
+}
+
+# The package cache stamp. The inputs hash covers only this repository; a
+# branch wrap keeps the same inputs while its upstream commit moves.
+package_cache_stamp() {
+  local resolved=$1 inputs=$2
+  if [ -n "$resolved" ]; then
+    printf '%s %s\n' "$resolved" "$inputs"
+  else
+    printf '%s\n' "$inputs"
+  fi
+}
+
+package_revision_members() {
+  tar -tJf "$1" 2>/dev/null | grep -E '^(\./)?share/pixiewood/upstream-revision$' || true
+}
+
+# The upstream commit a package was built from, as recorded in its tarball.
+package_tarball_revision() {
+  local tarball=$1 member
+  [ -f "$tarball" ] || return 1
+  member="$(package_revision_members "$tarball" | tail -n1)"
+  [ -n "$member" ] || return 1
+  tar -xJf "$tarball" -O "$member" | tr -d '[:space:]'
+}
+
+package_mark_revision() {
+  local tarball=$1 resolved=$2 work member
+  work="$(mktemp -d)"
+  xz -dc "$tarball" > "$work/pkg.tar"
+  while IFS= read -r member; do
+    [ -n "$member" ] || continue
+    tar --delete -f "$work/pkg.tar" "$member"
+  done < <(package_revision_members "$tarball" | sort -u)
+  mkdir -p "$work/root/share/pixiewood"
+  printf '%s\n' "$resolved" > "$work/root/share/pixiewood/upstream-revision"
+  tar -C "$work/root" -rf "$work/pkg.tar" ./share/pixiewood/upstream-revision
+  xz -c "$work/pkg.tar" > "$work/pkg.tar.xz"
+  mv "$work/pkg.tar.xz" "$tarball"
+  rm -rf "$work"
+}
+
+# A branch pin names a commit, and that must be the commit in the tarball.
+package_revision_check() {
+  local name=$1 track=$2 resolved=$3 tarball=$4 got
+  package_track_is_branch "$track" || return 0
+  if ! got="$(package_tarball_revision "$tarball")" || [ -z "$got" ]; then
+    echo "$name tracks $track but $tarball records no upstream commit; not publishing it as $resolved" >&2
+    return 1
+  fi
+  if [ "$got" != "$resolved" ]; then
+    echo "$name tarball was built from $got, not $resolved; not publishing it" >&2
+    return 1
+  fi
+}
+
 # The file name uses a short arch. Libraries stay in lib/arm64-v8a and lib/x86_64.
 package_abi_label() {
   case "$1" in
