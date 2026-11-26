@@ -24,6 +24,7 @@ introspection = 'disabled'
 vapi = 'disabled'
 docs = 'disabled'
 brotli = 'disabled'
+zstd = 'disabled'
 gssapi = 'disabled'
 ntlm = 'disabled'
 tls_check = false
