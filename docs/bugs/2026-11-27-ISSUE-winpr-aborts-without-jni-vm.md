@@ -97,7 +97,7 @@ The patch itself:
 
 - `winpr_jni_attach_thread` returns `JNI_FALSE` when `jniVm` is null. Delete the `WINPR_ASSERT(jniVm)` in that function.
 - `winpr_jni_detach_thread` returns immediately when `jniVm` is null. Delete the `WINPR_ASSERT(jniVm)` in that function.
-- `ConvertUtf8NToWChar` (the caller named in the tombstone) uses its non-JNI conversion when attach returns `JNI_FALSE` because there is no VM. Do not leave a path that uses `jniVm` after that failure.
+- `ConvertUtf8NToWChar` (the caller named in the tombstone) uses its non-JNI conversion when attach returns `JNI_FALSE` because there is no VM. Do not leave a path that uses `jniVm` after that failure. On Android that call lands in `unicode_android.c` `convert`. The patch adds `convert_plain` there and uses it when `jniVm` is null.
 
 ## LLM
 
