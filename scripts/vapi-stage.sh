@@ -132,7 +132,8 @@ scan_libadwaita() {
     --pkg=libadwaita-1 \
     --pkg-export=libadwaita-1 \
     --library=adwaita-1 \
-    --includes=Gio-2.0,Gtk-4.0 \
+    --include=Gio-2.0 \
+    --include=Gtk-4.0 \
     --add-include-path="$system_gir" \
     -L"$libdir" \
     -ladwaita-1 \
