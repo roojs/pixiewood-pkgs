@@ -22,10 +22,10 @@ activate_pkg() {
 }
 
 destdir="$tmp/destdir"
-mkdir -p "$destdir/share/vala/vapi"
-printf '%s\n' 'namespace Demo {}' > "$destdir/share/vala/vapi/libadwaita-1.vapi"
+mkdir -p "$destdir"
 "$ROOT/scripts/vapi-stage.sh" --package libadwaita --destdir "$destdir"
 [ -f "$destdir/share/vala/vapi/libadwaita-1.vapi" ]
+cmp -s "$ROOT/packages/libadwaita/vapi/libadwaita-1.vapi" "$destdir/share/vala/vapi/libadwaita-1.vapi"
 
 activate_pkg "$destdir"
 if ! grep -q "valac = \['valac', '--vapidir'" "$tmp/sysroot/share/pixiewood/pixie.cross"; then

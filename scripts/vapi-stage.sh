@@ -83,80 +83,14 @@ vapigen_gtk() {
   )
 }
 
-scan_libadwaita() {
-  local libdir inc meta system_gir vapidir lib
-  if ! command -v g-ir-scanner >/dev/null 2>&1; then
-    echo "g-ir-scanner is required to build libadwaita VAPI files" >&2
+stage_libadwaita_vapi() {
+  local vendored="$ROOT/packages/libadwaita/vapi/libadwaita-1.vapi"
+  if [ ! -f "$vendored" ]; then
+    echo "vendored libadwaita VAPI missing: $vendored" >&2
     exit 1
   fi
-  if ! command -v vapigen >/dev/null 2>&1; then
-    echo "vapigen is required to build libadwaita VAPI files" >&2
-    exit 1
-  fi
-  if [ -z "$abi" ]; then
-    echo "libadwaita VAPI staging needs --abi" >&2
-    exit 1
-  fi
-  libdir="$destdir/lib/$abi"
-  inc="$destdir/include/libadwaita-1"
-  meta="$ROOT/packages/libadwaita/gir"
-  lib="$libdir/libadwaita-1.so"
-  if [ ! -f "$lib" ]; then
-    echo "libadwaita library missing: $lib" >&2
-    exit 1
-  fi
-  if [ ! -f "$inc/adwaita.h" ]; then
-    echo "libadwaita header missing: $inc/adwaita.h" >&2
-    exit 1
-  fi
-  mkdir -p "$gir_dir" "$vapi_dir"
-  system_gir=/usr/share/gir-1.0
-  if [ ! -d "$system_gir" ]; then
-    echo "Host GIR directory missing: $system_gir" >&2
-    exit 1
-  fi
-  export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
-  export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
-  if [ -n "$cross_cc" ]; then
-    export CC="$cross_cc"
-    export LD="$cross_cc"
-  fi
-  g-ir-scanner \
-    --quiet \
-    --warn-all \
-    --no-libtool \
-    --namespace=Adw \
-    --nsversion=1 \
-    --identifier-prefix=Adw \
-    --symbol-prefix=adw \
-    --pkg=libadwaita-1 \
-    --pkg-export=libadwaita-1 \
-    --library=adwaita-1 \
-    --include=Gio-2.0 \
-    --include=Gtk-4.0 \
-    --add-include-path="$system_gir" \
-    -L"$libdir" \
-    -ladwaita-1 \
-    --cflags-begin \
-    -I"$inc" \
-    -I"$destdir/include" \
-    -DADWAITA_COMPILATION \
-    --cflags-end \
-    -o "$gir_dir/Adw-1.gir" \
-    "$inc/adwaita.h"
-  vapidir="$(host_vapidir)"
-  vapigen_args=(--quiet "--vapidir=$vapi_dir" "--girdir=$gir_dir" --pkg=gio-2.0 --pkg=gtk4)
-  if [ -d "$meta" ]; then
-    vapigen_args+=("--metadatadir=$meta")
-  fi
-  if [ -n "$vapidir" ] && [ -d "$vapidir" ]; then
-    vapigen_args+=("--vapidir=$vapidir")
-  fi
-  vapigen_args+=(libadwaita-1 Adw-1.gir)
-  (
-    cd "$gir_dir"
-    vapigen "${vapigen_args[@]}"
-  )
+  mkdir -p "$vapi_dir"
+  cp -f "$vendored" "$vapi_dir/libadwaita-1.vapi"
 }
 
 case "$package" in
@@ -174,7 +108,7 @@ case "$package" in
     ;;
   libadwaita)
     if ! have_vapi 'libadwaita-1.vapi'; then
-      scan_libadwaita
+      stage_libadwaita_vapi
     fi
     require_vapi 'libadwaita-1.vapi' 'libadwaita-1.vapi'
     ;;
@@ -182,7 +116,6 @@ case "$package" in
     if have_vapi 'gtksourceview-5.vapi'; then
       exit 0
     fi
-    # GtkSourceView uses the same host-scan pattern as libadwaita when Meson GI is off.
     exit 0
     ;;
   *)
