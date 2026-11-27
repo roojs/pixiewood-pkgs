@@ -243,6 +243,7 @@ for name in "${order[@]}"; do
     fi
     exit 1
   fi
+  failure_clear "$abi" "$name"
   built[$name]="$tarball_dir/${name}-${abi}.tar.xz"
   if [ -n "$cache" ]; then
     mkdir -p "$cache/$abi"

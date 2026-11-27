@@ -107,18 +107,8 @@ jq -n '{packages:[]}' > "$named/snapshot.pins"
 grep -q '<th scope="row">gtk</th><td><a href="https://github.com/roojs/pixiewood-pkgs/releases/download/1.261109/gtk-arm-v31-4.24.1.pixie">4.24.1</a></td>' "$named_out/index.html"
 grep -q 'newest release on that same version line' "$named_out/index.html"
 
-if grep -q 'git add release.pins' "$ROOT/.github/workflows/prove-package.yml"; then
-  echo "prove still commits the pin lists" >&2
-  exit 1
-fi
-if grep -q -- '--commit' \
-  "$ROOT/scripts/prove-package.sh" \
-  "$ROOT/scripts/publish-package.sh" \
-  "$ROOT/.github/workflows/monitor-upstreams.yml" \
-  "$ROOT/.github/workflows/prove-package.yml"; then
-  echo "a workflow still commits pin lists" >&2
-  exit 1
-fi
+grep -q 'commit-pin-lists.sh' "$ROOT/.github/workflows/monitor-upstreams.yml"
+grep -q 'commit-pin-lists.sh' "$ROOT/.github/workflows/prove-package.yml"
 grep -q 'pins-page.sh fetch' "$ROOT/.github/workflows/prove-package.yml"
 grep -q 'pins-page.sh stage' "$ROOT/.github/workflows/prove-package.yml"
 grep -q 'deploy-pages' "$ROOT/.github/workflows/prove-package.yml"

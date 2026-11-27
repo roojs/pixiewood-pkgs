@@ -377,6 +377,19 @@ failure_record() {
   mv "$tmp" "$file"
 }
 
+failure_clear() {
+  local abi=$1 name=$2 file tmp
+  file="$(failure_file)"
+  [ -f "$file" ] || return 0
+  tmp="$(mktemp)"
+  awk -F '\t' -v abi="$abi" -v name="$name" '
+    $0 ~ /^#/ { print; next }
+    NF < 4 { next }
+    !($1 == abi && $2 == name) { print }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
 cmd_plan() {
   local resolved="" previous="" out="" force="" gtk="${GTK_TARGET:-gnome}" order="$ROOT/build-order.txt"
   local abi=""
